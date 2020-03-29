@@ -53,8 +53,8 @@ def plist_analysis(src, is_source):
             logger.info('Finding Info.plist in iOS Source')
             for dirpath, _dirnames, files in os.walk(src):
                 for name in files:
-                    if (not any(x in dirpath for x in ['__MACOSX', 'Pods'])
-                            and name == 'Info.plist'):
+                    if (not any(x in dirpath for x in ['__MACOSX', 'Pods']) and
+                            name == 'Info.plist'):
                         plist_file = os.path.join(dirpath, name)
                         break
         else:
@@ -75,8 +75,9 @@ def plist_analysis(src, is_source):
             plist_obj = plistlib.readPlist(plist_file)
             plist_info['plist_xml'] = plistlib.writePlistToBytes(
                 plist_obj).decode('utf-8', 'ignore')
-            plist_info['bin_name'] = (plist_obj.get('CFBundleDisplayName', '')
-                                      or plist_obj.get('CFBundleName', ''))
+            plist_info['bin_name'] =
+            (plist_obj.get('CFBundleDisplayName', '') or
+             plist_obj.get('CFBundleName', ''))
             if not plist_info['bin_name'] and not is_source:
                 # For iOS IPA
                 plist_info['bin_name'] = dot_app_dir.replace('.app', '')

@@ -9,8 +9,8 @@ class AttackDetect(forms.Form):
     def clean_file(self):
         """Check ../ from path."""
         file = self.cleaned_data['file']
-        if (('../' in file) or ('%2e%2e' in file)
-                or ('..' in file) or ('%252e' in file)):
+        if (('../' in file) or ('%2e%2e' in file) or
+                ('..' in file) or ('%252e' in file)):
             raise forms.ValidationError('Attack Detected')
 
         return file

@@ -19,13 +19,13 @@ WARNING = 'warning'
 
 def get_otool_out(tools_dir, cmd_type, bin_path, bin_dir):
     """Get otool args by OS and type."""
-    if (len(settings.OTOOL_BINARY) > 0
-            and is_file_exists(settings.OTOOL_BINARY)):
+    if (len(settings.OTOOL_BINARY) > 0 and
+            is_file_exists(settings.OTOOL_BINARY)):
         otool_bin = settings.OTOOL_BINARY
     else:
         otool_bin = 'otool'
-    if (len(settings.JTOOL_BINARY) > 0
-            and is_file_exists(settings.JTOOL_BINARY)):
+    if (len(settings.JTOOL_BINARY) > 0 and
+            is_file_exists(settings.JTOOL_BINARY)):
         jtool_bin = settings.JTOOL_BINARY
     else:
         jtool_bin = os.path.join(tools_dir, 'jtool.ELF64')
@@ -57,8 +57,8 @@ def get_otool_out(tools_dir, cmd_type, bin_path, bin_dir):
         elif plat == 'Linux':
             arg1 = [jtool_bin, '-arch', 'arm', '-bind', '-v', bin_path]
             arg2 = [jtool_bin, '-arch', 'arm', '-lazy_bind', '-v', bin_path]
-            return (subprocess.check_output(arg1)
-                    + subprocess.check_output(arg2))
+            return (subprocess.check_output(arg1) +
+                    subprocess.check_output(arg2))
         else:
             # Platform Not Supported
             return None

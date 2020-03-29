@@ -38,10 +38,10 @@ def key(d, key_name):
 
 def index(request):
     """Index Route."""
-    mimes = (settings.APK_MIME
-             + settings.IPA_MIME
-             + settings.ZIP_MIME
-             + settings.APPX_MIME)
+    mimes = (settings.APK_MIME +
+             settings.IPA_MIME +
+             settings.ZIP_MIME +
+             settings.APPX_MIME)
     context = {
         'version': settings.MOBSF_VER,
         'mimes': mimes,
@@ -266,8 +266,8 @@ def download(request):
                     wrapper, content_type=allowed_exts[ext])
                 response['Content-Length'] = os.path.getsize(dwd_file)
                 return response
-    if ('screen/screen.png' not in filename
-            and '-icon.png' not in filename):
+    if ('screen/screen.png' not in filename and
+            '-icon.png' not in filename):
         msg += filename
         return print_n_send_error_response(request, msg)
     return HttpResponse('')

@@ -58,10 +58,10 @@ def static_analyzer_ios(request, api=False):
             filename = request.GET['name']
 
         md5_match = re.match('^[0-9a-f]{32}$', checksum)
-        if ((md5_match)
-                and (filename.lower().endswith('.ipa')
-            or filename.lower().endswith('.zip'))
-                and (file_type in ['ipa', 'ios'])):
+        if ((md5_match) and
+                (filename.lower().endswith('.ipa') or
+                    filename.lower().endswith('.zip')) and
+                (file_type in ['ipa', 'ios'])):
             app_dict = {}
             app_dict['directory'] = settings.BASE_DIR  # BASE DIR
             app_dict['file_name'] = filename  # APP ORGINAL NAME
@@ -80,8 +80,8 @@ def static_analyzer_ios(request, api=False):
                     logger.info('iOS Binary (IPA) Analysis Started')
                     app_dict['app_file'] = app_dict[
                         'md5_hash'] + '.ipa'  # NEW FILENAME
-                    app_dict['app_path'] = (app_dict['app_dir']
-                                            + app_dict['app_file'])
+                    app_dict['app_path'] = (app_dict['app_dir'] +
+                                            app_dict['app_file'])
                     app_dict['bin_dir'] = os.path.join(
                         app_dict['app_dir'], 'Payload/')
                     app_dict['size'] = str(
@@ -169,8 +169,8 @@ def static_analyzer_ios(request, api=False):
                     logger.info('iOS Source Code Analysis Started')
                     app_dict['app_file'] = app_dict[
                         'md5_hash'] + '.zip'  # NEW FILENAME
-                    app_dict['app_path'] = (app_dict['app_dir']
-                                            + app_dict['app_file'])
+                    app_dict['app_path'] = (app_dict['app_dir'] +
+                                            app_dict['app_file'])
                     # ANALYSIS BEGINS - Already Unzipped
                     logger.info('ZIP Already Extracted')
                     app_dict['size'] = str(

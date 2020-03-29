@@ -66,8 +66,8 @@ def dynamic_analyzer(request):
         bin_hash = request.GET['hash']
         package = request.GET['package']
         no_device = False
-        if (is_attack_pattern(package)
-                or not is_md5(bin_hash)):
+        if (is_attack_pattern(package) or not
+                is_md5(bin_hash)):
             return print_n_send_error_response(request,
                                                'Invalid Parameters')
         try:

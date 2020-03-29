@@ -344,8 +344,8 @@ def manifest_analysis(mfxml, man_data_dic):
                 if (
                         affected_sdk and
                         itemname in ['Activity', 'Activity-Alias'] and
-                        (node.getAttribute('android:launchMode') == 'singleInstance'
-                            or node.getAttribute('android:launchMode') == 'singleTask')):
+                        (node.getAttribute('android:launchMode') == 'singleInstance' or
+                            node.getAttribute('android:launchMode') == 'singleTask')):
                     item = node.getAttribute('android:name')
                     ret_list.append(('a_launchmode', (item,), ()))
                 # Exported Check
@@ -364,15 +364,15 @@ def manifest_analysis(mfxml, man_data_dic):
                         item = node.getAttribute('android:name')
                         if node.getAttribute('android:permission'):
                             # permission exists
-                            perm = ('<strong>Permission: </strong>'
-                                    + node.getAttribute('android:permission'))
+                            perm = ('<strong>Permission: </strong>' +
+                                    node.getAttribute('android:permission'))
                             is_perm_exist = True
                         if item != man_data_dic['mainactivity']:
                             if is_perm_exist:
                                 prot = ''
                                 if node.getAttribute('android:permission') in permission_dict:
-                                    prot = ('</br><strong>protectionLevel: </strong>'
-                                            + permission_dict[node.getAttribute('android:permission')])
+                                    prot = ('</br><strong>protectionLevel: </strong>' +
+                                            permission_dict[node.getAttribute('android:permission')])
                                     # Esteve 23.07.2016 - begin - take into account protection level of the permission when claiming that a component is protected by it;
                                     # - the permission might not be defined in the application being analysed, if so, the protection level is not known;
                                     # - activities (or activity-alias) that are exported and have an unknown or normal or dangerous protection level are
@@ -430,8 +430,8 @@ def manifest_analysis(mfxml, man_data_dic):
                                     perm = '<strong>Permission: </strong>' + perm_appl_level
                                     prot = ''
                                     if perm_appl_level in permission_dict:
-                                        prot = ('</br><strong>protectionLevel: </strong>'
-                                                + permission_dict[perm_appl_level])
+                                        prot = ('</br><strong>protectionLevel: </strong>' +
+                                                permission_dict[perm_appl_level])
                                         prot_level_exist = True
                                         protlevel = permission_dict[
                                             perm_appl_level]
@@ -477,15 +477,15 @@ def manifest_analysis(mfxml, man_data_dic):
                             item = node.getAttribute('android:name')
                             if node.getAttribute('android:permission'):
                                 # permission exists
-                                perm = ('<strong>Permission: </strong>'
-                                        + node.getAttribute('android:permission'))
+                                perm = ('<strong>Permission: </strong>' +
+                                        node.getAttribute('android:permission'))
                                 is_perm_exist = True
                             if item != man_data_dic['mainactivity']:
                                 if is_perm_exist:
                                     prot = ''
                                     if node.getAttribute('android:permission') in permission_dict:
-                                        prot = ('</br><strong>protectionLevel: </strong>'
-                                                + permission_dict[node.getAttribute('android:permission')])
+                                        prot = ('</br><strong>protectionLevel: </strong>' +
+                                                permission_dict[node.getAttribute('android:permission')])
                                         # Esteve 24.07.2016 - begin - take into account protection level of the permission when claiming that a component is protected by it;
                                         # - the permission might not be defined in the application being analysed, if so, the protection level is not known;
                                         # - activities (or activity-alias) that are exported and have an unknown or normal or dangerous protection level are
@@ -545,8 +545,8 @@ def manifest_analysis(mfxml, man_data_dic):
                                         perm = '<strong>Permission: </strong>' + perm_appl_level
                                         prot = ''
                                         if perm_appl_level in permission_dict:
-                                            prot = ('</br><strong>protectionLevel: </strong>'
-                                                    + permission_dict[perm_appl_level])
+                                            prot = ('</br><strong>protectionLevel: </strong>' +
+                                                    permission_dict[perm_appl_level])
                                             prot_level_exist = True
                                             protlevel = permission_dict[
                                                 perm_appl_level]
@@ -592,14 +592,14 @@ def manifest_analysis(mfxml, man_data_dic):
                                     item = node.getAttribute('android:name')
                                     if node.getAttribute('android:permission'):
                                         # permission exists
-                                        perm = ('<strong>Permission: </strong>'
-                                                + node.getAttribute('android:permission'))
+                                        perm = ('<strong>Permission: </strong>' +
+                                                node.getAttribute('android:permission'))
                                         is_perm_exist = True
                                     if is_perm_exist:
                                         prot = ''
                                         if node.getAttribute('android:permission') in permission_dict:
-                                            prot = ('</br><strong>protectionLevel: </strong>'
-                                                    + permission_dict[node.getAttribute('android:permission')])
+                                            prot = ('</br><strong>protectionLevel: </strong>' +
+                                                    permission_dict[node.getAttribute('android:permission')])
                                             prot_level_exist = True
                                             protlevel = permission_dict[
                                                 node.getAttribute('android:permission')]
@@ -635,8 +635,8 @@ def manifest_analysis(mfxml, man_data_dic):
                                             perm = '<strong>Permission: </strong>' + perm_appl_level
                                             prot = ''
                                             if perm_appl_level in permission_dict:
-                                                prot = ('</br><strong>protectionLevel: </strong>'
-                                                        + permission_dict[perm_appl_level])
+                                                prot = ('</br><strong>protectionLevel: </strong>' +
+                                                        permission_dict[perm_appl_level])
                                                 prot_level_exist = True
                                                 protlevel = permission_dict[
                                                     perm_appl_level]
@@ -673,14 +673,14 @@ def manifest_analysis(mfxml, man_data_dic):
                                             'android:name')
                                         if node.getAttribute('android:permission'):
                                             # permission exists
-                                            perm = ('<strong>Permission: </strong>'
-                                                    + node.getAttribute('android:permission'))
+                                            perm = ('<strong>Permission: </strong>' +
+                                                    node.getAttribute('android:permission'))
                                             is_perm_exist = True
                                         if is_perm_exist:
                                             prot = ''
                                             if node.getAttribute('android:permission') in permission_dict:
-                                                prot = ('</br><strong>protectionLevel: </strong>'
-                                                        + permission_dict[node.getAttribute('android:permission')])
+                                                prot = ('</br><strong>protectionLevel: </strong>' +
+                                                        permission_dict[node.getAttribute('android:permission')])
                                                 prot_level_exist = True
                                                 protlevel = permission_dict[
                                                     node.getAttribute('android:permission')]
@@ -716,8 +716,8 @@ def manifest_analysis(mfxml, man_data_dic):
                                                 perm = '<strong>Permission: </strong>' + perm_appl_level
                                                 prot = ''
                                                 if perm_appl_level in permission_dict:
-                                                    prot = ('</br><strong>protectionLevel: </strong>'
-                                                            + permission_dict[perm_appl_level])
+                                                    prot = ('</br><strong>protectionLevel: </strong>' +
+                                                            permission_dict[perm_appl_level])
                                                     prot_level_exist = True
                                                     protlevel = permission_dict[
                                                         perm_appl_level]
@@ -861,8 +861,8 @@ def get_manifest_file(app_path, app_dir, tools_dir):
     """Get readable AndroidManifest.xml."""
     try:
         manifest = None
-        if (len(settings.APKTOOL_BINARY) > 0
-                and is_file_exists(settings.APKTOOL_BINARY)):
+        if (len(settings.APKTOOL_BINARY) > 0 and
+                is_file_exists(settings.APKTOOL_BINARY)):
             apktool_path = settings.APKTOOL_BINARY
         else:
             apktool_path = os.path.join(tools_dir, 'apktool_2.4.1.jar')

@@ -138,8 +138,8 @@ def droidmon_api_analysis(app_dir, package):
                     if re.findall(details['regex'], apis['class']):
                         call_data['api'] = api
                         # Decode Base64
-                        if ('decode' in apis['method']
-                                and api == 'api_base64'):
+                        if ('decode' in apis['method'] and
+                                api == 'api_base64'):
                             call_data['decoded'] = base64_decode(
                                 call_data['args'])
                         hooks.append(call_data)

@@ -401,11 +401,11 @@ def binscope(name, bin_an_dic, run_local=False, app_dir=None):
 
         # Assemble
         params = (
-            binscope_path
-            + target
-            + out_type
-            + output
-            + checks
+            binscope_path +
+            target +
+            out_type +
+            output +
+            checks
         )
 
         # Execute process
@@ -493,16 +493,16 @@ def _parse_xml(app_dir):
             if isinstance(child.tag, str) and child.tag.endswith('}Identity'):
                 xml_dic['version'] = child.get('Version')
                 xml_dic['arch'] = child.get('ProcessorArchitecture')
-            elif (isinstance(child.tag, str)
-                    and child.tag.endswith('Properties')):
+            elif (isinstance(child.tag, str) and
+                    child.tag.endswith('Properties')):
                 for sub_child in child.getchildren():
                     if sub_child.tag.endswith('}DisplayName'):
                         # TODO(Needed? Compare to existing app_name)
                         xml_dic['app_name'] = sub_child.text
                     elif sub_child.tag.endswith('}PublisherDisplayName'):
                         xml_dic['pub_name'] = sub_child.text
-            elif (isinstance(child.tag, str)
-                    and child.tag.endswith('}Metadata')):
+            elif (isinstance(child.tag, str) and
+                    child.tag.endswith('}Metadata')):
                 xml_dic = parse_xml_metadata(xml_dic, child)
     except Exception:
         logger.exception('Reading from AppxManifest.xml')

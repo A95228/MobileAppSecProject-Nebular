@@ -3,6 +3,7 @@
 import re
 
 import requests
+import ast
 
 from bs4 import BeautifulSoup as Soup
 
@@ -33,9 +34,10 @@ for pd in permission_divs:
 
 # check the permissions we currently have in dvm_permissions.py
 DVM_PERMISSIONS = {}
-eval(compile(open('StaticAnalyzer/views/android/dvm_permissions.py').read(),
-             '<string>',
-             'exec'))
+ast.literal_eval(compile(
+                open('StaticAnalyzer/views/android/dvm_permissions.py').read(),
+                '<string>',
+                'exec'))
 MANIFEST_PERMISSIONS = DVM_PERMISSIONS['MANIFEST_PERMISSION']
 
 for permission_name in online_permissions:

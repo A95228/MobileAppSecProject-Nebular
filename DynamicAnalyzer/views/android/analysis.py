@@ -151,8 +151,8 @@ def get_log_data(apk_dir, package):
                      encoding='utf8',
                      errors='ignore') as flip:
             frida_logs = flip.read()
-    traffic = (web_data + traffic + droidmon_data
-               + apimon_data + frida_logs)
+    traffic = (web_data + traffic + droidmon_data +
+               apimon_data + frida_logs)
     return {'logcat': logcat_data,
             'traffic': traffic}
 

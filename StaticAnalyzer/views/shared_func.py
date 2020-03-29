@@ -326,10 +326,10 @@ def code_rule_matcher(findings, perms, data, file_path, code_rules):
                                          'desc'], file_path, rule)
                             break
                 elif rule['match'] == 'regex_and_perm':
-                    if (rule['perm'] in perms
-                            and re.findall(rule['regex1'], tmp_data)):
-                        add_findings(findings, rule[
-                                     'desc'], file_path, rule)
+                    if (rule['perm'] in perms and
+                            re.findall(rule['regex1'], tmp_data)):
+                            add_findings(findings, rule[
+                                        'desc'], file_path, rule)
                 else:
                     logger.error('Code Regex Rule Match Error\n %s', rule)
 
@@ -376,8 +376,8 @@ def code_rule_matcher(findings, perms, data, file_path, code_rules):
                         add_findings(findings, rule[
                                      'desc'], file_path, rule)
                 elif rule['match'] == 'string_and_perm':
-                    if (rule['perm'] in perms
-                            and rule['string1'] in tmp_data):
+                    if (rule['perm'] in perms and
+                            rule['string1'] in tmp_data):
                         add_findings(findings, rule[
                                      'desc'], file_path, rule)
                 elif rule['match'] == 'string_or_and_perm':
@@ -443,8 +443,8 @@ def api_rule_matcher(api_findings, perms, data, file_path, api_rules):
                             add_apis(api_findings, api['desc'], file_path)
                             break
                 elif api['match'] == 'regex_and_perm':
-                    if (api['perm'] in perms
-                            and re.findall(api['regex1'], tmp_data)):
+                    if (api['perm'] in perms and
+                            re.findall(api['regex1'], tmp_data)):
                         add_apis(api_findings, api['desc'], file_path)
                 else:
                     logger.error('API Regex Rule Match Error\n %s', api)

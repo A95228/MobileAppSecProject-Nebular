@@ -130,8 +130,8 @@ def collect_logs(request):
         env = Environment()
         md5_hash = request.POST['hash']
         package = request.POST['package']
-        if (not strict_package_check(package)
-                or not is_md5(md5_hash)):
+        if (not strict_package_check(package) or not
+                is_md5(md5_hash)):
             return invalid_params()
         apk_dir = os.path.join(settings.UPLD_DIR, md5_hash + '/')
         lout = os.path.join(apk_dir, 'logcat.txt')

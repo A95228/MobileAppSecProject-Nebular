@@ -91,9 +91,9 @@ def instrument(request):
         cls_trace = request.POST.get('cls_trace')
         if cls_trace:
             extras['cls_trace'] = cls_trace.strip()
-        if (is_attack_pattern(default_hooks)
-                or not strict_package_check(package)
-                or not is_md5(md5_hash)):
+        if (is_attack_pattern(default_hooks) or not
+                strict_package_check(package) or not
+                is_md5(md5_hash)):
             return invalid_params()
         frida_obj = Frida(md5_hash,
                           package,
@@ -223,11 +223,11 @@ def apimon_analysis(app_dir):
                 flip.read()[:-1]))
         for api in apis:
             to_decode = None
-            if (api['class'] == 'android.util.Base64'
-                    and (api['method'] == 'encodeToString')):
+            if (api['class'] == 'android.util.Base64'and
+                    (api['method'] == 'encodeToString')):
                 to_decode = api['returnValue'].replace('"', '')
-            elif (api['class'] == 'android.util.Base64'
-                  and api['method'] == 'decode'):
+            elif (api['class'] == 'android.util.Base64' and
+                  api['method'] == 'decode'):
                 to_decode = api['arguments'][0]
             try:
                 if to_decode:

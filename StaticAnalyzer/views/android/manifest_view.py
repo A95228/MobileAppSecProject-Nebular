@@ -23,9 +23,9 @@ def run(request):
         typ = request.GET['type']  # APK or SOURCE
         binary = request.GET['bin']
         match = re.match('^[0-9a-f]{32}$', md5)
-        if (match
-            and (typ in ['eclipse', 'studio', 'apk'])
-                and (binary in ['1', '0'])):
+        if (match and
+                (typ in ['eclipse', 'studio', 'apk']) and
+                (binary in ['1', '0'])):
             app_dir = os.path.join(
                 settings.UPLD_DIR, md5 + '/')  # APP DIRECTORY
             tools_dir = os.path.join(

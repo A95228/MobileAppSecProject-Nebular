@@ -37,16 +37,16 @@ def class_dump(tools_dir, bin_path, app_dir, bin_type):
             logger.info('Dumping classes')
             if bin_type == 'Swift':
                 logger.info('Running class-dump-swift against binary')
-                if (len(settings.CLASSDUMP_SWIFT_BINARY) > 0
-                        and is_file_exists(settings.CLASSDUMP_SWIFT_BINARY)):
+                if (len(settings.CLASSDUMP_SWIFT_BINARY) > 0 and
+                        is_file_exists(settings.CLASSDUMP_SWIFT_BINARY)):
                     class_dump_bin = settings.CLASSDUMP_SWIFT_BINARY
                 else:
                     class_dump_bin = os.path.join(
                         tools_dir, 'class-dump-swift')
             else:
                 logger.info('Running class-dump against binary')
-                if (len(settings.CLASSDUMP_BINARY) > 0
-                        and is_file_exists(settings.CLASSDUMP_BINARY)):
+                if (len(settings.CLASSDUMP_BINARY) > 0 and
+                        is_file_exists(settings.CLASSDUMP_BINARY)):
                     class_dump_bin = settings.CLASSDUMP_BINARY
                 else:
                     class_dump_bin = os.path.join(tools_dir, 'class-dump')
@@ -54,8 +54,8 @@ def class_dump(tools_dir, bin_path, app_dir, bin_type):
             args = [class_dump_bin, bin_path]
         elif platform.system() == 'Linux':
             logger.info('Running jtool against the binary for dumping classes')
-            if (len(settings.JTOOL_BINARY) > 0
-                    and is_file_exists(settings.JTOOL_BINARY)):
+            if (len(settings.JTOOL_BINARY) > 0 and
+                    is_file_exists(settings.JTOOL_BINARY)):
                 jtool_bin = settings.JTOOL_BINARY
             else:
                 jtool_bin = os.path.join(tools_dir, 'jtool.ELF64')
@@ -132,8 +132,8 @@ def binary_analysis(src, tools_dir, app_dir, executable_name):
                 break
         # Bin Dir - Dir/Payload/x.app/
         bin_dir = os.path.join(src, dot_app_dir)
-        if (executable_name
-                and is_file_exists(os.path.join(bin_dir, executable_name))):
+        if (executable_name and
+                is_file_exists(os.path.join(bin_dir, executable_name))):
             bin_name = executable_name
         else:
             bin_name = dot_app_dir.replace('.app', '')

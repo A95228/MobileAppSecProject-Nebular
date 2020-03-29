@@ -30,9 +30,9 @@ def app_search(app_id):
             det = resp['results'][0]
             return {
                 'features': det['features'] or [],
-                'icon': (det['artworkUrl512']
-                         or det['artworkUrl100']
-                         or det['artworkUrl60'] or ''),
+                'icon': (det['artworkUrl512'] or
+                         det['artworkUrl100'] or
+                         det['artworkUrl60'] or ''),
                 'developer_id': det['artistId'],
                 'developer': det['artistName'],
                 'developer_url': det['artistViewUrl'],

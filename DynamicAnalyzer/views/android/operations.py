@@ -48,10 +48,10 @@ def strict_package_check(user_input):
 
 def is_path_traversal(user_input):
     """Check for path traversal."""
-    if (('../' in user_input)
-        or ('%2e%2e' in user_input)
-        or ('..' in user_input)
-            or ('%252e' in user_input)):
+    if (('../' in user_input) or
+            ('%2e%2e' in user_input) or
+            ('..' in user_input) or
+            ('%252e' in user_input)):
         logger.error('Path traversal attack detected')
         return True
     return False

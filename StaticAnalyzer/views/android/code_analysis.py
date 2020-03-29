@@ -50,11 +50,9 @@ def code_analysis(app_dir, perms, typ):
                     shutil.move(jfile_path, p_2)
                     jfile_path = p_2
                 repath = dir_name.replace(java_src, '') + '/'
-                if (
-                        jfile.endswith('.java')
-                        and any(re.search(cls, repath)
-                                for cls in settings.SKIP_CLASSES) is False
-                ):
+                if (jfile.endswith('.java') and
+                    any(re.search(cls, repath)
+                        for cls in settings.SKIP_CLASSES) is False):
                     dat = ''
                     with io.open(
                         jfile_path,

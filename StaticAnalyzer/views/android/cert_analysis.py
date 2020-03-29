@@ -71,9 +71,9 @@ def cert_info(app_dir, app_file):
         certlist.append('v2 signature: {}'.format(a.is_signed_v2()))
         certlist.append('v3 signature: {}'.format(a.is_signed_v3()))
 
-        certs = set(a.get_certificates_der_v3() + a.get_certificates_der_v2()
-                    + [a.get_certificate_der(x)
-                       for x in a.get_signature_names()])
+        certs = set(a.get_certificates_der_v3() + a.get_certificates_der_v2() +
+                    [a.get_certificate_der(x)
+                    for x in a.get_signature_names()])
         pkeys = set(a.get_public_keys_der_v3() + a.get_public_keys_der_v2())
 
         if len(certs) > 0:

@@ -56,9 +56,9 @@ class TinyELFFile(object):
             'e_shstrndx': self.unpack_half(),
         }
         xxx = self.decode_shdr(
-            self.header['e_shoff']
-            + self.header['e_shstrndx']
-            * self.header['e_shentsize'])
+            self.header['e_shoff'] +
+            self.header['e_shstrndx'] +
+            self.header['e_shentsize'])
         self._file_stringtable_section = xxx['sh_offset']
 
     def decode_shdr(self, off):
@@ -160,11 +160,11 @@ class TinyELFFile(object):
 
     def unpack_addr(self):
         if self.elfclass == 32:
-            return (struct.unpack(self.unpack_endian
-                    + 'L', self.stream.read(4))[0])
+            return (struct.unpack(self.unpack_endian +
+                    'L', self.stream.read(4))[0])
         else:
-            return (struct.unpack(self.unpack_endian
-                    + 'Q', self.stream.read(8))[0])
+            return (struct.unpack(self.unpack_endian +
+                    'Q', self.stream.read(8))[0])
 
     def unpack_offset(self):
         return self.unpack_addr()
@@ -174,19 +174,19 @@ class TinyELFFile(object):
 
     def unpack_xword(self):
         if self.elfclass == 32:
-            return (struct.unpack(self.unpack_endian
-                    + 'L', self.stream.read(4))[0])
+            return (struct.unpack(self.unpack_endian +
+                    'L', self.stream.read(4))[0])
         else:
-            return (struct.unpack(self.unpack_endian
-                    + 'Q', self.stream.read(8))[0])
+            return (struct.unpack(self.unpack_endian +
+                    'Q', self.stream.read(8))[0])
 
     def unpack_sxword(self):
         if self.elfclass == 32:
-            return (struct.unpack(self.unpack_endian
-                    + 'l', self.stream.read(4))[0])
+            return (struct.unpack(self.unpack_endian +
+                    'l', self.stream.read(4))[0])
         else:
-            return (struct.unpack(self.unpack_endian
-                    + 'q', self.stream.read(8))[0])
+            return (struct.unpack(self.unpack_endian +
+                    'q', self.stream.read(8))[0])
 
 
 def check_elf_built(f):
@@ -210,19 +210,19 @@ def check_elf_built(f):
                 siz = section_header['sh_size'] // section_header['sh_entsize']
                 for i in range(siz):
                     elffile.stream.seek(
-                        section_header['sh_offset']
-                        + i
-                        * section_header['sh_entsize'])
+                        section_header['sh_offset'] +
+                        i +
+                        section_header['sh_entsize'])
                     if section_header['sh_type'] == 9:
                         entry = elffile.decode_rel(
-                            section_header['sh_offset']
-                            + i
-                            * section_header['sh_entsize'])
+                            section_header['sh_offset'] +
+                            i +
+                            section_header['sh_entsize'])
                     elif section_header['sh_type'] == 4:
                         entry = elffile.decode_rela(
-                            section_header['sh_offset']
-                            + i
-                            * section_header['sh_entsize'])
+                            section_header['sh_offset'] +
+                            i +
+                            section_header['sh_entsize'])
                     else:
                         continue
                     if (entry['r_info_type']
@@ -254,8 +254,8 @@ def res_analysis(app_dir):
             if os.path.exists(resdir) and os.path.isdir(resdir):
                 for pdir, _dirl, filel in os.walk(resdir):
                     for filename in filel:
-                        if (filename.endswith('.htm')
-                                or filename.endswith('.html')):
+                        if (filename.endswith('.htm') or
+                                filename.endswith('.html')):
                             try:
                                 filepath = os.path.join(pdir, filename)
                                 buf = ''

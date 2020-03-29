@@ -28,8 +28,8 @@ def run(request):
         if typ == 'eclipse':
             src = os.path.join(settings.UPLD_DIR, md5 + '/src/')
         elif typ == 'studio':
-            src = os.path.join(settings.UPLD_DIR, md5
-                               + '/app/src/main/java/')
+            src = os.path.join(settings.UPLD_DIR, md5 +
+                               '/app/src/main/java/')
         elif typ == 'apk':
             src = os.path.join(settings.UPLD_DIR, md5 + '/java_source/')
         else:

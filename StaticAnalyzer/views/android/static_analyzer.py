@@ -80,8 +80,8 @@ def static_analyzer(request, api=False):
                 (
                     match
                 ) and (
-                    filename.lower().endswith('.apk')
-                    or filename.lower().endswith('.zip')
+                    filename.lower().endswith('.apk') or
+                    filename.lower().endswith('.zip')
                 ) and (
                     typ in ['zip', 'apk']
                 )
@@ -105,8 +105,8 @@ def static_analyzer(request, api=False):
                 else:
                     app_dic['app_file'] = app_dic[
                         'md5'] + '.apk'  # NEW FILENAME
-                    app_dic['app_path'] = (app_dic['app_dir']
-                                           + app_dic['app_file'])  # APP PATH
+                    app_dic['app_path'] = (app_dic['app_dir'] +
+                                           app_dic['app_file'])  # APP PATH
 
                     # ANALYSIS BEGINS
                     app_dic['size'] = str(
@@ -169,9 +169,9 @@ def static_analyzer(request, api=False):
                             app_dic['icon_path'] = icon_dic['path']
 
                     # Set Manifest link
-                    app_dic['mani'] = ('../ManifestView/?md5='
-                                       + app_dic['md5']
-                                       + '&type=apk&bin=1')
+                    app_dic['mani'] = ('../ManifestView/?md5=' +
+                                       app_dic['md5'] +
+                                       '&type=apk&bin=1')
                     man_data_dic = manifest_data(app_dic['parsed_xml'])
                     app_dic['playstore'] = get_app_details(
                         man_data_dic['packagename'])
@@ -303,8 +303,8 @@ def static_analyzer(request, api=False):
                 else:
                     app_dic['app_file'] = app_dic[
                         'md5'] + '.zip'  # NEW FILENAME
-                    app_dic['app_path'] = (app_dic['app_dir']
-                                           + app_dic['app_file'])  # APP PATH
+                    app_dic['app_path'] = (app_dic['app_dir'] +
+                                           app_dic['app_file'])  # APP PATH
                     logger.info('Extracting ZIP')
                     app_dic['files'] = unzip(
                         app_dic['app_path'], app_dic['app_dir'])
@@ -316,10 +316,10 @@ def static_analyzer(request, api=False):
                             return {'type': 'ios'}
                         else:
                             return HttpResponseRedirect(
-                                '/StaticAnalyzer_iOS/?name='
-                                + app_dic['app_name']
-                                + '&type=ios&checksum='
-                                + app_dic['md5'])
+                                '/StaticAnalyzer_iOS/?name=' +
+                                app_dic['app_name'] +
+                                '&type=ios&checksum=' +
+                                app_dic['md5'])
                     app_dic['certz'] = get_hardcoded_cert_keystore(
                         app_dic['files'])
                     app_dic['zipped'] = pro_type
@@ -350,9 +350,9 @@ def static_analyzer(request, api=False):
 
                         # Set manifest view link
                         app_dic['mani'] = (
-                            '../ManifestView/?md5='
-                            + app_dic['md5'] + '&type='
-                            + pro_type + '&bin=0'
+                            '../ManifestView/?md5=' +
+                            app_dic['md5'] + '&type=' +
+                            pro_type + '&bin=0'
                         )
 
                         man_data_dic = manifest_data(app_dic['persed_xml'])
@@ -551,8 +551,8 @@ def get_app_name(app_path, app_dir, tools_dir, is_apk):
 def get_app_name_from_values_folder(values_dir):
     """Get all the files in values folder and checks them for app_name."""
     files = [f for f in os.listdir(values_dir) if
-             (os.path.isfile(os.path.join(values_dir, f)))
-             and (f.endswith('.xml'))]
+             (os.path.isfile(os.path.join(values_dir, f))) and
+             (f.endswith('.xml'))]
     for f in files:
         # Look through each file, searching for app_name.
         app_name = get_app_name_from_file(os.path.join(values_dir, f))

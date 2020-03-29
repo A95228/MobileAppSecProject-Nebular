@@ -32,8 +32,8 @@ def dex_2_smali(app_dir, tools_dir):
         for dex_path in dexes:
             logger.info('Converting %s to Smali Code',
                         filename_from_path(dex_path))
-            if (len(settings.BACKSMALI_BINARY) > 0
-                    and is_file_exists(settings.BACKSMALI_BINARY)):
+            if (len(settings.BACKSMALI_BINARY) > 0 and
+                    is_file_exists(settings.BACKSMALI_BINARY)):
                 bs_path = settings.BACKSMALI_BINARY
             else:
                 bs_path = os.path.join(tools_dir, 'baksmali-2.4.0.jar')
@@ -65,8 +65,8 @@ def apk_2_java(app_path, app_dir, tools_dir):
         if os.path.exists(output):
             shutil.rmtree(output)
 
-        if (len(settings.JADX_BINARY) > 0
-                and is_file_exists(settings.JADX_BINARY)):
+        if (len(settings.JADX_BINARY) > 0 and
+                is_file_exists(settings.JADX_BINARY)):
             jadx = settings.JADX_BINARY
         else:
             if platform.system() == 'Windows':

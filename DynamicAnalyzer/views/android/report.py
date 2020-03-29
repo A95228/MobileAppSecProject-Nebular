@@ -42,8 +42,8 @@ def view_report(request):
         package = request.GET['package']
         droidmon = {}
         apimon = {}
-        if (is_attack_pattern(package)
-                or not is_md5(md5_hash)):
+        if (is_attack_pattern(package) or not
+                is_md5(md5_hash)):
             return print_n_send_error_response(request,
                                                'Invalid Parameters')
         app_dir = os.path.join(settings.UPLD_DIR, md5_hash + '/')

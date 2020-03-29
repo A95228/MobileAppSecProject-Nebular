@@ -290,9 +290,9 @@ def filename_from_path(path):
     head, tail = ntpath.split(path)
     return tail or ntpath.basename(head)
 
-
+""" not used (cleaning)
 def get_md5(data):
-    return hashlib.md5(data).hexdigest()
+    return hashlib.md5(data).hexdigest()"""
 
 
 def find_between(s, first, last):
@@ -415,10 +415,10 @@ def find_process_by(name):
     """Return a set of process path matching name."""
     proc = set()
     for p in psutil.process_iter(attrs=['name', 'exe', 'cmdline']):
-        if (name == p.info['name'] or p.info['exe']
-            and os.path.basename(p.info['exe']) == name
-                or p.info['cmdline'] and p.info['cmdline'][0] == name):
-            proc.add(p.info['exe'])
+        if (name == p.info['name'] or p.info['exe'] and
+                os.path.basename(p.info['exe']) == name or
+                p.info['cmdline'] and p.info['cmdline'][0] == name):
+                proc.add(p.info['exe'])
     return proc
 
 
@@ -443,8 +443,8 @@ def get_adb():
     """Get ADB binary path."""
     try:
         global ADB_PATH
-        if (len(settings.ADB_BINARY) > 0
-                and is_file_exists(settings.ADB_BINARY)):
+        if (len(settings.ADB_BINARY) > 0 and
+                is_file_exists(settings.ADB_BINARY)):
             ADB_PATH = settings.ADB_BINARY
             return ADB_PATH
         if ADB_PATH:
@@ -571,11 +571,11 @@ def read_sqlite(sqlite_file):
         tables = cur.fetchall()
         for table in tables:
             table_dict[table[0]] = {'head': [], 'data': []}
-            cur.execute('PRAGMA table_info(\'%s\')' % table)
+            cur.execute('PRAGMA table_info(\'%s\')', % (table,))
             rows = cur.fetchall()
             for sq_row in rows:
                 table_dict[table[0]]['head'].append(sq_row[1])
-            cur.execute('SELECT * FROM \'%s\'' % table)
+            cur.execute('SELECT * FROM \'%s\'', % (table,))
             rows = cur.fetchall()
             for sq_row in rows:
                 tmp_row = []

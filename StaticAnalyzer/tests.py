@@ -68,8 +68,8 @@ def static_analysis_test():
 
         for pdf in pdfs:
             resp = http_client.get(pdf)
-            if (resp.status_code == 200
-                    and resp._headers['content-type'][1] == 'application/pdf'):
+            if (resp.status_code == 200 and
+                    resp._headers['content-type'][1] == 'application/pdf'):
                 logger.info('[OK] PDF Report Generated: %s', pdf)
             else:
                 logger.error('Generating PDF: %s', pdf)
@@ -132,8 +132,8 @@ def api_test():
         apk_dir = os.path.join(settings.BASE_DIR, 'StaticAnalyzer/test_files/')
         for filename in os.listdir(apk_dir):
             fpath = os.path.join(apk_dir, filename)
-            if (platform.system() not in ['Darwin', 'Linux']
-                    and fpath.endswith('.ipa')):
+            if (platform.system() not in ['Darwin', 'Linux'] and
+                    fpath.endswith('.ipa')):
                 continue
             with open(fpath, 'rb') as filp:
                 response = http_client.post(
@@ -194,8 +194,8 @@ def api_test():
         for pdf in pdfs:
             resp = http_client.post(
                 '/api/v1/download_pdf', pdf, HTTP_AUTHORIZATION=auth)
-            if (resp.status_code == 200
-                    and resp._headers['content-type'][1] == 'application/pdf'):
+            if (resp.status_code == 200 and
+                    resp._headers['content-type'][1] == 'application/pdf'):
                 logger.info('[OK] PDF Report Generated: %s', pdf['hash'])
             else:
                 logger.error('Generating PDF: %s', pdf['hash'])
@@ -208,8 +208,8 @@ def api_test():
         for jsn in pdfs:
             resp = http_client.post(
                 '/api/v1/report_json', jsn, HTTP_AUTHORIZATION=auth)
-            if (resp.status_code == 200
-                    and resp._headers['content-type'][1] == ctype):
+            if (resp.status_code == 200 and
+                    resp._headers['content-type'][1] == ctype):
                 logger.info('[OK] JSON Report Generated: %s', jsn['hash'])
             else:
                 logger.error('Generating JSON Response: %s', jsn['hash'])
