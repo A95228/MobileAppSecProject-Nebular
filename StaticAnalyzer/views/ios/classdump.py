@@ -26,8 +26,8 @@ def classdump_mac(clsdmp_bin, tools_dir, ipa_bin):
     else:
         logger.info('Running class-dump against binary')
         external = settings.CLASSDUMP_BINARY
-    if (len(external) > 0
-            and is_file_exists(external)):
+    if (len(external) > 0 and
+            is_file_exists(external)):
         class_dump_bin = external
     else:
         class_dump_bin = os.path.join(

@@ -26,7 +26,7 @@ import requests
 
 from django.shortcuts import render
 
-#from install.windows.setup import windows_config_local
+# from install.windows.setup import windows_config_local
 
 from . import settings
 
@@ -523,7 +523,7 @@ def first_run(secret_file, base_dir, mobsf_home):
         make_migrations(base_dir)
         migrate(base_dir)
         # Windows Setup
-        #windows_config_local(mobsf_home)
+        # windows_config_local(mobsf_home)
     return secret_key
 
 

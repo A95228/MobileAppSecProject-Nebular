@@ -93,8 +93,8 @@ def _match_regex_rule(rule, matcher, findings, perms, data,
                 _add_findings(matcher, findings, file_path, rule)
                 break
     elif rule['match'] == Match.regex_and_perm:
-        if (rule['perm'] in perms
-                and re.findall(rule['regex1'], tmp_data)):
+        if (rule['perm'] in perms and
+                re.findall(rule['regex1'], tmp_data)):
             _add_findings(matcher, findings, file_path, rule)
     else:
         logger.error('Code Regex Rule Match Error\n %s', rule)
@@ -139,8 +139,8 @@ def _match_string_rule(rule, matcher, findings, perms, data,
         if string_and_stat or (rule['string1'] in tmp_data):
             _add_findings(matcher, findings, file_path, rule)
     elif rule['match'] == Match.string_and_perm:
-        if (rule['perm'] in perms
-                and rule['string1'] in tmp_data):
+        if (rule['perm'] in perms and
+                rule['string1'] in tmp_data):
             _add_findings(matcher, findings, file_path, rule)
     elif rule['match'] == Match.string_or_and_perm:
         match_list = _get_list_match_items(rule)
@@ -152,8 +152,8 @@ def _match_string_rule(rule, matcher, findings, perms, data,
         if (rule['perm'] in perms) and string_or_ps:
             _add_findings(matcher, findings, file_path, rule)
     elif rule['match'] == Match.string_and_not:
-        if (rule['string1'] in tmp_data
-                and rule['string2'] not in tmp_data):
+        if (rule['string1'] in tmp_data and
+                rule['string2'] not in tmp_data):
             _add_findings(matcher, findings, file_path, rule)
     else:
         logger.error('Code String Rule Match Error\n%s', rule)

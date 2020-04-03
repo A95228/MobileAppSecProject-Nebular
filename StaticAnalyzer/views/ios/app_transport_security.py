@@ -72,8 +72,8 @@ def check_transport_security(p_list):
                 if not isinstance(config, dict):
                     continue
                 old_exp = 'NSTemporaryExceptionAllowsInsecureHTTPLoads'
-                if (config.get('NSExceptionAllowsInsecureHTTPLoads', False)
-                        or config.get(old_exp, False)):
+                if (config.get('NSExceptionAllowsInsecureHTTPLoads', False) or
+                        config.get(old_exp, False)):
                     findings = {
                         'issue': ('Insecure communication'
                                   ' to {} is allowed'.format(domain)),
@@ -108,8 +108,8 @@ def check_transport_security(p_list):
                     }
                     ats.append(findings)
                 old_tls = 'NSTemporaryExceptionMinimumTLSVersion'
-                inc_min_tls = (config.get('NSExceptionMinimumTLSVersion', None)
-                               or config.get(old_tls, None))
+                inc_min_tls = (config.get('NSExceptionMinimumTLSVersion', None) or
+                               config.get(old_tls, None))
                 if inc_min_tls in ['TLSv1.0', 'TLSv1.1']:
                     findings = {
                         'issue': ('NSExceptionMinimumTLSVersion set to {}'
@@ -173,8 +173,8 @@ def check_transport_security(p_list):
                     }
                     ats.append(findings)
                 old_fwd = 'NSTemporaryExceptionRequiresForwardSecrecy'
-                if (config.get('NSExceptionRequiresForwardSecrecy', False)
-                        or config.get(old_fwd, False)):
+                if (config.get('NSExceptionRequiresForwardSecrecy', False) or
+                        config.get(old_fwd, False)):
                     findings = {
                         'issue': ('NSExceptionRequiresForwardSecrecy '
                                   'set to YES'
