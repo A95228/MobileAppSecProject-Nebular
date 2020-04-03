@@ -26,7 +26,7 @@ import requests
 
 from django.shortcuts import render
 
-from install.windows.setup import windows_config_local
+#from install.windows.setup import windows_config_local
 
 from . import settings
 
@@ -522,7 +522,7 @@ def first_run(secret_file, base_dir, mobsf_home):
         make_migrations(base_dir)
         migrate(base_dir)
         # Windows Setup
-        windows_config_local(mobsf_home)
+        #windows_config_local(mobsf_home)
     return secret_key
 
 
@@ -571,11 +571,11 @@ def read_sqlite(sqlite_file):
         tables = cur.fetchall()
         for table in tables:
             table_dict[table[0]] = {'head': [], 'data': []}
-            cur.execute('PRAGMA table_info(\'%s\')', % (table,))
+            cur.execute('PRAGMA table_info(\'%s\')', (table,))
             rows = cur.fetchall()
             for sq_row in rows:
                 table_dict[table[0]]['head'].append(sq_row[1])
-            cur.execute('SELECT * FROM \'%s\'', % (table,))
+            cur.execute('SELECT * FROM \'%s\'', (table,))
             rows = cur.fetchall()
             for sq_row in rows:
                 tmp_row = []
