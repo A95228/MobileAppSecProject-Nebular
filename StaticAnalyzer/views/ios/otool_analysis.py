@@ -8,7 +8,7 @@ from django.conf import settings
 from django.utils.encoding import smart_text
 from django.utils.html import escape
 
-from MobSF.utils import is_file_exists
+from Kensa.utils import is_file_exists
 
 
 logger = logging.getLogger(__name__)

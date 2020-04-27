@@ -12,7 +12,7 @@ from django.shortcuts import render
 from django.conf import settings
 from django.utils.html import escape
 
-from MobSF.utils import print_n_send_error_response
+from Kensa.utils import print_n_send_error_response
 
 from StaticAnalyzer.models import StaticAnalyzerAndroid
 from StaticAnalyzer.views.android.db_interaction import (
@@ -76,7 +76,7 @@ def generic_compare(request,
     # it will be filled during the different diff analysis
     context = {
         'title': 'Compare report',
-        'version': settings.MOBSF_VER,
+        'version': settings.KENSA_VER,
         'first_app': {},
         'second_app': {},
         'urls': {},

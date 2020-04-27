@@ -8,14 +8,14 @@ services:
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=mobsf
-  mobsf:
+      - POSTGRES_DB=kensa
+  kensa:
     build:
       context: .
       dockerfile: Dockerfile
       args:
        - POSTGRES=True
     volumes:
-      - /MobSF_data:/root/.MobSF
+      - /Kensa_data:/root/.Kensa
     ports:
      - "8000:8000"

@@ -10,7 +10,7 @@ import subprocess
 
 from django.conf import settings
 
-from MobSF.utils import is_dir_exists
+from Kensa.utils import is_dir_exists
 
 logger = logging.getLogger(__name__)
 

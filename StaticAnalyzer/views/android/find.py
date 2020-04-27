@@ -11,7 +11,7 @@ from django.conf import settings
 from django.shortcuts import render
 from django.utils.html import escape
 
-from MobSF.utils import print_n_send_error_response
+from Kensa.utils import print_n_send_error_response
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ def run(request):
             'matches': matches,
             'term': query,
             'found': str(flz),
-            'version': settings.MOBSF_VER,
+            'version': settings.KENSA_VER,
         }
         template = 'general/search.html'
         return render(request, template, context)

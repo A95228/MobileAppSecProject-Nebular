@@ -18,7 +18,7 @@ from DynamicAnalyzer.tools.webproxy import (get_ca_dir,
 
 from StaticAnalyzer.models import StaticAnalyzerAndroid
 
-from MobSF.utils import (get_adb,
+from Kensa.utils import (get_adb,
                          get_device,
                          get_proxy_ip,
                          python_list)
@@ -134,8 +134,8 @@ class Environment:
         stop_httptools(proxy_port)
         start_proxy(proxy_port, project)
 
-    def install_mobsf_ca(self, action):
-        """Install or Remove MobSF Root CA."""
+    def install_kensa_ca(self, action):
+        """Install or Remove Kensa Root CA."""
         ca_construct = '{}.0'
         pem = open(get_ca_dir(), 'rb').read()
         ca_file = crypto.load_certificate(crypto.FILETYPE_PEM, pem)
@@ -143,7 +143,7 @@ class Environment:
         ca_file = os.path.join('/system/etc/security/cacerts/',
                                ca_construct.format(ca_file_hash))
         if action == 'install':
-            logger.info('Installing MobSF RootCA')
+            logger.info('Installing Kensa RootCA')
             self.adb_command(['push',
                               get_ca_dir(),
                               ca_file])
@@ -151,7 +151,7 @@ class Environment:
                               '644',
                               ca_file], True)
         elif action == 'remove':
-            logger.info('Removing MobSF RootCA')
+            logger.info('Removing Kensa RootCA')
             self.adb_command(['rm',
                               ca_file], True)
         # with a high timeout afterwards
@@ -354,7 +354,7 @@ class Environment:
                 logger.error(err_msg)
                 if runtime == 'emulator':
                     logger.error('Please start the AVD as per '
-                                 'MobSF documentation!')
+                                 'Kensa documentation!')
                 return False
         except Exception:
             logger.error(err_msg)
@@ -373,15 +373,15 @@ class Environment:
         logger.info('Stopping app')
         self.adb_command(['am', 'force-stop', package], True)
 
-    def is_mobsfyied(self, android_version):
-        """Check is Device is MobSFyed."""
-        logger.info('Environment MobSFyed Check')
+    def is_kensayied(self, android_version):
+        """Check is Device is Kensayed."""
+        logger.info('Environment Kensayed Check')
         if android_version < 5:
-            agent_file = '.mobsf-x'
-            agent_str = b'MobSF-Xposed'
+            agent_file = '.kensa-x'
+            agent_str = b'Kensa-Xposed'
         else:
-            agent_file = '.mobsf-f'
-            agent_str = b'MobSF-Frida'
+            agent_file = '.kensa-f'
+            agent_str = b'Kensa-Frida'
         try:
             out = subprocess.check_output(
                 [get_adb(),
@@ -395,42 +395,42 @@ class Environment:
             return False
         return True
 
-    def mobsfy_init(self):
-        """Init MobSFy."""
+    def kensay_init(self):
+        """Init Kensay."""
         version = self.get_android_version()
         logger.info('Android Version identified as %s', version)
         try:
             if version < 5:
                 self.xposed_setup(version)
-                self.mobsf_agents_setup('xposed')
+                self.kensa_agents_setup('xposed')
             else:
                 self.frida_setup()
-                self.mobsf_agents_setup('frida')
-            logger.info('MobSFying Completed!')
+                self.kensa_agents_setup('frida')
+            logger.info('Kensaying Completed!')
             return version
         except Exception:
-            logger.exception('Failed to MobSFy Android Instance')
+            logger.exception('Failed to Kensay Android Instance')
             return False
 
-    def mobsf_agents_setup(self, agent):
-        """Setup MobSF agents."""
+    def kensa_agents_setup(self, agent):
+        """Setup Kensa agents."""
         # Install MITM RootCA
-        self.install_mobsf_ca('install')
-        # Install MobSF Agents
-        mobsf_agents = 'onDevice/mobsf_agents/'
+        self.install_kensa_ca('install')
+        # Install Kensa Agents
+        kensa_agents = 'onDevice/kensa_agents/'
         clip_dump = os.path.join(self.tools_dir,
-                                 mobsf_agents,
+                                 kensa_agents,
                                  'ClipDump.apk')
-        logger.info('Installing MobSF Clipboard Dumper')
+        logger.info('Installing Kensa Clipboard Dumper')
         self.adb_command(['install', '-r', clip_dump])
         if agent == 'frida':
-            agent_file = '.mobsf-f'
+            agent_file = '.kensa-f'
         else:
-            agent_file = '.mobsf-x'
-        mobsf_env = os.path.join(self.tools_dir,
-                                 mobsf_agents,
+            agent_file = '.kensa-x'
+        kensa_env = os.path.join(self.tools_dir,
+                                 kensa_agents,
                                  agent_file)
-        self.adb_command(['push', mobsf_env, '/system/' + agent_file])
+        self.adb_command(['push', kensa_env, '/system/' + agent_file])
 
     def xposed_setup(self, android_version):
         """Setup Xposed."""

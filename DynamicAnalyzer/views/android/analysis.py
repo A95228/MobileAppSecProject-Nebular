@@ -8,7 +8,7 @@ import shutil
 import tarfile
 from pathlib import Path
 
-from MobSF.utils import (is_file_exists,
+from Kensa.utils import (is_file_exists,
                          is_pipe_or_link,
                          python_list)
 
@@ -118,8 +118,8 @@ def get_log_data(apk_dir, package):
     web = os.path.join(httptools, 'flows', package + '.flow.txt')
     logcat = os.path.join(apk_dir, 'logcat.txt')
     xlogcat = os.path.join(apk_dir, 'x_logcat.txt')
-    apimon = os.path.join(apk_dir, 'mobsf_api_monitor.txt')
-    fd_logs = os.path.join(apk_dir, 'mobsf_frida_out.txt')
+    apimon = os.path.join(apk_dir, 'kensa_api_monitor.txt')
+    fd_logs = os.path.join(apk_dir, 'kensa_frida_out.txt')
     if is_file_exists(web):
         with io.open(web,
                      mode='r',
@@ -215,8 +215,8 @@ def generate_download(apk_dir, md5_hash, download_dir, package):
         httptools = os.path.join(str(Path.home()), '.httptools')
         logcat = os.path.join(apk_dir, 'logcat.txt')
         xlogcat = os.path.join(apk_dir, 'x_logcat.txt')
-        apimon = os.path.join(apk_dir, 'mobsf_api_monitor.txt')
-        fd_logs = os.path.join(apk_dir, 'mobsf_frida_out.txt')
+        apimon = os.path.join(apk_dir, 'kensa_api_monitor.txt')
+        fd_logs = os.path.join(apk_dir, 'kensa_frida_out.txt')
         dumpsys = os.path.join(apk_dir, 'dump.txt')
         sshot = os.path.join(apk_dir, 'screenshots-apk/')
         web = os.path.join(httptools, 'flows', package + '.flow.txt')

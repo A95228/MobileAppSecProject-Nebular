@@ -1,5 +1,5 @@
 """
-WSGI config for MobSF project.
+WSGI config for Kensa project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -15,7 +15,7 @@ from whitenoise import WhiteNoise
 
 
 warnings.filterwarnings('ignore', category=UserWarning, module='cffi')
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'MobSF.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Kensa.settings')
 
 application = WhiteNoise(get_wsgi_application(),
                          root='static', prefix='static/')

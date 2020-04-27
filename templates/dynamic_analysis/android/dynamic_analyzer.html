@@ -52,7 +52,7 @@
   <div class="content-header">
     <div class="container-fluid">
       <div class="row mb-2">
-        <div id="mobsf_header">
+        <div id="kensa_header">
             <h2><strong>Dynamic Analyzer </strong>- {{ package }}</h2>
           <input type="hidden" id="screen_width" value="{{ screen_witdth }}">
           <input type="hidden" id="screen_height" value="{{ screen_height }}">
@@ -70,7 +70,7 @@
               <div class="card-body">
                  <div id="but" align="center">
                   <a href="#" id="screen" class="btn btn-primary" role="button">Show Screen</a>
-                  <a href="#" id="rootca" class="btn btn-primary" role="button">Remove MobSF RootCA</a>
+                  <a href="#" id="rootca" class="btn btn-primary" role="button">Remove Kensa RootCA</a>
                   <a href="#" id="expactt" class="btn btn-primary" role="button">Start Exported Activity Tester</a>
                   <a href="#" id="actt" class="btn btn-primary" role="button" >Start Activity Tester</a>
                   <a href="#" id="ss" class="btn btn-primary" role="button">Take a Screenshot</a>
@@ -574,7 +574,7 @@ function print_status(message){
 }
 print_status("Setting up Dynamic Analysis environment");
 print_status("Running HTTPS intercepting proxy");
-print_status("Invoking MobSF agents");
+print_status("Invoking Kensa agents");
 print_status("Environment is ready for user assisted dynamic analysis.");
 print_status("Navigate through all the flows of the app manually.");
 
@@ -649,23 +649,23 @@ $("#ss").click(function() {
   return false;  
 });
 
-//MobSF CA
+//Kensa CA
 
 $("#rootca").click(function() {
   var stext = $("#rootca").text();
   var act;
-  if (stext === "Remove MobSF RootCA"){
-    $("#rootca").text("Install MobSF RootCA");
+  if (stext === "Remove Kensa RootCA"){
+    $("#rootca").text("Install Kensa RootCA");
     act = "remove";
   } else {
-    $("#rootca").text("Remove MobSF RootCA");
+    $("#rootca").text("Remove Kensa RootCA");
     act = "install";
   }
-  action('../mobsf_ca/', {action: act}, function(json) {
+  action('../kensa_ca/', {action: act}, function(json) {
       if (json.message === "installed")
-        print_status("MobSF RootCA installed successfully");
+        print_status("Kensa RootCA installed successfully");
       else if (json.message === "removed")
-        print_status("MobSF RootCA removed successfully");
+        print_status("Kensa RootCA removed successfully");
       else
         print_status(json.message);
     });

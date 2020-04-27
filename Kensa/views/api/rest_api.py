@@ -1,12 +1,12 @@
 # -*- coding: utf_8 -*-
-"""MobSF REST API V 1."""
+"""Kensa REST API V 1."""
 
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from MobSF.utils import api_key
-from MobSF.views.helpers import request_method
-from MobSF.views.home import RecentScans, Upload, delete_scan
+from Kensa.utils import api_key
+from Kensa.views.helpers import request_method
+from Kensa.views.home import RecentScans, Upload, delete_scan
 
 from StaticAnalyzer.views.android import view_source
 from StaticAnalyzer.views.android.static_analyzer import static_analyzer

@@ -48,7 +48,7 @@ if [ $? -eq 0 ]; then
     source venv/bin/activate
     pip install --upgrade pip
 else
-    echo '[ERROR] Failed to create virtualenv. Please install MobSF requirements mentioned in Documentation.'
+    echo '[ERROR] Failed to create virtualenv. Please install Kensa requirements mentioned in Documentation.'
     exit 1
 fi
 

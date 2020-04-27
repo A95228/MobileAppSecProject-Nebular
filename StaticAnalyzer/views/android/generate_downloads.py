@@ -9,7 +9,7 @@ import shutil
 from django.conf import settings
 from django.shortcuts import redirect
 
-from MobSF.utils import print_n_send_error_response
+from Kensa.utils import print_n_send_error_response
 
 logger = logging.getLogger(__name__)
 

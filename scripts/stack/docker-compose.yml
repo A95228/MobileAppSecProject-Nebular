@@ -1,8 +1,8 @@
 version: "3"
 services:
   web:
-    image: opensecurity/mobile-security-framework-mobsf:latest
-    hostname: mobsfhost
+    image: opensecurity/kensa:latest
+    hostname: kensahost
     deploy:
       replicas: 1
       restart_policy:

@@ -8,7 +8,7 @@ from macholib.mach_o import (CPU_TYPE_NAMES, MH_CIGAM_64, MH_MAGIC_64,
                              get_cpu_subtype)
 from macholib.MachO import MachO
 
-from MobSF.utils import is_file_exists
+from Kensa.utils import is_file_exists
 
 from StaticAnalyzer.views.ios.classdump import get_class_dump
 from StaticAnalyzer.views.ios.otool_analysis import (
@@ -88,7 +88,7 @@ def binary_analysis(src, tools_dir, app_dir, executable_name):
         binary_analysis_dict['bin_res'] = {}
         binary_analysis_dict['strings'] = []
         if not is_file_exists(bin_path):
-            logger.warning('MobSF Cannot find binary in %s', bin_path)
+            logger.warning('Kensa Cannot find binary in %s', bin_path)
             logger.warning('Skipping Otool, Classdump and Strings')
         else:
             bin_info = get_bin_info(bin_path)

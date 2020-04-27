@@ -18,7 +18,7 @@ from DynamicAnalyzer.views.android.frida_scripts import (
     string_catch,
     string_compare)
 
-from MobSF.utils import (get_device,
+from Kensa.utils import (get_device,
                          is_file_exists)
 
 logger = logging.getLogger(__name__)
@@ -36,8 +36,8 @@ class Frida:
         self.frida_dir = os.path.join(settings.TOOLS_DIR,
                                       'frida_scripts')
         self.apk_dir = os.path.join(settings.UPLD_DIR, self.hash + '/')
-        self.api_mon = os.path.join(self.apk_dir, 'mobsf_api_monitor.txt')
-        self.frida_log = os.path.join(self.apk_dir, 'mobsf_frida_out.txt')
+        self.api_mon = os.path.join(self.apk_dir, 'kensa_api_monitor.txt')
+        self.frida_log = os.path.join(self.apk_dir, 'kensa_frida_out.txt')
 
     def get_default_scripts(self):
         """Get default Frida Scripts."""
@@ -84,7 +84,7 @@ class Frida:
         """Function to handle frida responses."""
         if 'payload' in message:
             msg = message['payload']
-            api_mon = 'MobSF-API-Monitor: '
+            api_mon = 'Kensa-API-Monitor: '
             aux = '[AUXILIARY] '
             if not isinstance(msg, str):
                 msg = str(msg)

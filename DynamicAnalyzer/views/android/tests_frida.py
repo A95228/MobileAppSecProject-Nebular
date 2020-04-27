@@ -21,7 +21,7 @@ from DynamicAnalyzer.views.android.operations import (
     json_response,
     strict_package_check)
 
-from MobSF.utils import (
+from Kensa.utils import (
     is_file_exists,
     is_safe_path,
     print_n_send_error_response)
@@ -119,7 +119,7 @@ def live_api(request):
             return invalid_params()
         if stream:
             apk_dir = os.path.join(settings.UPLD_DIR, apphash + '/')
-            apimon_file = os.path.join(apk_dir, 'mobsf_api_monitor.txt')
+            apimon_file = os.path.join(apk_dir, 'kensa_api_monitor.txt')
             data = {}
             if is_file_exists(apimon_file):
                 with open(apimon_file, 'r') as flip:
@@ -133,7 +133,7 @@ def live_api(request):
                       template,
                       {'hash': apphash,
                        'package': request.GET.get('package', ''),
-                       'version': settings.MOBSF_VER,
+                       'version': settings.KENSA_VER,
                        'title': 'Live API Monitor'})
     except Exception:
         logger.exception('API monitor streaming')
@@ -149,7 +149,7 @@ def frida_logs(request):
             return invalid_params()
         if stream:
             apk_dir = os.path.join(settings.UPLD_DIR, apphash + '/')
-            frida_logs = os.path.join(apk_dir, 'mobsf_frida_out.txt')
+            frida_logs = os.path.join(apk_dir, 'kensa_frida_out.txt')
             data = {}
             if is_file_exists(frida_logs):
                 with open(frida_logs, 'r') as flip:
@@ -161,7 +161,7 @@ def frida_logs(request):
                       template,
                       {'hash': apphash,
                        'package': request.GET.get('package', ''),
-                       'version': settings.MOBSF_VER,
+                       'version': settings.KENSA_VER,
                        'title': 'Live Frida logs'})
     except Exception:
         logger.exception('Frida log streaming')
@@ -214,7 +214,7 @@ def apimon_analysis(app_dir):
     """API Analysis."""
     api_details = {}
     try:
-        location = os.path.join(app_dir, 'mobsf_api_monitor.txt')
+        location = os.path.join(app_dir, 'kensa_api_monitor.txt')
         if not is_file_exists(location):
             return {}
         logger.info('Frida API Monitor Analysis')

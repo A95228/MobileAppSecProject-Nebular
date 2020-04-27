@@ -6,8 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>{{title}}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Mobile Security Framework - MobSF">
-  <meta name="author" content="Ajin Abraham">
+  <meta name="description" content="Kensa">
   <link rel="icon" href="{% static "img/favicon.ico" %}">
 
   <!-- Tell the browser to be responsive to screen width -->
@@ -65,23 +64,23 @@
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
     <a href="{% url 'home' %}" class="brand-link">
-      <img src="{% static "img/mobsf_icon.png" %}" alt="MobSF" class="brand-image"
+      <img src="{% static "img/kensa_icon.png" %}" alt="Kensa" class="brand-image"
            style="opacity: .8">
       <span class="brand-text logo-lg"> | <strong> Mob</strong>SF</span>
     </a>
     {% block sidebar %}
-  
+
     {% endblock %}
   </aside>
  <!-- /.sidebar -->
   <!-- Content Wrapper. Contains page content -->
   {% block content %}
-  
+
   {% endblock %}
 
   <!-- /.content-wrapper -->
   <footer class="main-footer">
-    <strong>© {% now "Y" %} Mobile Security Framework - MobSF | <a href="https://ajinabraham.com">Ajin Abraham</a> | <a href="https://opensecurity.in">OpenSecurity</a>.</strong>
+    <strong>© {% now "Y" %} Kensa .</strong>
     <div class="float-right d-none d-sm-inline-block">
       <b>Version</b> {{ version }}
     </div>

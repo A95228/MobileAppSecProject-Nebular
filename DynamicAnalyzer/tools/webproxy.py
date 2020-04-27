@@ -6,7 +6,7 @@ import time
 
 import requests
 
-from MobSF.utils import is_file_exists, upstream_proxy
+from Kensa.utils import is_file_exists, upstream_proxy
 
 logger = logging.getLogger(__name__)
 

@@ -25,8 +25,8 @@ from django.template.loader import get_template
 from django.utils import timezone
 from django.utils.html import escape
 
-from MobSF import settings
-from MobSF.utils import (print_n_send_error_response,
+from Kensa import settings
+from Kensa.utils import (print_n_send_error_response,
                          upstream_proxy)
 
 from StaticAnalyzer.models import (RecentScansDB,

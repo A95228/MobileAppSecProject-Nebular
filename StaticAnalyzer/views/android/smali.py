@@ -10,7 +10,7 @@ from django.conf import settings
 from django.shortcuts import render
 from django.utils.html import escape
 
-from MobSF.utils import print_n_send_error_response
+from Kensa.utils import print_n_send_error_response
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ def run(request):
             'files': smali_files,
             'type': 'apk',
             'hash': md5,
-            'version': settings.MOBSF_VER,
+            'version': settings.KENSA_VER,
         }
         template = 'static_analysis/smali.html'
         return render(request, template, context)

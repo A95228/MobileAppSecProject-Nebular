@@ -4,14 +4,14 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>MobSF Static Analysis Report</title>
-    <meta name="description" content="MobSF Report">
+    <title>Kensa Static Analysis Report</title>
+    <meta name="description" content="Kensa Report">
     {% if host_os == 'windows' %}
         <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
         <link href='https://fonts.googleapis.com/css?family=Oswald' rel='stylesheet' type='text/css'>
     {% else %}
     <style>
-    
+
       /* latin */
       @font-face {
         font-family: 'Open Sans';
@@ -29,7 +29,7 @@
         font-display: swap;
         src: local('Oswald'), local('Oswald'), url('{{base_url}}{% static 'fonts/Oswald/Oswald-Regular.ttf' %}') format('truetype');
       }
-     
+
   </style>
   {% endif %}
   <link rel="stylesheet" href="{{base_url}}{% static "others/css/pdf_report.css" %}">
@@ -39,7 +39,7 @@
   <body>
     <article id="cover">
       <div class="header">
-        <img src="{{base_url}}{% static "img/mobsf_logo.png" %}" class="center logo" alt="MobSF Logo"/>
+        <img src="{{base_url}}{% static "img/kensa_logo.png" %}" class="center logo" alt="Kensa Logo"/>
         <div class="htext">ANDROID STATIC ANALYSIS REPORT </div>
       </div>
       </br></br></br>
@@ -63,7 +63,7 @@
       <tr>
         <td class="no_border"><h3>Average CVSS Score:</h3></td>
         <td class="no_border"><h3>
-  
+
         {% if average_cvss > 6 %}
         <span class="danger">{{ average_cvss }} </span>
         {% elif average_cvss == 0 %}
@@ -78,7 +78,7 @@
       <tr>
         <td class="no_border"><h3>App Security Score:</h3></td>
         <td class="no_border">
-        <h3> 
+        <h3>
           {% if security_score < 16 %}
             <span class="danger">{{ security_score }}/100 (CRITICAL RISK)</span>
           {% elif security_score < 41 %}
@@ -114,10 +114,10 @@
       </br></br>
       </br></br>
     </article>
-    
+
     <article id="contents">
 
-      
+
       <h2><i class="fas fa-box-open"></i> FILE INFORMATION</h2>
 
       <h5>File Name:</h5> {{ file_name }}</br>
@@ -125,7 +125,7 @@
       <h5>MD5:</h5> {{ md5 }}</br>
       <h5>SHA1:</h5> {{ sha1 }}</br>
       <h5>SHA256:</h5> {{ sha256 }}</br>
-     
+
 
       <h2><i class="fas fa-info"></i> APP INFORMATION</h2>
 
@@ -167,7 +167,7 @@
                 <h5>Certificate Status: </h5> <span class="warning">Warning</span><br />
                 <h5>Description:</h5> {{ certificate_analysis.description }}<br />
               {% endif %}
-              
+
         </div>
       {% endif %}
       {% if permissions %}
@@ -205,7 +205,7 @@
                             <th>SEVERITY</th>
                             <th>DESCRIPTION</th>
                             <th>FILES</th>
-                            
+
                         </tr>
                     </thead>
                     <tbody>
@@ -222,7 +222,7 @@
                           {% elif item|key:"stat" == "medium" %}
                             <span class="warning">medium</span>
                           {% endif %}
-                         
+
                         </td>
                         <td>
                         {{item|key:"desc"}}
@@ -230,11 +230,11 @@
                         <td>
                         {{item|key:"file"}}
                         </td>
-   
+
                        </tr>
                      {% endfor %}
-                   
-                    
+
+
                     </tbody>
                     </table>
         {% endif %}
@@ -243,7 +243,7 @@
        <h2><i class="fas fa-spider"></i> VIRUSTOTAL SCAN</h2>
        <p> <h5>{{ virus_total.positives }} / {{ virus_total.total }}</h5> &nbsp; AVs found this file Malicious! </p>
             {% if virus_total.positives %}
-          
+
                     <table class="basic">
                                     <thead>
                                         <tr>
@@ -327,7 +327,7 @@
                            </tbody>
                             </table>
                         </td>
-                 
+
                         </tr>
                          {% endfor %}
                       {% else %}
@@ -342,7 +342,7 @@
                                         <thead>
                                             <tr>
                                                 <th>ACTIVITY</th>
-                                                <th>INTENT</th>   
+                                                <th>INTENT</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -351,7 +351,7 @@
                             <td>{{activity}}</td>
                             <td>
                                    {% if intent_details|key:"schemes" %}
-                                      <strong>Schemes</strong>: 
+                                      <strong>Schemes</strong>:
                                       {% for scheme in intent_details|key:"schemes" %}
                                         {{scheme}},
                                       {% endfor %}
@@ -360,37 +360,37 @@
                                    {% if intent_details|key:"hosts" %}
                                       <strong>Hosts:</strong> {% for host in intent_details|key:"hosts" %}
                                         {{host}},
-                                      {% endfor %} 
+                                      {% endfor %}
                                       </br>
                                    {% endif %}
                                    {% if intent_details|key:"ports" %}
                                       <strong>Ports:</strong> {% for port in intent_details|key:"ports" %}
                                         {{port}},
-                                      {% endfor %} 
+                                      {% endfor %}
                                       </br>
                                    {% endif %}
                                    {% if intent_details|key:"mime_types" %}
                                       <strong>Mime Types:</strong> {% for mime in intent_details|key:"mime_types" %}
                                         {{mime}},
-                                      {% endfor %} 
+                                      {% endfor %}
                                       </br>
                                    {% endif %}
                                    {% if intent_details|key:"paths" %}
                                       <strong>Paths:</strong> {% for path in intent_details|key:"paths" %}
                                         {{path}},
-                                      {% endfor %} 
+                                      {% endfor %}
                                       </br>
                                    {% endif %}
                                    {% if intent_details|key:"path_prefixs" %}
                                       <strong>Path Prefixes:</strong> {% for prefix in intent_details|key:"path_prefixs" %}
                                         {{prefix}},
-                                      {% endfor %} 
+                                      {% endfor %}
                                       </br>
                                    {% endif %}
                                    {% if intent_details|key:"path_patterns" %}
                                       <strong>Path Patterns:</strong> {% for pattern in intent_details|key:"path_patterns" %}
                                         {{pattern}},
-                                      {% endfor %} 
+                                      {% endfor %}
                                       </br>
                                    {% endif %}
                               {% endfor %}
@@ -424,12 +424,12 @@
                           {% elif item|key:"stat" == "medium" %}
                             <span class="warning">medium</span>
                           {% endif %}
-                         
+
                         </td>
                         <td>
                         {{item|key:"desc"}}
                         </td>
-   
+
                        </tr>
                      {% endfor %}
 
@@ -485,8 +485,8 @@
                   </br>
                   {% endfor %}
                   </td>
-                </tr>    
-              {% endfor %} 
+                </tr>
+              {% endfor %}
 										</tbody>
 										</table>
 
@@ -511,11 +511,11 @@
                   </br>
                   {% endfor %}
                   </td>
-                </tr>    
-              {% endfor %} 
+                </tr>
+              {% endfor %}
 										</tbody>
 										</table>
-    
+
 
        {% if file_analysis %}
       <h2><i class="fa fa-file"></i> FILE ANALYSIS</h2>
@@ -535,10 +535,10 @@
                     <td>
                     {% for cert_f in item|key:"files" %}
                     {{ cert_f }}<br />
-                    {% endfor %} 
+                    {% endfor %}
                     </td>
-                </tr>    
-                {% endfor %} 
+                </tr>
+                {% endfor %}
 										</tbody>
 										</table>
       {% endif %}
@@ -556,22 +556,22 @@
                  </thead>
                  <tbody>
                  {% for domain, details in domains.items %}
-                  <tr><td>{{domain}}</td><td> 
+                  <tr><td>{{domain}}</td><td>
 
                     {% if details|key:"bad" == "yes" %}
                     <span class="danger">malware</span><br/>
-             
+
                       <h5>URL: </h5> {{details|key:"domain_or_url"}}
                       <h5>IP: </h5> <span class="danger">{{details|key:"ip"}}</span>
                       <h5>Description: </h5> {{details|key:"desc"}}
-                   
+
                   {% else %}
                     <span class="success">good</span><br/>
                   {% endif %}
                   </td>
                   <td>
                     {% if details|key:"geolocation" %}
-                
+
                       <h5>IP: </h5> {{details|key:"geolocation"|key:"ip"}}  <br/>
                       <h5>Country: </h5> {{details|key:"geolocation"|key:"country_long"}} <br/>
                       <h5>Region: </h5> {{details|key:"geolocation"|key:"region"}} <br/>
@@ -589,7 +589,7 @@
             </table>
       {% endif %}
 
-       {% if urls %} 
+       {% if urls %}
       <h2><i class="fas fa-globe"></i> URLS </h2>
       <table class="basic">
                   <thead>
@@ -610,12 +610,12 @@
                          {{urldict|key:"path"}}
                        </td>
                     </tr>
-                  {% endfor %} 
+                  {% endfor %}
 										</tbody>
 										</table>
         {% endif %}
 
-       {% if firebase_urls %} 
+       {% if firebase_urls %}
       <h2><i class="fas fa-database"></i> FIREBASE DATABASES</h2>
             <table class="basic">
                   <thead>
@@ -636,15 +636,15 @@
                         {% else %}
                          <span class="info">info</span></br>App talks to a Firebase Database.
                          {% endif %}
-                      
+
                        </td>
                     </tr>
-                  {% endfor %} 
+                  {% endfor %}
                     </tbody>
                     </table>
          {% endif %}
 
-      
+
 
       {% if emails %}
       <h2><i class="fas fa-envelope"></i> EMAILS</h2>
@@ -668,11 +668,11 @@
                          {{email_dict|key:"path"}}
                        </td>
                     </tr>
-                  {% endfor %} 
+                  {% endfor %}
 										</tbody>
 										</table>
       {% endif %}
-  
+
       {% if trackers|key:"trackers" %}
       <h2><i class="fas fa-user-secret"></i> TRACKERS</h2>
        <table class="basic">
@@ -682,7 +682,7 @@
                     <th>URL</th>
                 </tr>
             </thead>
-          
+
             <tbody>
 
                 {% for trk in trackers|key:"trackers" %}
@@ -703,49 +703,49 @@
      {% if not playstore_details.error %}
     <h2><i class="fab fa-google-play"></i> PLAYSTORE INFORMATION </h2>
 
-                  <p>                                       
-                    <h5>Title:</h5> 
+                  <p>
+                    <h5>Title:</h5>
                     {{ playstore_details.title }}
                   </p>
-                  <p>                                       
-                    <h5>Score:</h5> 
+                  <p>
+                    <h5>Score:</h5>
                   {{ playstore_details.score}}
 
-                   <h5>Installs:</h5> 
+                   <h5>Installs:</h5>
                     {{ playstore_details.installs }}
 
-                   <h5>Price:</h5> 
+                   <h5>Price:</h5>
                       {{ playstore_details.price }}
 
-                   <h5>Android Version Support:</h5> 
+                   <h5>Android Version Support:</h5>
                     {{ playstore_details.androidVersionText }}
-                   
-                    <h5>Category:</h5> 
+
+                    <h5>Category:</h5>
 		                {{ playstore_details.genre }}
 
-                    <h5>Play Store URL:</h5> 
+                    <h5>Play Store URL:</h5>
                       <a target="_blank" href="{{ playstore_details.url }}"> {{ package_name }} </a>
                   </p>
-                  
+
                   <p>
-                  <h5>Developer Details:</h5> 
-                      {{playstore_details.developer}},  
-                      {{playstore_details.developerId}}, 
+                  <h5>Developer Details:</h5>
+                      {{playstore_details.developer}},
+                      {{playstore_details.developerId}},
                       {{playstore_details.developerAddress }},
-                      {{playstore_details.developerWebsite}}, 
-                      {{playstore_details.developerEmail}}, 
+                      {{playstore_details.developerWebsite}},
+                      {{playstore_details.developerEmail}},
                   </p>
 		              <p>
-                  <h5>Release Date:</h5> 
+                  <h5>Release Date:</h5>
                    {{ playstore_details.released }}
-		               <h5>Privacy Policy:</h5> 
+		               <h5>Privacy Policy:</h5>
                    <a target="_blank" href="{{ playstore_details.privacyPolicy }}">Privacy link</a>
 		            </p>
-                 <p>                                       
-                      <h5>Description:</h5> 
+                 <p>
+                      <h5>Description:</h5>
                       <p>{{ playstore_details.description }}</p>
                   </p>
-             
+
        {% endif %}
     </article>
     <article>
@@ -793,13 +793,13 @@
     <article id="columns">
       </br>
       <hr>
-      <h3>Report Generated by - MobSF {{ version }} </h3>
+      <h3>Report Generated by - Kensa {{ version }} </h3>
       <section>
         <p>
-          Mobile Security Framework (MobSF) is an automated, all-in-one mobile application (Android/iOS/Windows) pen-testing, malware analysis and security assessment framework capable of performing static and dynamic analysis.
+          Kensa is an automated, all-in-one mobile application (Android/iOS/Windows) pen-testing, malware analysis and security assessment framework capable of performing static and dynamic analysis.
         </p>
         <p>
-        <strong>© {% now "Y" %} Mobile Security Framework - MobSF | <a href="https://ajinabraham.com">Ajin Abraham</a> | <a href="https://opensecurity.in">OpenSecurity</a>.</strong>
+        <strong>© {% now "Y" %} Kensa .</strong>
       </p>
       </section>
     </article>

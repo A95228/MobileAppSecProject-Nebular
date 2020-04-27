@@ -10,8 +10,8 @@ from django.conf import settings
 from django.shortcuts import render
 from django.utils.html import escape
 
-from MobSF.forms import FormUtil
-from MobSF.utils import (
+from Kensa.forms import FormUtil
+from Kensa.utils import (
     is_safe_path,
     print_n_send_error_response)
 
@@ -80,7 +80,7 @@ def run(request, api=False):
             'dat': dat,
             'type': 'java',
             'sql': {},
-            'version': settings.MOBSF_VER,
+            'version': settings.KENSA_VER,
         }
         template = 'general/view.html'
         if api:

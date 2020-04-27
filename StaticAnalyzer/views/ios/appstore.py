@@ -5,7 +5,7 @@ import requests
 
 from django.conf import settings
 
-from MobSF.utils import upstream_proxy
+from Kensa.utils import upstream_proxy
 
 logger = logging.getLogger(__name__)
 

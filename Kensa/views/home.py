@@ -1,5 +1,5 @@
 # -*- coding: utf_8 -*-
-"""MobSF File Upload and Home Routes."""
+"""Kensa File Upload and Home Routes."""
 import json
 import logging
 import os
@@ -14,11 +14,11 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.template.defaulttags import register
 
-from MobSF.forms import FormUtil, UploadFileForm
-from MobSF.utils import (api_key, is_dir_exists, is_file_exists,
+from Kensa.forms import FormUtil, UploadFileForm
+from Kensa.utils import (api_key, is_dir_exists, is_file_exists,
                          print_n_send_error_response)
-from MobSF.views.helpers import FileType
-from MobSF.views.scanning import Scanning
+from Kensa.views.helpers import FileType
+from Kensa.views.scanning import Scanning
 
 from StaticAnalyzer.models import (RecentScansDB,
                                    StaticAnalyzerAndroid,
@@ -43,7 +43,7 @@ def index(request):
              settings.ZIP_MIME +
              settings.APPX_MIME)
     context = {
-        'version': settings.MOBSF_VER,
+        'version': settings.KENSA_VER,
         'mimes': mimes,
     }
     template = 'general/home.html'
@@ -156,7 +156,7 @@ def api_docs(request):
     context = {
         'title': 'REST API Docs',
         'api_key': api_key(),
-        'version': settings.MOBSF_VER,
+        'version': settings.KENSA_VER,
     }
     template = 'general/apidocs.html'
     return render(request, template, context)
@@ -166,7 +166,7 @@ def about(request):
     """About Route."""
     context = {
         'title': 'About',
-        'version': settings.MOBSF_VER,
+        'version': settings.KENSA_VER,
     }
     template = 'general/about.html'
     return render(request, template, context)
@@ -176,7 +176,7 @@ def error(request):
     """Error Route."""
     context = {
         'title': 'Error',
-        'version': settings.MOBSF_VER,
+        'version': settings.KENSA_VER,
     }
     template = 'general/error.html'
     return render(request, template, context)
@@ -186,7 +186,7 @@ def zip_format(request):
     """Zip Format Message Route."""
     context = {
         'title': 'Zipped Source Instruction',
-        'version': settings.MOBSF_VER,
+        'version': settings.KENSA_VER,
     }
     template = 'general/zip.html'
     return render(request, template, context)
@@ -196,7 +196,7 @@ def mac_only(request):
     """Mac Ony Message Route."""
     context = {
         'title': 'Supports OSX Only',
-        'version': settings.MOBSF_VER,
+        'version': settings.KENSA_VER,
     }
     template = 'general/ios.html'
     return render(request, template, context)
@@ -206,7 +206,7 @@ def not_found(request):
     """Not Found Route."""
     context = {
         'title': 'Not Found',
-        'version': settings.MOBSF_VER,
+        'version': settings.KENSA_VER,
     }
     template = 'general/not_found.html'
     return render(request, template, context)
@@ -229,7 +229,7 @@ def recent_scans(request):
     context = {
         'title': 'Recent Scans',
         'entries': entries,
-        'version': settings.MOBSF_VER,
+        'version': settings.KENSA_VER,
     }
     template = 'general/recent.html'
     return render(request, template, context)
@@ -248,7 +248,7 @@ def search(request):
 
 
 def download(request):
-    """Download from MobSF Route."""
+    """Download from Kensa Route."""
     msg = 'Error Downloading File '
     if request.method == 'GET':
         allowed_exts = settings.ALLOWED_EXTENSIONS

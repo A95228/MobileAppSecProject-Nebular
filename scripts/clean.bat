@@ -1,5 +1,5 @@
 @echo off 
-echo =======================MobSF Clean Script for Windows=======================
+echo =======================Kensa Clean Script for Windows=======================
 echo Running this script will delete the Scan database, all files uploaded and generated.
 SET mypath=%~dp0
 echo %mypath:~0,-1%
@@ -12,8 +12,8 @@ echo Deleting Static Analyzer Migrations
 rmdir "StaticAnalyzer\migrations" /q /s
 echo Deleting Dynamic Analyzer Migrations
 rmdir "DynamicAnalyzer\migrations" /q /s
-echo Deleting MobSF Migrations
-rmdir "MobSF\migrations" /q /s
+echo Deleting Kensa Migrations
+rmdir "Kensa\migrations" /q /s
 echo Deleting temp and log files
 rmdir "logs" /q /s
 del /f "classes*""
@@ -22,10 +22,10 @@ del /f "db.sqlite3"
 echo Deleting Secret File
 del /f "secret"
 echo Deleting Previous Setup files
-rmdir "%UserProfile%\MobSF" /q /s
+rmdir "%UserProfile%\Kensa" /q /s
 del /f "setup_done.txt"
 echo Done
 ) ELSE ( 
-echo Please run script from MobSF directory
+echo Please run script from Kensa directory
 echo 'scripts/clean.bat y
 )

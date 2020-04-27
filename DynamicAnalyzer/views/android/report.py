@@ -19,7 +19,7 @@ from DynamicAnalyzer.views.android.operations import (is_attack_pattern,
 from DynamicAnalyzer.views.android.tests_xposed import droidmon_api_analysis
 from DynamicAnalyzer.views.android.tests_frida import apimon_analysis
 
-from MobSF.utils import (is_file_exists,
+from Kensa.utils import (is_file_exists,
                          is_safe_path,
                          print_n_send_error_response,
                          read_sqlite)
@@ -53,7 +53,7 @@ def view_report(request):
                    'for this app. Perform Dynamic Analysis '
                    'and generate the report.')
             return print_n_send_error_response(request, msg)
-        fd_log = os.path.join(app_dir, 'mobsf_frida_out.txt')
+        fd_log = os.path.join(app_dir, 'kensa_frida_out.txt')
         droidmon = droidmon_api_analysis(app_dir, package)
         apimon = apimon_analysis(app_dir)
         analysis_result = run_analysis(app_dir, md5_hash, package)
@@ -74,7 +74,7 @@ def view_report(request):
                    'apimon': apimon,
                    'fdlog': is_file_exists(fd_log),
                    'package': package,
-                   'version': settings.MOBSF_VER,
+                   'version': settings.KENSA_VER,
                    'title': 'Dynamic Analysis'}
         template = 'dynamic_analysis/android/dynamic_report.html'
         return render(request, template, context)
@@ -125,7 +125,7 @@ def view_file(request):
             'dat': dat,
             'sql': sql_dump,
             'type': rtyp,
-            'version': settings.MOBSF_VER,
+            'version': settings.KENSA_VER,
         }
         template = 'general/view.html'
         return render(request, template, context)

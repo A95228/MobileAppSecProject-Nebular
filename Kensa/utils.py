@@ -69,11 +69,11 @@ def upstream_proxy(flaw_type):
 
 def api_key():
     """Print REST API Key."""
-    if os.environ.get('MOBSF_API_KEY'):
+    if os.environ.get('KENSA_API_KEY'):
         logger.info('\nAPI Key read from environment variable')
-        return os.environ['MOBSF_API_KEY']
+        return os.environ['KENSA_API_KEY']
 
-    secret_file = os.path.join(settings.MobSF_HOME, 'secret')
+    secret_file = os.path.join(settings.Kensa_HOME, 'secret')
     if is_file_exists(secret_file):
         try:
             _api_key = open(secret_file).read().strip()
@@ -83,14 +83,14 @@ def api_key():
 
 
 def print_version():
-    """Print MobSF Version."""
+    """Print Kensa Version."""
     logger.info(settings.BANNER)
-    ver = settings.MOBSF_VER
+    ver = settings.KENSA_VER
     if platform.system() == 'Windows':
-        logger.info('Mobile Security Framework %s', ver)
+        logger.info('Kensa %s', ver)
         print('REST API Key: ' + api_key())
     else:
-        logger.info('\033[1m\033[34mMobile Security Framework %s\033[0m', ver)
+        logger.info('\033[1m\033[34mKensa %s\033[0m', ver)
         print('REST API Key: ' + Color.BOLD + api_key() + Color.END)
     logger.info('OS: %s', platform.system())
     logger.info('Platform: %s', platform.platform())
@@ -114,12 +114,12 @@ def check_update():
         response = requests.get(github_url, timeout=5,
                                 proxies=proxies, verify=verify)
         html = str(response.text).split('\n')
-        local_version = settings.MOBSF_VER
+        local_version = settings.KENSA_VER
         for line in html:
-            if line.startswith('MOBSF_VER'):
+            if line.startswith('KENSA_VER'):
                 remote_version = line.split('= ', 1)[1].replace('\'', '')
                 if LooseVersion(local_version) < LooseVersion(remote_version):
-                    logger.warning('A new version of MobSF is available, '
+                    logger.warning('A new version of Kensa is available, '
                                    'Please update to %s from master branch.',
                                    remote_version)
                 else:
@@ -133,11 +133,11 @@ def check_update():
         logger.exception('Cannot Check for updates.')
 
 
-def create_user_conf(mobsf_home):
+def create_user_conf(kensa_home):
     try:
-        config_path = os.path.join(mobsf_home, 'config.py')
+        config_path = os.path.join(kensa_home, 'config.py')
         if not is_file_exists(config_path):
-            sample_conf = os.path.join(settings.BASE_DIR, 'MobSF/settings.py')
+            sample_conf = os.path.join(settings.BASE_DIR, 'Kensa/settings.py')
             with open(sample_conf, 'r') as f:
                 dat = f.readlines()
             config = []
@@ -157,19 +157,19 @@ def create_user_conf(mobsf_home):
         logger.exception('Cannot create config file')
 
 
-def get_mobsf_home(use_home):
+def get_kensa_home(use_home):
     try:
-        mobsf_home = ''
+        kensa_home = ''
         if use_home:
-            mobsf_home = os.path.join(os.path.expanduser('~'), '.MobSF')
-            # MobSF Home Directory
-            if not os.path.exists(mobsf_home):
-                os.makedirs(mobsf_home)
-            create_user_conf(mobsf_home)
+            kensa_home = os.path.join(os.path.expanduser('~'), '.Kensa')
+            # Kensa Home Directory
+            if not os.path.exists(kensa_home):
+                os.makedirs(kensa_home)
+            create_user_conf(kensa_home)
         else:
-            mobsf_home = settings.BASE_DIR
+            kensa_home = settings.BASE_DIR
         # Logs Directory
-        log_dir = os.path.join(mobsf_home, 'logs/')
+        log_dir = os.path.join(kensa_home, 'logs/')
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         # Certs Directory
@@ -177,7 +177,7 @@ def get_mobsf_home(use_home):
         if not os.path.exists(cert_dir):
             os.makedirs(cert_dir)
         # Download Directory
-        dwd_dir = os.path.join(mobsf_home, 'downloads/')
+        dwd_dir = os.path.join(kensa_home, 'downloads/')
         if not os.path.exists(dwd_dir):
             os.makedirs(dwd_dir)
         # Screenshot Directory
@@ -185,16 +185,16 @@ def get_mobsf_home(use_home):
         if not os.path.exists(screen_dir):
             os.makedirs(screen_dir)
         # Upload Directory
-        upload_dir = os.path.join(mobsf_home, 'uploads/')
+        upload_dir = os.path.join(kensa_home, 'uploads/')
         if not os.path.exists(upload_dir):
             os.makedirs(upload_dir)
         # Signature Directory
-        sig_dir = os.path.join(mobsf_home, 'signatures/')
+        sig_dir = os.path.join(kensa_home, 'signatures/')
         if not os.path.exists(sig_dir):
             os.makedirs(sig_dir)
-        return mobsf_home
+        return kensa_home
     except Exception:
-        logger.exception('Creating MobSF Home Directory')
+        logger.exception('Creating Kensa Home Directory')
 
 
 def make_migrations(base_dir):
@@ -280,7 +280,7 @@ def print_n_send_error_response(request,
             'title': 'Error',
             'exp': exp,
             'doc': msg,
-            'version': settings.MOBSF_VER,
+            'version': settings.KENSA_VER,
         }
         template = 'general/error.html'
         return render(request, template, context, status=500)
@@ -435,8 +435,8 @@ def get_device():
             dev_id = out[1].decode('utf-8').split('\t')[0]
             return dev_id
     logger.error('Is the Android VM running?\n'
-                 'MobSF cannot identify device id.\n'
-                 'Please set ANALYZER_IDENTIFIER in MobSF/settings.py')
+                 'Kensa cannot identify device id.\n'
+                 'Please set ANALYZER_IDENTIFIER in Kensa/settings.py')
 
 
 def get_adb():
@@ -455,7 +455,7 @@ def get_adb():
             adb_loc = find_process_by('adb')
         if len(adb_loc) > 1:
             logger.warning('Multiple ADB locations found. '
-                           'Set adb path, ADB_BINARY in MobSF/settings.py'
+                           'Set adb path, ADB_BINARY in Kensa/settings.py'
                            ' with same adb binary used'
                            ' by Genymotion VM/Emulator AVD.')
             logger.warning(adb_loc)
@@ -466,9 +466,9 @@ def get_adb():
         logger.exception('Getting ADB Location')
     finally:
         if ADB_PATH:
-            os.environ['MOBSF_ADB'] = ADB_PATH
+            os.environ['KENSA_ADB'] = ADB_PATH
         else:
-            os.environ['MOBSF_ADB'] = 'adb'
+            os.environ['KENSA_ADB'] = 'adb'
             logger.warning('Dynamic Analysis related '
                            'functions will not work. '
                            '\nMake sure a Genymotion Android VM/'
@@ -478,8 +478,8 @@ def get_adb():
 
 
 def check_basic_env():
-    """Check if we have basic env for MobSF to run."""
-    logger.info('MobSF Basic Environment Check')
+    """Check if we have basic env for Kensa to run."""
+    logger.info('Kensa Basic Environment Check')
     try:
         import http_tools  # noqa F401
     except ImportError:
@@ -494,7 +494,7 @@ def check_basic_env():
         logger.error(
             'JDK 8+ is not available. '
             'Set JAVA_HOME environment variable'
-            ' or JAVA_DIRECTORY in MobSF/settings.py')
+            ' or JAVA_DIRECTORY in Kensa/settings.py')
         logger.info('Current Configuration: '
                     'JAVA_DIRECTORY=%s', settings.JAVA_DIRECTORY)
         logger.info('Example Configuration:'
@@ -505,10 +505,10 @@ def check_basic_env():
     get_adb()
 
 
-def first_run(secret_file, base_dir, mobsf_home):
+def first_run(secret_file, base_dir, kensa_home):
     # Based on https://gist.github.com/ndarville/3452907#file-secret-key-gen-py
-    if 'MOBSF_SECRET_KEY' in os.environ:
-        secret_key = os.environ['MOBSF_SECRET_KEY']
+    if 'KENSA_SECRET_KEY' in os.environ:
+        secret_key = os.environ['KENSA_SECRET_KEY']
     elif is_file_exists(secret_file):
         secret_key = open(secret_file).read().strip()
     else:
@@ -523,7 +523,7 @@ def first_run(secret_file, base_dir, mobsf_home):
         make_migrations(base_dir)
         migrate(base_dir)
         # Windows Setup
-        # windows_config_local(mobsf_home)
+        # windows_config_local(kensa_home)
     return secret_key
 
 

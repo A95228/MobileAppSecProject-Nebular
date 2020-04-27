@@ -7,9 +7,9 @@ from DynamicAnalyzer.views.android import (
     tests_common,
     tests_frida)
 
-from MobSF import utils
-from MobSF.views import home
-from MobSF.views.api import rest_api
+from Kensa import utils
+from Kensa.views import home
+from Kensa.views.api import rest_api
 
 from StaticAnalyzer import tests
 from StaticAnalyzer.views import shared_func
@@ -73,13 +73,13 @@ urlpatterns = [
         name='httptools'),
     url(r'^logcat/$', dz.logcat),
     # Android Operations
-    url(r'^mobsfy/$', operations.mobsfy),
+    url(r'^kensay/$', operations.kensay),
     url(r'^screenshot/$', operations.take_screenshot),
     url(r'^execute_adb/$', operations.execute_adb),
     url(r'^screen_cast/$', operations.screen_cast),
     url(r'^touch_events/$', operations.touch),
     url(r'^get_component/$', operations.get_component),
-    url(r'^mobsf_ca/$', operations.mobsf_ca),
+    url(r'^kensa_ca/$', operations.kensa_ca),
     # Dynamic Tests
     url(r'^activity_tester/$', tests_common.activity_tester),
     url(r'^download_data/$', tests_common.download_data),

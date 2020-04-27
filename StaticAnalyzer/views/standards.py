@@ -1,4 +1,4 @@
-"""Standards Supported by MobSF."""
+"""Standards Supported by Kensa."""
 
 
 # OWASP Mobile Top 10 Risk 2016

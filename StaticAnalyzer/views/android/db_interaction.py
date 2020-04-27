@@ -4,7 +4,7 @@ import logging
 from django.conf import settings
 from django.db.models import QuerySet
 
-from MobSF.utils import python_dict, python_list
+from Kensa.utils import python_dict, python_list
 
 from StaticAnalyzer.models import StaticAnalyzerAndroid
 from StaticAnalyzer.models import RecentScansDB
@@ -20,7 +20,7 @@ def get_context_from_db_entry(db_entry: QuerySet) -> dict:
     try:
         logger.info('Analysis is already Done. Fetching data from the DB...')
         context = {
-            'version': settings.MOBSF_VER,
+            'version': settings.KENSA_VER,
             'title': 'Static Analysis',
             'file_name': db_entry[0].FILE_NAME,
             'app_name': db_entry[0].APP_NAME,
@@ -82,7 +82,7 @@ def get_context_from_analysis(app_dic,
     try:
         context = {
             'title': 'Static Analysis',
-            'version': settings.MOBSF_VER,
+            'version': settings.KENSA_VER,
             'file_name': app_dic['app_name'],
             'app_name': app_dic['real_name'],
             'app_type': app_dic['zipped'],

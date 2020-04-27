@@ -23,7 +23,7 @@ from django.conf import settings
 from django.shortcuts import render
 from django.utils.html import escape
 
-from MobSF.utils import (
+from Kensa.utils import (
     file_size,
     print_n_send_error_response,
 )
@@ -227,7 +227,7 @@ def _binary_analysis(app_dic):
                 'status': 'Info',
                 'info': '',
                 'desc': 'VM is not configured. Please read the readme.md'
-                ' in MobSF/install/windows.',
+                ' in Kensa/install/windows.',
             }
             bin_an_dic['results'].append(warning)
     else:
@@ -236,7 +236,7 @@ def _binary_analysis(app_dic):
         global config
         config = configparser.ConfigParser()
         # Switch to settings definded path if available
-        config.read(expanduser('~') + '\\MobSF\\Config\\config.txt')
+        config.read(expanduser('~') + '\\Kensa\\Config\\config.txt')
 
         # Run analysis functions
         bin_an_dic = binskim(bin_path,

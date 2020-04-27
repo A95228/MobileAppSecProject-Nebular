@@ -16,7 +16,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.template.defaulttags import register
 
-from MobSF.utils import (
+from Kensa.utils import (
     file_size,
     is_file_exists,
     print_n_send_error_response,
@@ -457,7 +457,7 @@ def static_analyzer(request, api=False):
                             print_n_send_error_response(request, msg, False)
                             ctx = {
                                 'title': 'Invalid ZIP archive',
-                                'version': settings.MOBSF_VER,
+                                'version': settings.KENSA_VER,
                             }
                             template = 'general/zip.html'
                             return render(request, template, ctx)

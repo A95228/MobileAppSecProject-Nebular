@@ -1,11 +1,11 @@
 #!/bin/bash
 echo 
-echo '=======================MobSF Clean Script for Unix======================='
+echo '=======================Kensa Clean Script for Unix======================='
 echo 'Running this script will delete the Scan database, all files uploaded and generated.'
 
 script_path=$(dirname $0)
 if [ "$script_path" != "scripts" ] && [ "$script_path" != "./scripts" ]; then
-    echo 'Please run script from MobSF directory '
+    echo 'Please run script from Kensa directory '
     echo './scripts/clean.sh '
     exit  1
 fi
@@ -27,8 +27,8 @@ then
 	rm -rf ./StaticAnalyzer/migrations/*
 	echo 'Deleting Dynamic Analyzer Migrations'
 	rm -rf ./DynamicAnalyzer/migrations/*
-	echo 'Deleting MobSF Migrations'
-	rm -rf ./MobSF/migrations/*
+	echo 'Deleting Kensa Migrations'
+	rm -rf ./Kensa/migrations/*
 	echo 'Deleting python byte code files'
         find ./ -name "*.pyc" -exec rm -rf {} \;
         find ./ | grep -E "(__pycache__|\.pyo$)" | xargs rm -rf

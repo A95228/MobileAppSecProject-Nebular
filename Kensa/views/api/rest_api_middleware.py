@@ -2,7 +2,7 @@
 """REST API Middleware."""
 from django.utils.deprecation import MiddlewareMixin
 
-from MobSF.views.api.rest_api import api_auth, make_api_response
+from Kensa.views.api.rest_api import api_auth, make_api_response
 
 
 class RestApiAuthMiddleware(MiddlewareMixin):

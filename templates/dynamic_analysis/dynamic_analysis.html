@@ -238,7 +238,7 @@ div.loading{
               </div>
               <!-- /.card-header -->
               <div class="card-body">
-                 <p> MobSF cannot find android instance identifier. Make sure that an android instance is running and refresh this page.</p><p> If this error persists, Please set <i>ANALYZER_IDENTIFIER</i> in <strong>MobSF/settings.py</strong>
+                 <p> Kensa cannot find android instance identifier. Make sure that an android instance is running and refresh this page.</p><p> If this error persists, Please set <i>ANALYZER_IDENTIFIER</i> in <strong>Kensa/settings.py</strong>
                       </p>
               </div>
               <!-- /.card-body -->
@@ -255,7 +255,7 @@ div.loading{
                      <div class="col-md-9">
                         <h4>Dynamic Analyzer Supports</h4>
                         <h5><strong>• Genymotion Android VM</strong> version 4.1 to 9.0 (x86, upto API 28)<br/><strong>• Android Studio Emulator AVD</strong> version 5.0 to 9.0 (arm, arm64, and x86 upto API 28)<br/>We recommend using Android 7.0 and above.</h5>
-                        <p>For Android versions less than <strong>5</strong>, we use Xposed Framework and therefore, you must MobSFy the Android Runtime prior to Dynamic Analysis.<br /> Other versions use Frida and are automatically MobSFyed on the go.</p>
+                        <p>For Android versions less than <strong>5</strong>, we use Xposed Framework and therefore, you must Kensay the Android Runtime prior to Dynamic Analysis.<br /> Other versions use Frida and are automatically Kensayed on the go.</p>
                         <p><h5> HTTPS Traffic Interception</h5>
                         <p>For Android version <strong>4.1 - 4.3</strong>, set Android VM proxy as <strong>{% if proxy_ip %} {{ proxy_ip }}{% else %} <i>&lt;Host IP&gt;</i>{% endif %}:{{proxy_port}}</strong><br/ >For Android versions <strong>4.4 - 9</strong>, global proxy settings are automatically applied.<br/>For more information, please refer Documentation.
                         </p>
@@ -265,7 +265,7 @@ div.loading{
                      <br/>
                      <br/>
                      <p>
-                        <button class="btn btn-info" role="button"  data-toggle="modal" data-target="#mmobsfy">MobSFy Android Runtime</button> <p>Android instance: <strong>{{ identifier }}</strong></p></div>
+                        <button class="btn btn-info" role="button"  data-toggle="modal" data-target="#mkensay">Kensay Android Runtime</button> <p>Android instance: <strong>{{ identifier }}</strong></p></div>
                       </p>
                     </div>
                      </div>
@@ -334,11 +334,11 @@ div.loading{
 <!--Modal-->
 
 
-<div class="modal" id="mmobsfy" tabindex="-1" role="dialog">
+<div class="modal" id="mkensay" tabindex="-1" role="dialog">
       <div class="modal-dialog modal-xl">
         <div class="modal-content">
           <div class="modal-header">
-            <h4 class="modal-title">MobSFy Android Runtime</h4>
+            <h4 class="modal-title">Kensay Android Runtime</h4>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">×</span>
             </button>
@@ -357,7 +357,7 @@ div.loading{
               </form>
           </div>
            <div class="modal-footer">
-            <button id="mobsfy" type="button" class="btn btn-primary">MobSFy!</button>
+            <button id="kensay" type="button" class="btn btn-primary">Kensay!</button>
           </div>
         </div>
         <!-- /.modal-content -->
@@ -382,11 +382,11 @@ function dynamic_loader(){
     loadingOverlay.classList.remove('hidden');
 }
 
-//MobSFy AJAX
- $("#mobsfy").one( "click", function() {
-        $('#stat').append("\nMobSFying Android Runtime\n");
+//Kensay AJAX
+ $("#kensay").one( "click", function() {
+        $('#stat').append("\nKensaying Android Runtime\n");
         $.ajax({
-                url : "../mobsfy/", 
+                url : "../kensay/", 
                 type : "POST",
                 dataType: "json", 
                 data : {
@@ -395,12 +395,12 @@ function dynamic_loader(){
                     },
                     success : function(json) {
                         if (json.status==="ok"){
-                              $('#stat').append("\nSucessfully created MobSF Dynamic Analysis environment.");
+                              $('#stat').append("\nSucessfully created Kensa Dynamic Analysis environment.");
                             if (json.version  < 5){
                               $('#stat').append("\n* Download & Install Xposed Framework.\n* Restart the device.");
                               $('#stat').append("\n* Enable all the Xposed modules.\n* Restart the device once more.");
                             } else{
-                               $('#stat').append("\nMobSF agents and Frida server installed.");
+                               $('#stat').append("\nKensa agents and Frida server installed.");
                             }
                            
                         }

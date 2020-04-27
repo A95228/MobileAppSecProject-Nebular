@@ -11,8 +11,8 @@ jobs:
     python: 3.7
     before_install:
     - export TRAVIS_COMMIT_MSG="$(git log --format=%B --no-merges -n 1)"
-    - sudo apt-get install -y libpng16-16 xfonts-75dpi xfonts-base libffi-dev	
-      libxml2-dev libxslt1-dev 
+    - sudo apt-get install -y libpng16-16 xfonts-75dpi xfonts-base libffi-dev
+      libxml2-dev libxslt1-dev
     - wget https://downloads.wkhtmltopdf.org/0.12/0.12.5/wkhtmltox_0.12.5-1.xenial_amd64.deb
     - sudo dpkg -i wkhtmltox_0.12.5-1.xenial_amd64.deb
   - name: Python 3.7 on OSX, Xcode 11
@@ -48,6 +48,3 @@ before_script:
 script:
 - if [ "$TRAVIS_OS_NAME" != "windows" ]; then tox -e lint; fi
 - python3 manage.py test || python manage.py test
-notifications:
-  slack: mobsf:4Ce13XOnMRzFG3bqQ0Hap7OP
-  

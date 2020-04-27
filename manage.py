@@ -7,7 +7,7 @@ import sys
 warnings.filterwarnings('ignore', category=UserWarning, module='cffi')
 
 if __name__ == '__main__':
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'MobSF.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Kensa.settings')
 
     from django.core.management import execute_from_command_line
 

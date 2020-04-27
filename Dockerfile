@@ -3,12 +3,8 @@ FROM ubuntu:18.04
 
 # Labels and Credits
 LABEL \
-    name="MobSF" \
-    author="Ajin Abraham <ajin25@gmail.com>" \
-    maintainer="Ajin Abraham <ajin25@gmail.com>" \
-    contributor_1="OscarAkaElvis <oscar.alfonso.diaz@gmail.com>" \
-    contributor_2="Vincent Nadal <vincent.nadal@orange.fr>" \
-    description="Mobile Security Framework (MobSF) is an automated, all-in-one mobile application (Android/iOS/Windows) pen-testing, malware analysis and security assessment framework capable of performing static and dynamic analysis."
+    name="Kensa" \
+    description="Kensa is an automated, all-in-one mobile application (Android/iOS/Windows) pen-testing, malware analysis and security assessment framework capable of performing static and dynamic analysis."
 
 # Environment vars
 ENV DEBIAN_FRONTEND="noninteractive" \
@@ -61,7 +57,7 @@ RUN wget --quiet "${JDK_URL}" && \
 ENV JAVA_HOME="/jdk-12"
 ENV PATH="$JAVA_HOME/bin:$PATH"
 
-WORKDIR /root/Mobile-Security-Framework-MobSF
+WORKDIR /root/Kensa
 COPY ./requirements.txt .
 
 # Install Requirements
@@ -90,27 +86,27 @@ RUN \
 COPY . .
 
 # Enable Use Home Directory and set adb path
-RUN sed -i 's/USE_HOME = False/USE_HOME = True/g' MobSF/settings.py && \
-    sed -i "s#ADB_BINARY = ''#ADB_BINARY = '/usr/bin/adb'#" MobSF/settings.py
+RUN sed -i 's/USE_HOME = False/USE_HOME = True/g' Kensa/settings.py && \
+    sed -i "s#ADB_BINARY = ''#ADB_BINARY = '/usr/bin/adb'#" Kensa/settings.py
 
 # Postgres support is set to false by default
 ARG POSTGRES=False
 # Check if Postgres support needs to be enabled
-WORKDIR /root/Mobile-Security-Framework-MobSF/scripts
+WORKDIR /root/Kensa/scripts
 RUN chmod +x postgres_support.sh; sync; ./postgres_support.sh $POSTGRES
-WORKDIR /root/Mobile-Security-Framework-MobSF
+WORKDIR /root/Kensa
 
 # Add apktool working path
 RUN mkdir -p /root/.local/share/apktool/framework
 
-# Expose MobSF Port
+# Expose Kensa Port
 EXPOSE 8000
-# MobSF Proxy
+# Kensa Proxy
 EXPOSE 1337
 
 RUN python3 manage.py makemigrations && \
     python3 manage.py makemigrations StaticAnalyzer && \
     python3 manage.py migrate
 
-# Run MobSF
-CMD ["gunicorn", "-b", "0.0.0.0:8000", "MobSF.wsgi:application", "--workers=1", "--threads=10", "--timeout=1800"]
+# Run Kensa
+CMD ["gunicorn", "-b", "0.0.0.0:8000", "Kensa.wsgi:application", "--workers=1", "--threads=10", "--timeout=1800"]

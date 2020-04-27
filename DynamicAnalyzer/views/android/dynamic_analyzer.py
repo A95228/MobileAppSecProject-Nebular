@@ -20,7 +20,7 @@ from DynamicAnalyzer.tools.webproxy import (
     start_httptools_ui,
     stop_httptools)
 
-from MobSF.utils import (get_device,
+from Kensa.utils import (get_device,
                          get_proxy_ip,
                          print_n_send_error_response)
 
@@ -38,19 +38,19 @@ def dynamic_analysis(request):
         try:
             identifier = get_device()
         except Exception:
-            msg = ('Is Andoird VM running? MobSF cannot'
+            msg = ('Is Andoird VM running? Kensa cannot'
                    ' find android instance identifier.'
                    ' Please run an android instance and refresh'
                    ' this page. If this error persists,'
-                   ' set ANALYZER_IDENTIFIER in MobSF/settings.py')
+                   ' set ANALYZER_IDENTIFIER in Kensa/settings.py')
             return print_n_send_error_response(request, msg)
         proxy_ip = get_proxy_ip(identifier)
         context = {'apks': apks,
                    'identifier': identifier,
                    'proxy_ip': proxy_ip,
                    'proxy_port': settings.PROXY_PORT,
-                   'title': 'MobSF Dynamic Analysis',
-                   'version': settings.MOBSF_VER}
+                   'title': 'Kensa Dynamic Analysis',
+                   'version': settings.KENSA_VER}
         template = 'dynamic_analysis/dynamic_analysis.html'
         return render(request, template, context)
     except Exception as exp:
@@ -75,11 +75,11 @@ def dynamic_analyzer(request):
         except Exception:
             no_device = True
         if no_device or not identifier:
-            msg = ('Is the android instance running? MobSF cannot'
+            msg = ('Is the android instance running? Kensa cannot'
                    ' find android instance identifier. '
                    'Please run an android instance and refresh'
                    ' this page. If this error persists,'
-                   ' set ANALYZER_IDENTIFIER in MobSF/settings.py')
+                   ' set ANALYZER_IDENTIFIER in Kensa/settings.py')
             return print_n_send_error_response(request, msg)
         env = Environment(identifier)
         if not env.connect_n_mount():
@@ -88,18 +88,18 @@ def dynamic_analyzer(request):
         version = env.get_android_version()
         logger.info('Android Version identified as %s', version)
         xposed_first_run = False
-        if not env.is_mobsfyied(version):
-            msg = ('This Android instance is not MobSfyed.\n'
-                   'MobSFying the android runtime environment')
+        if not env.is_kensayied(version):
+            msg = ('This Android instance is not Kensayed.\n'
+                   'Kensaying the android runtime environment')
             logger.warning(msg)
-            if not env.mobsfy_init():
+            if not env.kensay_init():
                 return print_n_send_error_response(
                     request,
-                    'Failed to MobSFy the instance')
+                    'Failed to Kensay the instance')
             if version < 5:
                 xposed_first_run = True
         if xposed_first_run:
-            msg = ('Have you MobSFyed the instance before'
+            msg = ('Have you Kensayed the instance before'
                    ' attempting Dynamic Analysis?'
                    ' Install Framework for Xposed.'
                    ' Restart the device and enable'
@@ -129,7 +129,7 @@ def dynamic_analyzer(request):
                    'package': package,
                    'md5': bin_hash,
                    'android_version': version,
-                   'version': settings.MOBSF_VER,
+                   'version': settings.KENSA_VER,
                    'title': 'Dynamic Analyzer'}
         template = 'dynamic_analysis/android/dynamic_analyzer.html'
         return render(request, template, context)
@@ -179,7 +179,7 @@ def logcat(request):
                 return print_n_send_error_response(
                     request,
                     'Invalid package name')
-            adb = os.environ['MOBSF_ADB']
+            adb = os.environ['KENSA_ADB']
             g = proc.Group()
             g.run([adb, 'logcat', app_pkg + ':V', '*:*'])
 

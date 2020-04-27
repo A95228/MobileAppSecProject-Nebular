@@ -16,7 +16,7 @@ from DynamicAnalyzer.views.android.environment import Environment
 from DynamicAnalyzer.views.android.tests_xposed import download_xposed_log
 from DynamicAnalyzer.tools.webproxy import stop_httptools
 
-from MobSF.utils import python_list
+from Kensa.utils import python_list
 
 from StaticAnalyzer.models import StaticAnalyzerAndroid
 

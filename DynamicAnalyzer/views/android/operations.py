@@ -14,7 +14,7 @@ from django.views.decorators.http import require_http_methods
 
 from DynamicAnalyzer.views.android.environment import Environment
 
-from MobSF.utils import (get_adb, get_device, is_number)
+from Kensa.utils import (get_adb, get_device, is_number)
 
 logger = logging.getLogger(__name__)
 
@@ -76,9 +76,9 @@ def invalid_params():
 
 
 @require_http_methods(['POST'])
-def mobsfy(request):
+def kensay(request):
     """Configure Instance for Dynamic Analysis."""
-    logger.info('MobSFying Android instance')
+    logger.info('Kensaying Android instance')
     data = {}
     try:
         identifier = request.POST['identifier']
@@ -87,7 +87,7 @@ def mobsfy(request):
             msg = 'Connection failed'
             data = {'status': 'failed', 'message': msg}
             return json_response(data)
-        version = create_env.mobsfy_init()
+        version = create_env.kensay_init()
         if not version:
             msg = 'Connection failed'
             data = {'status': 'failed', 'message': msg}
@@ -95,7 +95,7 @@ def mobsfy(request):
         else:
             data = {'status': 'ok', 'version': version}
     except Exception as exp:
-        logger.exception('MobSFying Android instance failed')
+        logger.exception('Kensaying Android instance failed')
         data = {'status': 'failed', 'message': str(exp)}
     return json_response(data)
 
@@ -226,22 +226,22 @@ def touch(request):
 
 
 @require_http_methods(['POST'])
-def mobsf_ca(request):
-    """Install and Remove MobSF Proxy RootCA."""
+def kensa_ca(request):
+    """Install and Remove Kensa Proxy RootCA."""
     data = {}
     try:
         env = Environment()
         action = request.POST['action']
         if action == 'install':
-            env.install_mobsf_ca(action)
+            env.install_kensa_ca(action)
             data = {'status': 'ok', 'message': 'installed'}
         elif action == 'remove':
-            env.install_mobsf_ca(action)
+            env.install_kensa_ca(action)
             data = {'status': 'ok', 'message': 'removed'}
         else:
             data = {'status': 'failed',
                     'message': 'Action not supported'}
     except Exception as exp:
-        logger.exception('MobSF RootCA Handler')
+        logger.exception('Kensa RootCA Handler')
         data = {'status': 'failed', 'message': str(exp)}
     return json_response(data)

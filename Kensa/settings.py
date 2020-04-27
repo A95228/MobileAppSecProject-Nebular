@@ -1,29 +1,29 @@
 # noqa: E800
 """
-Django settings for MobSF project.
+Django settings for Kensa project.
 
-MobSF and Django settings
+Kensa and Django settings
 """
 
 import imp
 import logging
 import os
 
-from MobSF.utils import (find_java_binary, first_run,
-                         get_mobsf_home)
+from Kensa.utils import (find_java_binary, first_run,
+                         get_kensa_home)
 
 logger = logging.getLogger(__name__)
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#       MOBSF CONFIGURATIONS
+#       KENSA CONFIGURATIONS
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-MOBSF_VER = 'v3.0.6 Beta'
+KENSA_VER = 'v3.0.6 Beta'
 
 BANNER = """
-  __  __       _    ____  _____       _____  ___  
- |  \/  | ___ | |__/ ___||  ___|_   _|___ / / _ \ 
+  __  __       _    ____  _____       _____  ___
+ |  \/  | ___ | |__/ ___||  ___|_   _|___ / / _ \
  | |\/| |/ _ \| '_ \___ \| |_  \ \ / / |_ \| | | |
  | |  | | (_) | |_) |__) |  _|  \ V / ___) | |_| |
  |_|  |_|\___/|_.__/____/|_|     \_/ |____(_)___/
@@ -31,31 +31,31 @@ BANNER = """
 # ASCII Standard
 # ==============================================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# ==========MobSF Home Directory=================
+# ==========Kensa Home Directory=================
 USE_HOME = False
 
 # True : All Uploads/Downloads will be stored in user's home directory
-# False : All Uploads/Downloads will be stored in MobSF root directory
+# False : All Uploads/Downloads will be stored in Kensa root directory
 # If you need multiple users to share the scan results set this to False
 # ===============================================
 
-MobSF_HOME = get_mobsf_home(USE_HOME)
+Kensa_HOME = get_kensa_home(USE_HOME)
 # Logs Directory
-LOG_DIR = os.path.join(MobSF_HOME, 'logs/')
+LOG_DIR = os.path.join(Kensa_HOME, 'logs/')
 # Download Directory
-DWD_DIR = os.path.join(MobSF_HOME, 'downloads/')
+DWD_DIR = os.path.join(Kensa_HOME, 'downloads/')
 # Screenshot Directory
-SCREEN_DIR = os.path.join(MobSF_HOME, 'downloads/screen/')
+SCREEN_DIR = os.path.join(Kensa_HOME, 'downloads/screen/')
 # Upload Directory
-UPLD_DIR = os.path.join(MobSF_HOME, 'uploads/')
+UPLD_DIR = os.path.join(Kensa_HOME, 'uploads/')
 # Database Directory
-DB_DIR = os.path.join(MobSF_HOME, 'db.sqlite3')
+DB_DIR = os.path.join(Kensa_HOME, 'db.sqlite3')
 # Signatures used by modules
-SIGNATURE_DIR = os.path.join(MobSF_HOME, 'signatures/')
+SIGNATURE_DIR = os.path.join(Kensa_HOME, 'signatures/')
 # Tools Directory
 TOOLS_DIR = os.path.join(BASE_DIR, 'DynamicAnalyzer/tools/')
 # Secret File
-SECRET_FILE = os.path.join(MobSF_HOME, 'secret')
+SECRET_FILE = os.path.join(Kensa_HOME, 'secret')
 
 # Database
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
@@ -74,7 +74,7 @@ DATABASES = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'mobsf',
+        'NAME': 'kensa',
         'USER': 'postgres',
         'PASSWORD': '',
         'HOST': 'localhost',
@@ -85,11 +85,11 @@ DATABASES = {
 """
 # ===============================================
 
-# ==========LOAD CONFIG FROM MobSF HOME==========
+# ==========LOAD CONFIG FROM Kensa HOME==========
 try:
-    # Update Config from MobSF Home Directory
+    # Update Config from Kensa Home Directory
     if USE_HOME:
-        USER_CONFIG = os.path.join(MobSF_HOME, 'config.py')
+        USER_CONFIG = os.path.join(Kensa_HOME, 'config.py')
         sett = imp.load_source('user_settings', USER_CONFIG)
         locals().update(
             {k: v for k, v in list(sett.__dict__.items())
@@ -102,8 +102,8 @@ except Exception:
     CONFIG_HOME = False
 # ===============================================
 
-# ===MOBSF SECRET GENERATION AND DB MIGRATION====
-SECRET_KEY = first_run(SECRET_FILE, BASE_DIR, MobSF_HOME)
+# ===KENSA SECRET GENERATION AND DB MIGRATION====
+SECRET_KEY = first_run(SECRET_FILE, BASE_DIR, Kensa_HOME)
 
 # =============================================
 
@@ -149,7 +149,7 @@ APPX_MIME = [
 # ============DJANGO SETTINGS =================
 DEBUG = True
 DJANGO_LOG_LEVEL = DEBUG
-ALLOWED_HOSTS = ['127.0.0.1', 'mobsf', '*']
+ALLOWED_HOSTS = ['127.0.0.1', 'kensa', '*']
 # Application definition
 INSTALLED_APPS = (
     # 'django.contrib.admin',
@@ -160,7 +160,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'StaticAnalyzer',
     'DynamicAnalyzer',
-    'MobSF',
+    'Kensa',
     'MalwareAnalyzer',
 )
 MIDDLEWARE_CLASSES = (
@@ -176,10 +176,10 @@ MIDDLEWARE_CLASSES = (
 )
 
 MIDDLEWARE = (
-    'MobSF.views.api.rest_api_middleware.RestApiAuthMiddleware',
+    'Kensa.views.api.rest_api_middleware.RestApiAuthMiddleware',
 )
-ROOT_URLCONF = 'MobSF.urls'
-WSGI_APPLICATION = 'MobSF.wsgi.application'
+ROOT_URLCONF = 'Kensa.urls'
+WSGI_APPLICATION = 'Kensa.wsgi.application'
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = os.getenv('TIME_ZONE', 'UTC')
 USE_I18N = True
@@ -219,11 +219,11 @@ else:
     If 'USE_HOME' is set to True,
     then below user configuration settings are not considered.
     The user configuration will be loaded from
-    config.py in MobSF Home directory.
+    config.py in Kensa Home directory.
     """
     # ^CONFIG-START^: Do not edit this line
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    #          MOBSF USER CONFIGURATIONS
+    #          KENSA USER CONFIGURATIONS
     # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     # -------------------------
@@ -261,8 +261,8 @@ else:
     # ======WINDOWS STATIC ANALYSIS SETTINGS ===========
 
     # Private key
-    WINDOWS_VM_SECRET = 'MobSF/windows_vm_priv_key.asc'
-    # IP and Port of the MobSF Windows VM
+    WINDOWS_VM_SECRET = 'Kensa/windows_vm_priv_key.asc'
+    # IP and Port of the Kensa Windows VM
     # example: WINDOWS_VM_IP = '127.0.0.1'   ;noqa E800
     WINDOWS_VM_IP = None
     WINDOWS_VM_PORT = '8000'
@@ -270,8 +270,8 @@ else:
 
     # ==============3rd Party Tools=================
     """
-    If you want to use a different version of 3rd party tools used by MobSF.
-    You can do that by specifying the path here. If specified, MobSF will run
+    If you want to use a different version of 3rd party tools used by Kensa.
+    You can do that by specifying the path here. If specified, Kensa will run
     the tool from this location.
     """
 
@@ -341,8 +341,8 @@ else:
     APPMONSTA_URL = 'https://api.appmonsta.com/v1/stores/android/details/'
     ITUNES_URL = 'https://itunes.apple.com/lookup'
     GITHUB_URL = ('https://raw.githubusercontent.com/'
-                  'MobSF/Mobile-Security-Framework-MobSF/'
-                  'master/MobSF/settings.py')
+                  'Kensa/'
+                  'master/Kensa/settings.py')
     GOOGLE = 'https://www.google.com'
     BAIDU = 'https://www.baidu.com/'
 
@@ -398,7 +398,7 @@ LOGGING = {
         'logfile': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(MobSF_HOME, 'logs', 'debug.log'),
+            'filename': os.path.join(Kensa_HOME, 'logs', 'debug.log'),
             'formatter': 'standard',
         },
         'console': {
@@ -419,7 +419,7 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,   # Don't propagate to other handlers
         },
-        'MobSF': {
+        'Kensa': {
             'handlers': ['console', 'logfile'],
             'level': 'DEBUG',
             'propagate': False,

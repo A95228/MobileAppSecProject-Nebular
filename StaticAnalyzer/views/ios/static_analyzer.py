@@ -9,7 +9,7 @@ import MalwareAnalyzer.views.VirusTotal as VirusTotal
 from django.conf import settings
 from django.shortcuts import render
 
-from MobSF.utils import (
+from Kensa.utils import (
     file_size,
     print_n_send_error_response,
 )

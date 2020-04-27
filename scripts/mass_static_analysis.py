@@ -24,7 +24,7 @@ def is_server_up(url):
 def start_scan(directory, server_url, apikey, rescan='0'):
     print('\nLooking for Android/iOS/'
           'Windows binaries or source code in : ' + directory)
-    logger.info('Uploading to MobSF Server')
+    logger.info('Uploading to Kensa Server')
     uploaded = []
     mimes = {
         '.apk': 'application/octet-stream',
@@ -70,10 +70,10 @@ if __name__ == '__main__':
                              'mobile app binary/zipped source code')
     parser.add_argument(
         '-s', '--ipport', help='IP address and Port number '
-                               'of a running MobSF Server. '
+                               'of a running Kensa Server. '
                                '(ex: 127.0.0.1:8000)')
     parser.add_argument(
-        '-k', '--apikey', help='MobSF REST API Key')
+        '-k', '--apikey', help='Kensa REST API Key')
     parser.add_argument(
         '-r', '--rescan', help='Run a fresh scan. '
                                'Value can be 1 or 0 (Default: 0)')
@@ -86,10 +86,10 @@ if __name__ == '__main__':
         apikey = args.apikey
         rescan = args.rescan
         if not is_server_up(server_url):
-            print('MobSF REST API Server is not running at ' + server_url)
+            print('Kensa REST API Server is not running at ' + server_url)
             print('Exiting!')
             exit(0)
-        # MobSF is running, start scan
+        # Kensa is running, start scan
         start_scan(directory, server_url, apikey, rescan)
     else:
         parser.print_help()

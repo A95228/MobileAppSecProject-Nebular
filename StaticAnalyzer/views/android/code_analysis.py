@@ -9,7 +9,7 @@ import shutil
 
 from django.conf import settings
 
-from MobSF.utils import filename_from_path
+from Kensa.utils import filename_from_path
 
 from StaticAnalyzer.views.android.rules import (
     android_apis,

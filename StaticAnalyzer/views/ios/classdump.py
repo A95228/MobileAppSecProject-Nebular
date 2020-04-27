@@ -9,7 +9,7 @@ import subprocess
 
 from django.conf import settings
 
-from MobSF.utils import is_file_exists
+from Kensa.utils import is_file_exists
 
 from StaticAnalyzer.views.ios.otool_analysis import (
     get_otool_out,

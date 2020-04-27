@@ -8,7 +8,7 @@ import re
 
 from DynamicAnalyzer.views.android.environment import Environment
 
-from MobSF.utils import (is_base64, is_file_exists, python_list)
+from Kensa.utils import (is_base64, is_file_exists, python_list)
 
 logger = logging.getLogger(__name__)
 

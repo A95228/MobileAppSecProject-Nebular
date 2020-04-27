@@ -12,7 +12,7 @@ import stat
 
 from django.conf import settings
 
-from MobSF.utils import (filename_from_path, is_file_exists)
+from Kensa.utils import (filename_from_path, is_file_exists)
 
 
 logger = logging.getLogger(__name__)

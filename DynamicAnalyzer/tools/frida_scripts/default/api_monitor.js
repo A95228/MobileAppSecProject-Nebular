@@ -1,4 +1,4 @@
-// MobSF Android API Monitor
+// Kensa Android API Monitor
 // Inspired from: https://github.com/realgam3/ReversingAutomation/blob/master/Frida/Android-DynamicHooks/DynamicHooks.js
 var apis = [{
     class: 'android.os.Process',
@@ -564,7 +564,7 @@ Java.performNow(function () {
                 message.result = undefined
             if (!message.returnValue)
                 message.returnValue = undefined
-            var msg = 'MobSF-API-Monitor: ' + JSON.stringify(message);
+            var msg = 'Kensa-API-Monitor: ' + JSON.stringify(message);
             send(msg + ',');
             return originalResult;
         });

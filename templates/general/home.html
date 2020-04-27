@@ -5,10 +5,9 @@
       <meta charset="utf-8">
       <meta http-equiv="X-UA-Compatible" content="IE=edge">
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      <meta name="description" content="Mobile Security Framework (MobSF) is an automated, all-in-one mobile application (Android/iOS/Windows) pen-testing, malware analysis and security assessment framework capable of performing static and dynamic analysis.">
-      <meta name="author" content="Ajin Abraham">
+      <meta name="description" content="Kensa is an automated, all-in-one mobile application (Android/iOS/Windows) pen-testing, malware analysis and security assessment framework capable of performing static and dynamic analysis.">
       <link rel="icon" href="{% static "img/favicon.ico" %}">
-      <title>Mobile Security Framework - MobSF</title>
+      <title>Kensa</title>
       <link rel="stylesheet" href="{% static "adminlte/dashboard/css/adminlte.min.css" %}">
       <link rel="stylesheet" href="{% static "adminlte/plugins/fontawesome-free/css/all.min.css" %}">
       <link rel="stylesheet" href="{% static "landing/css/home.css" %}">
@@ -21,7 +20,7 @@
         <!-- Centered link -->
         <div class="topnav-centered">
          <a>
-            <img src="{% static "img/mobsf_logo.png" %}" width="20%" height="20%"/>
+            <img src="{% static "img/kensa_logo.png" %}" width="20%" height="20%"/>
         </a>
         </div>
         <!-- Left-aligned links (default) -->
@@ -67,7 +66,7 @@
                   <div class="inner">
                      <h6> <a href="{% url 'recent' %}">RECENT SCANS</a>  |  <a href="{% url 'dynamic' %}">DYNAMIC ANALYZER</a>  |  <a href="{% url 'api_docs' %}">API DOCS</a>   |  <a href="{% url 'about' %}">ABOUT</a></h6>
                      </br>
-                     <p>&copy; {% now "Y" %}  Mobile Security Framework - MobSF {{ version }}</p>
+                     <p>&copy; {% now "Y" %}  Kensa {{ version }}</p>
                   </div>
                </div>
             </div>
@@ -78,7 +77,7 @@
             function _(el){
                 return document.getElementById(el);
             }
-            // Response Handler     
+            // Response Handler
             function responseHandler(json, isbutton) {
                 if (json.status === 'error') {
                     _("status").innerText = json.description;
@@ -129,7 +128,7 @@
           function isValidMime(file_mime){
                 if (file_mime.length < 1)
                     // bypass if mime is not available
-                    return true; 
+                    return true;
                 var supported = [{% for mime in mimes %}'{{mime}}',{% endfor %}];
                 if(supported.indexOf(file_mime) >-1)
                     return true;
@@ -159,17 +158,17 @@
                 alert("Error:" + e);
             }
            }
-         
+
            function handleFiles(files) {
                files = [...files]
                files.forEach(uploadFile)
            }
-         
+
            // Full Screen Drag & Drop File Upload
            var lastTarget = null;
            function isFile(evt) {
                var dt = evt.dataTransfer;
-         
+
                for (var i = 0; i < dt.types.length; i++) {
                    if (dt.types[i] === "Files") {
                        return true;
@@ -177,7 +176,7 @@
                }
                return false;
            }
-         
+
            window.addEventListener("dragenter", function (e) {
                if (isFile(e)) {
                    lastTarget = e.target;
@@ -186,7 +185,7 @@
                    document.querySelector("#textnode").style.fontSize = "48px";
                }
            });
-         
+
            window.addEventListener("dragleave", function (e) {
                e.preventDefault();
                if (e.target === document || e.target === lastTarget) {
@@ -195,11 +194,11 @@
                    document.querySelector("#textnode").style.fontSize = "42px";
                }
            });
-         
+
            window.addEventListener("dragover", function (e) {
                e.preventDefault();
            });
-         
+
            window.addEventListener("drop", function (e) {
                e.preventDefault();
                document.querySelector("#drop").style.visibility = "hidden";

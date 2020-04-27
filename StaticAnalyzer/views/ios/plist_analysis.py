@@ -8,7 +8,7 @@ import plistlib
 import biplist
 from biplist import readPlist, writePlistToString
 
-from MobSF.utils import is_file_exists
+from Kensa.utils import is_file_exists
 
 from StaticAnalyzer.views.ios.permission_analysis import check_permissions
 from StaticAnalyzer.views.ios.app_transport_security import (

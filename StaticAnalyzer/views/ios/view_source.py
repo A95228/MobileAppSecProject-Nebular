@@ -13,8 +13,8 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.utils.html import escape
 
-from MobSF.forms import FormUtil
-from MobSF.utils import (is_file_exists,
+from Kensa.forms import FormUtil
+from Kensa.utils import (is_file_exists,
                          is_safe_path,
                          print_n_send_error_response,
                          read_sqlite)
@@ -127,7 +127,7 @@ def run(request, api=False):
             'type': file_format,
             'dat': dat,
             'sql': sql_dump,
-            'version': settings.MOBSF_VER,
+            'version': settings.KENSA_VER,
         }
         template = 'general/view.html'
         if api:

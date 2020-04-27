@@ -1,7 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-MobSF/windows_vm_priv_key.asc
+Kensa/windows_vm_priv_key.asc
 
 # C extensions
 *.so
@@ -63,7 +63,7 @@ target/
 #D2J Error file
 classes-error.zip
 
-#MobSF Files
+#Kensa Files
 logs/
 uploads/
 db.sqlite3

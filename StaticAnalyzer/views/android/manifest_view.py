@@ -8,7 +8,7 @@ import re
 from django.conf import settings
 from django.shortcuts import render
 
-from MobSF.utils import print_n_send_error_response
+from Kensa.utils import print_n_send_error_response
 
 from StaticAnalyzer.views.android.manifest_analysis import read_manifest
 
@@ -43,7 +43,7 @@ def run(request):
                 'dat': manifest,
                 'type': 'xml',
                 'sql': {},
-                'version': settings.MOBSF_VER,
+                'version': settings.KENSA_VER,
             }
             template = 'general/view.html'
             return render(request, template, context)
