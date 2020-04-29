@@ -60,7 +60,7 @@ SECRET_FILE = os.path.join(Kensa_HOME, 'secret')
 # Database
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 # Sqlite3 suport
-
+"""
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -68,9 +68,8 @@ DATABASES = {
     },
 }
 # End Sqlite3 support
-
-# Postgres DB - Install psycopg2
 """
+# Postgres DB - Install psycopg2
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -82,7 +81,7 @@ DATABASES = {
     }
 }
 # End Postgres support
-"""
+
 # ===============================================
 
 # ==========LOAD CONFIG FROM Kensa HOME==========
