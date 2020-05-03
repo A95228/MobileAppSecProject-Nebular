@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-KENSA_VER = 'v3.0.6 Beta'
+KENSA_VER = 'v0.0.1 Beta'
 
 BANNER = """
 """  # noqa: W291
