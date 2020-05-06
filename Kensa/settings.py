@@ -53,17 +53,6 @@ TOOLS_DIR = os.path.join(BASE_DIR, 'DynamicAnalyzer/tools/')
 SECRET_FILE = os.path.join(Kensa_HOME, 'secret')
 
 # Database
-# https://docs.djangoproject.com/en/dev/ref/settings/#databases
-# Sqlite3 suport
-"""
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': DB_DIR,
-    },
-}
-# End Sqlite3 support
-"""
 # Postgres DB - Install psycopg2
 DATABASES = {
     'default': {
