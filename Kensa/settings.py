@@ -262,7 +262,7 @@ else:
     JADX_BINARY = ''
     BACKSMALI_BINARY = ''
     APKTOOL_BINARY = ''
-    ADB_BINARY = ''
+    ADB_BINARY = '/home/cloudsigma/Android/Sdk/platform-tools/adb'
 
     # iOS 3P Tools
     OTOOL_BINARY = ''
