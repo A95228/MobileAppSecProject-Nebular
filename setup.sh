@@ -29,14 +29,14 @@ if [[ "$unamestr" == 'Darwin' ]]; then
             echo 'xcode-select --install'
             echo "sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_${current_macos_version}.pkg -target /"
             exit 1
-        else    
-            xcode-select -v		
+        else
+            xcode-select -v
 	    if ! [ $? -eq 0 ]; then
                echo 'Please install command-line tools'
-               echo 'xcode-select --install' 
+               echo 'xcode-select --install'
                exit 1
-	    fi    
-        fi    
+	    fi
+        fi
     fi
 fi
 
@@ -66,6 +66,7 @@ echo '[INSTALL] Clean Up'
 bash scripts/clean.sh y
 
 echo '[INSTALL] Migrating Database'
+python manage.py makemigrations users
 python manage.py makemigrations
 python manage.py makemigrations StaticAnalyzer
 python manage.py migrate
