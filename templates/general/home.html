@@ -11,6 +11,8 @@
       <link rel="stylesheet" href="{% static "adminlte/dashboard/css/adminlte.min.css" %}">
       <link rel="stylesheet" href="{% static "adminlte/plugins/fontawesome-free/css/all.min.css" %}">
       <link rel="stylesheet" href="{% static "landing/css/home.css" %}">
+      <!-- Custom style -->
+      <link rel="stylesheet" href="{% static "custom/custom.css" %}">
       <!-- Google Font: Source Sans Pro -->
       <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
    </head>
@@ -31,9 +33,28 @@
         <div class="topnav-right">
             <a href="{% url 'api_docs' %}">API DOCS</a>
             <a href="{% url 'about' %}">ABOUT</a>
+            {% if request.user.is_authenticated %}
+              <ul class="nav navbar-nav pull-right">
+                  <li class="dropdown">
+                      <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                          <div class="img-rounded profile-img"></div>
+                          {% if request.user.first_name or request.user.last_name %}
+                              {{ request.user.first_name }} {{ request.user.last_name }}
+                          {% else %}
+                              {{ request.user.username }}
+                          {% endif %} <span class="caret"></span>
+                      </a>
+                      <ul class="dropdown-menu">
+                          <li role="separator" class="divider"></li>
+                          <li>
+                              <a href="/accounts/logout/">Logout</a>
+                          </li>
+                      </ul>
+                  </li>
+              </ul>
+            {% endif %}
         </div>
-
-        </div>
+      </div>
       <div class="site-wrapper">
          <div class="site-wrapper-inner">
             <div class="cover-container">
@@ -72,7 +93,6 @@
             </div>
          </div>
       </div>
-      <script src="{% static "adminlte/plugins/jquery.min.js" %}"></script>
       <script>
             function _(el){
                 return document.getElementById(el);
@@ -223,5 +243,11 @@
                 });
             });
       </script>
+      <!-- jQuery -->
+      <script src="{% static "adminlte/plugins/jquery.min.js" %}"></script>
+      <!-- jQuery UI 1.11.4 -->
+      <script src="{% static "adminlte/plugins/jquery-ui.min.js" %}"></script>
+      <!-- Bootstrap 4 -->
+      <script src="{% static "adminlte/plugins/bootstrap/bootstrap.bundle.min.js" %}"></script>
    </body>
 </html>

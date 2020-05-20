@@ -58,10 +58,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'kensa',
-        'USER': 'postgres',
+        'USER': 'kensa',
         'PASSWORD': '',
         'HOST': 'localhost',
-        'PORT': '',
+        'PORT': '5432',
     }
 }
 # End Postgres support
@@ -133,34 +133,45 @@ APPX_MIME = [
 DEBUG = True
 DJANGO_LOG_LEVEL = DEBUG
 ALLOWED_HOSTS = ['127.0.0.1', 'kensa', '*']
+GRAPPELLI_ADMIN_TITLE = "Kensa Admin"
 # Application definition
 INSTALLED_APPS = (
-    # 'django.contrib.admin',
+    'grappelli',
+    'django.contrib.admin',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'django.contrib.sites',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'users',
+    #'grappelli.dashboard',
+
     'StaticAnalyzer',
     'DynamicAnalyzer',
     'Kensa',
     'MalwareAnalyzer',
 )
 MIDDLEWARE_CLASSES = (
-    'django.middleware.security.SecurityMiddleware',
+
     'whitenoise.middleware.WhiteNoiseMiddleware',
+)
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-)
-
-MIDDLEWARE = (
     'Kensa.views.api.rest_api_middleware.RestApiAuthMiddleware',
-)
+    #'Kensa.LoginRequiredMiddleware',
+
+]
 ROOT_URLCONF = 'Kensa.urls'
 WSGI_APPLICATION = 'Kensa.wsgi.application'
 LANGUAGE_CODE = 'en-us'
@@ -174,14 +185,36 @@ TEMPLATES = [
         'APP_DIRS': True,
         'DIRS':
             [
-                os.path.join(BASE_DIR, 'templates'),
+                os.path.join(BASE_DIR, 'templates'), os.path.join(BASE_DIR, 'templates', 'allauth'), os.path.join(BASE_DIR, 'templates', 'admin'),
             ],
         'OPTIONS':
             {
-                'debug': True,
+                'context_processors': [
+                    # Already defined Django-related contexts here
+                    # `allauth` needs this from django
+                        'django.template.context_processors.debug',
+                        'django.template.context_processors.request',
+                        'django.contrib.auth.context_processors.auth',
+                        'django.contrib.messages.context_processors.messages',
+
+                    ],
             },
     },
 ]
+AUTHENTICATION_BACKENDS = (
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+
+    # `allauth` specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+AUTH_USER_MODEL = 'users.User'
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+SITE_ID = 1
+LOGIN_REDIRECT_URL = '/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
 MEDIA_URL = '/uploads/'
 STATIC_URL = '/static/'

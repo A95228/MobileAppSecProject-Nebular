@@ -1,5 +1,6 @@
-from django.conf.urls import url
-
+from django.contrib import admin
+from django.urls import path
+from django.conf.urls import include, url
 from DynamicAnalyzer.views.android import dynamic_analyzer as dz
 from DynamicAnalyzer.views.android import (
     operations,
@@ -29,6 +30,10 @@ from StaticAnalyzer.views.ios import view_source as io_view_source
 urlpatterns = [
     # General
     url(r'^$', home.index, name='home'),
+    path('grappelli/', include('grappelli.urls')), # grappelli URLS
+    path('admin/', admin.site.urls),
+    path('accounts/', include('allauth.urls')),
+
     url(r'^upload/$', home.Upload.as_view),
     url(r'^download/', home.download),
     url(r'^about$', home.about, name='about'),
@@ -40,7 +45,6 @@ urlpatterns = [
     url(r'^not_found/$', home.not_found),
     url(r'^zip_format/$', home.zip_format),
     url(r'^mac_only/$', home.mac_only),
-
     # Static Analysis
     # Android
     url(r'^StaticAnalyzer/$', android_sa.static_analyzer),

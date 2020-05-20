@@ -17,6 +17,8 @@
   <link rel="stylesheet" href="{% static "adminlte/dashboard/css/adminlte.min.css" %}">
   <!-- overlayScrollbars -->
   <link rel="stylesheet" href="{% static "adminlte/plugins/overlayScrollbars/css/OverlayScrollbars.min.css" %}">
+  <!-- Custom style -->
+  <link rel="stylesheet" href="{% static "custom/custom.css" %}">
   <!-- Ionicons -->
   <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
   <!-- Google Font: Source Sans Pro -->
@@ -43,7 +45,26 @@
         <li class="nav-item d-none d-sm-inline-block"><a href="{% url 'api_docs' %}" class="nav-link">API DOCS</a></li>
         <li class="nav-item d-none d-sm-inline-block"><a href="{% url 'about' %}" class="nav-link">ABOUT</a></li>
     </ul>
-
+    {% if request.user.is_authenticated %}
+      <ul class="nav navbar-nav pull-right">
+          <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                  <div class="img-rounded profile-img"></div>
+                  {% if request.user.first_name or request.user.last_name %}
+                      {{ request.user.first_name }} {{ request.user.last_name }}
+                  {% else %}
+                      {{ request.user.username }}
+                  {% endif %} <span class="caret"></span>
+              </a>
+              <ul class="dropdown-menu">
+                  <li role="separator" class="divider"></li>
+                  <li>
+                      <a href="/accounts/logout/">Logout</a>
+                  </li>
+              </ul>
+          </li>
+      </ul>
+    {% endif %}
     <!-- SEARCH FORM -->
     <form class="form-inline ml-3" action="/search" method="GET">
       <div class="input-group input-group-sm">
