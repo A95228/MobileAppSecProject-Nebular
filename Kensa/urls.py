@@ -94,8 +94,6 @@ urlpatterns = [
     url(r'^frida_logs/$', tests_frida.frida_logs),
     url(r'^list_frida_scripts/$', tests_frida.list_frida_scripts),
     url(r'^get_script/$', tests_frida.get_script),
-
-
     # Report
     url(r'^dynamic_report/$', report.view_report),
     url(r'^dynamic_view_file/$', report.view_file),
@@ -109,15 +107,16 @@ urlpatterns = [
     url(r'^api/v1/view_source$', rest_api.api_view_source),
     url(r'^api/v1/scans$', rest_api.api_recent_scans),
 
+    url(r'^api/v1/app_info$', rest_api.api_app_info),
+
     # REST Dynamic Analysis
-    url(r'^api/v1/dynamic_analysis/$', rest_api.dynamic_analysis, name='dynamic'),
-    url(r'^api/v1/android_dynamic/$', rest_api.dynamic_analyzer, name='dynamic_analyzer'),
-    url(r'^api/v1/httptools$', rest_api.httptools_start, name='httptools'),
+    # url(r'^api/v1/dynamic_analysis/$', rest_api.dynamic_analysis, name='dynamic'),
+    # url(r'^api/v1/android_dynamic/$', rest_api.dynamic_analyzer, name='dynamic_analyzer'),
+    # url(r'^api/v1/httptools$', rest_api.httptools_start, name='httptools'),
     # url(r'^api/v1/logcat/$', rest_api.logcat),
 
     # Test
     url(r'^tests/$', tests.start_test),
-
 ]
 
 utils.print_version()

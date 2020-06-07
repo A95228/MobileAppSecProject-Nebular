@@ -2,6 +2,7 @@
 """Kensa REST API V 1."""
 import logging
 import os
+import re
 from shelljob import proc
 
 from django.http import HttpResponse, JsonResponse
@@ -12,7 +13,7 @@ from Kensa.views.helpers import request_method
 from Kensa.views.home import RecentScans, Upload, delete_scan
 
 from StaticAnalyzer.views.android import view_source
-from StaticAnalyzer.views.android.static_analyzer import static_analyzer
+from StaticAnalyzer.views.android.static_analyzer import static_analyzer, get_app_name, valid_android_zip
 from StaticAnalyzer.views.ios import view_source as ios_view_source
 from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios
 from StaticAnalyzer.views.shared_func import pdf
@@ -21,18 +22,12 @@ from StaticAnalyzer.models import StaticAnalyzerAndroid
 from django.contrib.auth.decorators import permission_required
 
 from django.conf import settings
-from Kensa.utils import (get_device,
-                         get_proxy_ip,
-                         print_n_send_error_response)
+from Kensa.utils import (file_size)
+from StaticAnalyzer.views.android.db_interaction import (
+    get_context_from_db_entry)
+from StaticAnalyzer.views.android.manifest_analysis import (get_manifest, manifest_data)
 
-from DynamicAnalyzer.views.android.environment import Environment
-from DynamicAnalyzer.views.android.operations import (
-    is_attack_pattern,
-    is_md5,
-    strict_package_check)
-from DynamicAnalyzer.tools.webproxy import (
-    start_httptools_ui,
-    stop_httptools)
+from StaticAnalyzer.views.shared_func import (hash_gen, unzip)
 
 
 BAD_REQUEST = 400
@@ -78,6 +73,7 @@ def api_recent_scans(request):
         return make_api_response(resp, 500)
     else:
         return make_api_response(resp, 200)
+
 
 
 @request_method(['POST'])
@@ -206,189 +202,117 @@ def api_view_source(request):
     return response
 
 
-@request_method(['GET'])
-@csrf_exempt
-@permission_required
-def dynamic_analysis(request):
-    """Android Dynamic Analysis Entry point."""
-    try:
-        apks = StaticAnalyzerAndroid.objects.filter(
-            APP_TYPE='apk').order_by('-id')
-        try:
-            identifier = get_device()
-        except Exception:
-            msg = ('Is Andoird VM running? Kensa cannot'
-                   ' find android instance identifier.'
-                   ' Please run an android instance and refresh'
-                   ' this page. If this error persists,'
-                   ' set ANALYZER_IDENTIFIER in Kensa/settings.py')
-            err_response = print_n_send_error_response(request, msg, api=True)
-            response = make_api_response(err_response, INTERNAL_SERVER_ERR)
-            return response
-
-        proxy_ip = get_proxy_ip(identifier)
-        context = {'apks': apks,
-                   'identifier': identifier,
-                   'proxy_ip': proxy_ip,
-                   'proxy_port': settings.PROXY_PORT,
-                   'title': 'Kensa Dynamic Analysis',
-                   'version': settings.KENSA_VER}
-        response = make_api_response(context, OK)
-        return response
-    except Exception as exp:
-        logger.exception('Dynamic Analysis')
-        err_response = print_n_send_error_response(request, exp)
-        return make_api_response(err_response, INTERNAL_SERVER_ERR)
+def make_app_info_response(app_dic, man_data_dic):
+    resp_dic = {
+        'file_name': app_dic['app_name'],
+        'size': app_dic['size'],
+        'md5': app_dic['md5'],
+        'sha1': app_dic['sha1'],
+        'sha256': app_dic['sha256'],
+        'app_name': app_dic['real_name'],
+        'package_name': man_data_dic['packagename'],
+        'main_activity': man_data_dic['main_activity'],
+        'target_sdk': man_data_dic['target_sdk'],
+        'max_sdk': man_data_dic['max_sdk'],
+        'min_sdk': man_data_dic['min_sdk'],
+    }
+    return resp_dic
 
 
 @request_method(['GET'])
 @csrf_exempt
-@permission_required
-def dynamic_analyzer(request):
-    """Android Dynamic Analyzer Environment."""
+def api_app_info(request):
+    """Do static analysis on an request and save to db."""
     try:
-        bin_hash = request.GET['hash']
-        package = request.GET['package']
-        no_device = False
-        if (is_attack_pattern(package) or not
-                is_md5(bin_hash)):
-            error_response = print_n_send_error_response(request, 'Invalid Parameters', api=True)
-            return make_api_response(error_response, INTERNAL_SERVER_ERR)
 
-        identifier = ''
-        try:
-            identifier = get_device()
-        except Exception:
-            no_device = True
-        if no_device or not identifier:
-            msg = ('Is the android instance running? Kensa cannot'
-                   ' find android instance identifier. '
-                   'Please run an android instance and refresh'
-                   ' this page. If this error persists,'
-                   ' set ANALYZER_IDENTIFIER in Kensa/settings.py')
-            err_response = print_n_send_error_response(request, msg, api=True)
-            return make_api_response(err_response, INTERNAL_SERVER_ERR)
-        env = Environment(identifier)
-        if not env.connect_n_mount():
-            msg = 'Cannot Connect to ' + identifier
-            err_response = print_n_send_error_response(request, msg, api=True)
-            return make_api_response(err_response, INTERNAL_SERVER_ERR)
+        typ = request.GET['type']
+        checksum = request.GET['checksum']
+        filename = request.GET['name']
 
-        version = env.get_android_version()
+        # Input validation
+        resp_dic = {}
+        match = re.match('^[0-9a-f]{32}$', checksum)
+        app_dic = {}
+        match = re.match('^[0-9a-f]{32}$', checksum)
+        if match and (filename.lower().endswith('.apk') or filename.lower().endswith('.zip')) and (typ in ['zip', 'apk']):
+            base_dir = settings.BASE_DIR  # BASE DIR
+            app_dic['app_name'] = filename  # APP ORGINAL NAME
+            app_dic['md5'] = checksum  # MD5
+            app_dir = os.path.join(settings.UPLD_DIR, app_dic['md5'] + '/')  # APP DIRECTORY
 
-        logger.info('Android Version identified as %s', version)
+            tools_dir = os.path.join(base_dir, 'StaticAnalyzer/tools/')  # TOOLS DIR
 
-        xposed_first_run = False
-        if not env.is_kensayied(version):
-            msg = ('This Android instance is not Kensayed.\n'
-                   'Kensaying the android runtime environment')
-            logger.warning(msg)
-            if not env.kensay_init():
-                err_response = print_n_send_error_response(
-                    request,
-                    'Failed to Kensay the instance', api=True)
-                return make_api_response(err_response, INTERNAL_SERVER_ERR)
-            if version < 5:
-                xposed_first_run = True
-        if xposed_first_run:
-            msg = ('Have you Kensayed the instance before'
-                   ' attempting Dynamic Analysis?'
-                   ' Install Framework for Xposed.'
-                   ' Restart the device and enable'
-                   ' all Xposed modules. And finally'
-                   ' restart the device once again.')
-            err_response = print_n_send_error_response(request, msg, api=True)
-            return make_api_response(err_response, INTERNAL_SERVER_ERR)
-        # Clean up previous analysis
-        env.dz_cleanup(bin_hash)
-        # Configure Web Proxy
-        env.configure_proxy(package)
-        # Supported in Android 5+
-        env.enable_adb_reverse_tcp(version)
-        # Apply Global Proxy to device
-        env.set_global_proxy(version)
-        # Start Clipboard monitor
-        env.start_clipmon()
-        # Get Screen Resolution
-        screen_width, screen_height = env.get_screen_res()
-        logger.info('Installing APK')
-        app_dir = os.path.join(settings.UPLD_DIR,
-                               bin_hash + '/')  # APP DIRECTORY
-        apk_path = app_dir + bin_hash + '.apk'  # APP PATH
-        env.adb_command(['install', '-r', apk_path], False, True)
-        logger.info('Testing Environment is Ready!')
-        context = {'screen_witdth': screen_width,
-                   'screen_height': screen_height,
-                   'package': package,
-                   'md5': bin_hash,
-                   'android_version': version,
-                   'version': settings.KENSA_VER,
-                   'title': 'Dynamic Analyzer'}
-        template = 'dynamic_analysis/android/dynamic_analyzer.html'
-        return make_api_response(context, OK)
-    except Exception:
-        logger.exception('Dynamic Analyzer')
-        err_response = print_n_send_error_response(request, 'Dynamic Analysis Failed.', True)
-        return make_api_response(err_response, INTERNAL_SERVER_ERR)
+            logger.info('Starting Analysis on : %s', app_dic['app_name'])
 
+            if typ == 'apk':
+                db_entry = StaticAnalyzerAndroid.objects.filter(
+                    MD5=app_dic['md5'])
+                if db_entry.exists():
+                    context = get_context_from_db_entry(db_entry)
+                    ok_response_dic = {
+                        'file_name': context['file_name'],
+                        'size': context['size'],
+                        'md5': context['md5'],
+                        'sha1': context['sha1'],
+                        'sha256': context['sha256'],
+                        'app_name': context['app_name'],
+                        'package_name': context['package_name'],
+                        'main_activity': context['main_activity'],
+                        'target_sdk': context['target_sdk'],
+                        'max_sdk': context['max_sdk'],
+                        'min_sdk': context['min_sdk'],}
+                    return make_api_response(ok_response_dic, OK)
+                else:
+                    app_file = app_dic['md5'] + '.apk'  # NEW FILENAME
+                    app_path = (app_dir + app_file)  # APP PATH
 
-@request_method(['GET'])
-@csrf_exempt
-def httptools_start(request):
-    """Start httprools UI."""
-    logger.info('Starting httptools Web UI')
-    try:
-        stop_httptools(settings.PROXY_PORT)
-        start_httptools_ui(settings.PROXY_PORT)
-        logger.info('httptools UI started')
-        if request.GET['project']:
-            project = request.GET['project']
-        else:
-            project = ''
-        url = ('http://localhost:{}'
-               '/dashboard/{}'.format(
-                   str(settings.PROXY_PORT),
-                   project))
-        response = {'project_url': url}
-        return make_api_response(response, OK)
-    except Exception:
-        logger.exception('Starting httptools Web UI')
-        err = 'Error Starting httptools UI'
-        err_response = print_n_send_error_response(request, err, api=True)
-        return make_api_response(err_response, INTERNAL_SERVER_ERR)
+                    app_dic['size'] = str(
+                        file_size(app_path)) + 'MB'  # FILE SIZE
+                    app_dic['sha1'], app_dic['sha256'] = hash_gen(app_path)
 
-# def logcat(request):
-#     logger.info('Starting Logcat streaming')
-#     try:
-#         pkg = request.GET.get('package')
-#         if pkg:
-#             if not strict_package_check(pkg):
-#                 err_response = print_n_send_error_response(
-#                     request, 'Invalid package name', api=True)
-#                 return make_api_response(err_response, INTERNAL_SERVER_ERR)
-#             ok_response = {'package': pkg}
-#             return make_api_response(ok_response, OK)
-#         app_pkg = request.GET.get('app_package')
-#         if app_pkg:
-#             if not strict_package_check(app_pkg):
-#                 err_response = print_n_send_error_response(
-#                     request, 'Invalid package name', api=True)
-#             adb = os.environ['KENSA_ADB']
-#             g = proc.Group()
-#             g.run([adb, 'logcat', app_pkg + ':V', '*:*'])
-#
-#             def read_process():
-#                 while g.is_pending():
-#                     lines = g.readlines()
-#                     for _, line in lines:
-#                         time.sleep(.01)
-#                         yield 'data:{}\n\n'.format(line)
-#             return StreamingHttpResponse(read_process(),
-#                                          content_type='text/event-stream')
-#         return print_n_send_error_response(
-#             request,
-#             'Invalid parameters')
-#     except Exception:
-#         logger.exception('Logcat Streaming')
-#         err = 'Error in Logcat streaming'
-#         return print_n_send_error_response(request, err)
+                    app_file = app_dic['md5'] + '.apk'  # NEW FILENAME
+                    app_path = (app_dir + app_file)  # APP PATH
+                    files = unzip(app_path, app_dir)
+                    if not files:
+                        msg = 'APK file is invalid or corrupt'
+                        return make_api_response({'error': msg}, INTERNAL_SERVER_ERR)
+                    logger.info('APK Extracted')
+                    parsed_xml = get_manifest(app_path, app_dir, tools_dir, '', True,)
+
+                    # get app_name
+                    app_dic['real_name'] = get_app_name(
+                        app_path, app_dir, tools_dir,
+                        True,
+                    )
+                    man_data_dic = manifest_data(parsed_xml)
+                    ok_response_dic = make_app_info_response(app_dic, man_data_dic)
+                    return make_api_response(ok_response_dic, OK)
+            elif typ == 'zip':
+                db_entry = StaticAnalyzerAndroid.objects.filter(MD5=app_dic['md5'])
+                if db_entry.exists():
+                    context = get_context_from_db_entry(db_entry)
+                else:
+                    app_file = app_dic['md5'] + '.zip'  # NEW FILENAME
+                    app_path = app_dir + app_file  # APP PATH
+                    files = unzip(app_path, app_dir)
+                    pro_type, valid = valid_android_zip(app_dir)
+                    if valid and pro_type == 'ios':
+                        logger.info('Redirecting to iOS Source Code Analyzer')
+                        return make_api_response({'type': 'ios'}, BAD_REQUEST)
+                    if valid and (pro_type in ['eclipse', 'studio']):
+                        app_dic['size'] = str(file_size(app_path)) + 'MB'  # FILE SIZE
+                        app_dic['sha1'], app_dic[
+                            'sha256'] = hash_gen(app_path)
+                        parsed_xml = get_manifest('', app_dir, tools_dir, pro_type, False)
+                        # get app_name
+                        app_dic['real_name'] = get_app_name(
+                            app_path, app_dir, tools_dir, False,)
+                        man_data_dic = manifest_data(parsed_xml)
+                        ok_response_dic = make_app_info_response(app_dic, man_data_dic)
+                        return make_api_response(ok_response_dic, OK)
+        return make_api_response({'error': 'Input File Error'}, BAD_REQUEST)
+    except Exception as excep:
+        logger.exception('Error Performing Static Analysis')
+        msg = str(excep)
+        exp = excep.__doc__
+        return make_api_response({'error': msg}, BAD_REQUEST)
