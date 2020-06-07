@@ -109,6 +109,12 @@ urlpatterns = [
     url(r'^api/v1/view_source$', rest_api.api_view_source),
     url(r'^api/v1/scans$', rest_api.api_recent_scans),
 
+    # REST Dynamic Analysis
+    url(r'^api/v1/dynamic_analysis/$', rest_api.dynamic_analysis, name='dynamic'),
+    url(r'^api/v1/android_dynamic/$', rest_api.dynamic_analyzer, name='dynamic_analyzer'),
+    url(r'^api/v1/httptools$', rest_api.httptools_start, name='httptools'),
+    # url(r'^api/v1/logcat/$', rest_api.logcat),
+
     # Test
     url(r'^tests/$', tests.start_test),
 
