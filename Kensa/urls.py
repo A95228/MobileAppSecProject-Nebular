@@ -108,6 +108,20 @@ urlpatterns = [
     url(r'^api/v1/scans$', rest_api.api_recent_scans),
 
     url(r'^api/v1/app_info$', rest_api.api_app_info),
+    url(r'^api/v1/appstore_info$', rest_api.api_app_store),
+
+    url(r'^api/v1/code/smali/$', rest_api.api_code_smali),
+
+    url(r'^api/v1/summary/security_overview$', rest_api.api_security_overview),
+    url(r'^api/v1/summary/malware_overview$', rest_api.api_malware_overview),
+    url(r'^api/v1/summary/components$', rest_api.api_components),
+    url(r'^api/v1/summary/domain_analaysis$', rest_api.api_domain_analysis),
+
+    url(r'^api/v1/security_analysis/manifest_analysis$', rest_api.api_manifest_analysis),
+    url(r'^api/v1/security_analysis/code_analysis$', rest_api.api_code_analysis),
+    url(r'^api/v1/security_analysis/binary_analysis$', rest_api.api_binary_analysis),
+    url(r'^api/v1/security_analysis/file_analysis$', rest_api.api_file_analysis),
+    url(r'^api/v1/security_analysis/app_permissions$', rest_api.api_app_permissions),
 
     # REST Dynamic Analysis
     # url(r'^api/v1/dynamic_analysis/$', rest_api.dynamic_analysis, name='dynamic'),
