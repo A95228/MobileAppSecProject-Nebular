@@ -18,6 +18,7 @@ from StaticAnalyzer.views.android.java import run, api_run_java_code
 from StaticAnalyzer.views.ios import view_source as ios_view_source
 from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios
 from StaticAnalyzer.views.shared_func import pdf
+from StaticAnalyzer.views.android.smali import api_smali_run
 from StaticAnalyzer.views.windows import windows
 from StaticAnalyzer import models
 
@@ -195,14 +196,11 @@ def api_get_recent_scans(request):
     """Get Recent Scans """
     #if not request.user.is_authenticated:
     #    return make_api_response({"error" : "Not authorized"}, status=401)
-
     data = models.RecentScansDB.get_recent_scans()
-
     if data is not None:
         if isinstance(data, dict):
             return make_api_response(data=data, status=OK)
         return JsonResponse(data=data, safe=False, status=OK) # strange case
-
     return make_api_response(data={"error" : "<error here>"}, status=BAD_REQUEST)
 
 
@@ -211,7 +209,6 @@ def api_get_signer_certificate(request):
     """Get certificate"""
     #if not request.user.is_authenticated:
     #    return make_api_response({"error" : "Not authorized"}, status=401)
-
     if request.GET.get("md5", None) is None:
         return make_api_response(data={"error" : "missing md5"}, status=BAD_REQUEST)
     id = request.GET["md5"]
@@ -228,7 +225,6 @@ def api_get_manifest(request):
     """Get manifest"""
     #if not request.user.is_authenticated:
     #    return make_api_response({"error" : "Not authorized"}, status=401)
-
     if request.GET.get("md5", None) is None:
         return make_api_response(data={"error" : "missing md5"}, status=BAD_REQUEST)
     id = request.GET["md5"]
@@ -245,20 +241,14 @@ def api_get_recon_data(request):
     """Get reconaissance data"""
     #if not request.user.is_authenticated:
     #    return make_api_response({"error" : "Not authorized"}, status=401)
-
     if request.GET.get("md5", None) is None:
         return make_api_response(data={"error": "Missing md5"}, status=BAD_REQUEST)
-
     id = request.GET["md5"]
-
     if not re.match(r"^[0-9a-f]{32}$", id):
         return make_api_response(data={"error": "Invalid identifier"}, status=BAD_REQUEST)
-
     data = models.StaticAnalyzerAndroid.get_recon_data(id)
-
     if data is None:
         return make_api_response(data={"error": "No data to preview"}, status=404)
-
     return make_api_response(data=data, status=OK)
 
 
@@ -267,49 +257,53 @@ def api_get_domains_data(request):
     """Get domains data"""
     #if not request.user.is_authenticated:
     #    return make_api_response({"error" : "Not authorized"}, status=401)
-
     if request.GET.get("md5", None) is None:
         return make_api_response({"error" : "Missing identifier"}, status=BAD_REQUEST)
-
     id = request.GET["md5"]
-
     if not re.match(r"^[0-9a-f]{32}$", id):
         return make_api_response({"error" : "Invalid identifier"}, status=BAD_REQUEST)
-
     data = models.StaticAnalyzerAndroid.get_domains_data(id)
-
     if data is None:
         return make_api_response({"error": "No data to preview"}, status=404)
-
     return make_api_response(data=data, status=OK)
 
 
 @request_method(["GET"])
 def api_get_java_code(request):
-    """Get a list of java code files"""
+    """
+    Get a list of java code files
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    This view is not prone to RecursionErrors for the same reason as the
+    api_get_smoli_code.
+    """
     #if not request.user.is_authenticated:
     #    return make_api_response({"error" : "Not authorized"}, status=401)
-
     if request.GET.get("md5", None) is None:
         return make_api_response({"error" : "Missing identifier"}, status=BAD_REQUEST)
-
     if request.GET.get("type", None) is None:
         return make_api_response({"error" : "Missing type"}, status=BAD_REQUEST)
-
-    ctx = api_run_java_code(request)
-
+    ctx = api_run_java_code(request) # Potential RecursionError here too.
     if 'error' in ctx:
         return make_api_response(data=ctx, status=BAD_REQUEST)
-
-    serializer = tools.JavaCodeSerializer(ctx)
-    return make_api_response(data=serializer.data, status=OK)
-
+    data = tools.JavaCodeSerializer(ctx)
+    return make_api_response(data=data.data, status=OK)
 
 
 @request_method(["GET"])
-def api_get_code_smali(request):
-    pass
-
+def api_get_smali_code(request):
+    """
+    Get smoli code
+    ~~~~~~~~~~~~~~~
+    This view raises a RecursionError, must fetch files another way.
+    """
+    if request.GET.get("md5", None) is None:
+        return make_api_response({"error" : "Missing identifier"}, status=BAD_REQUEST)
+    id = request.GET["md5"]
+    ctx = api_get_smali_code(request)
+    if 'error' in ctx:
+        return make_api_response(data=ctx, status=BAD_REQUEST)
+    data = tools.JavaCodeSerializer(ctx)
+    return make_api_response(data=data.data, status=OK)
 
 
 
