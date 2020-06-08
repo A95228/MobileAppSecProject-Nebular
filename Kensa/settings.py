@@ -149,7 +149,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'users',
     #'grappelli.dashboard',
-
+    'rest_framework',
     'StaticAnalyzer',
     'DynamicAnalyzer',
     'Kensa',
@@ -387,6 +387,13 @@ else:
 
 # ============JAVA SETTINGS======================
 JAVA_BINARY = find_java_binary()
+# ===============================================
+
+# ============DJANGO REST========================
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 100
+}
 # ===============================================
 
 # Better logging
