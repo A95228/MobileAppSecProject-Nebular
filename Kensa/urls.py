@@ -115,8 +115,11 @@ urlpatterns = [
     url(r"^api/v1/summary/reconnaissance$", rest_api.api_get_recon_data),
     url(r"^api/v1/summary/domain_analysis_country$", rest_api.api_get_domains_data),
     url(r"^api/v1/code/java$", rest_api.api_get_java_code),
-    
+    # This view raises a RecursionError, read message in rest_api.py
+    url(r"^api/v1/code/smali$", rest_api.api_get_smali_code),
+
     #url(r"^api/v1/code/java/page/(?P<page_num>\d+)/$", rest_api.paginate_java_code),
+    
     # Test
     url(r'^tests/$', tests.start_test),
 
