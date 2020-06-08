@@ -160,7 +160,7 @@ class StaticAnalyzerAndroid(models.Model):
             except:
                 return None
             return {"countries" : countries}
-            
+    
 
 class StaticAnalyzerIOS(models.Model):
     FILE_NAME = models.CharField(max_length=255)
