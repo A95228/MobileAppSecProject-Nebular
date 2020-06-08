@@ -53,7 +53,7 @@ def index(request):
 
 class Upload(object):
     """Handle File Upload based on App type."""
-    @permission_required
+    
     def __init__(self, request):
         self.request = request
         self.form = UploadFileForm(request.POST, request.FILES)
@@ -133,7 +133,7 @@ class Upload(object):
             'file_name': data['file_name'],
         }
         return api_response, 200
-    @permission_required
+    
     def upload(self):
         request = self.request
         scanning = Scanning(request)
@@ -151,7 +151,7 @@ class Upload(object):
         elif self.file_type.is_appx():
             return scanning.scan_appx()
 
-@permission_required
+
 def api_docs(request):
     """Api Docs Route."""
     context = {
@@ -162,7 +162,7 @@ def api_docs(request):
     template = 'general/apidocs.html'
     return render(request, template, context)
 
-@permission_required
+
 def about(request):
     """About Route."""
     context = {
@@ -212,7 +212,7 @@ def not_found(request):
     template = 'general/not_found.html'
     return render(request, template, context)
 
-@permission_required
+
 def recent_scans(request):
     """Show Recent Scans Route."""
     entries = []
@@ -235,7 +235,7 @@ def recent_scans(request):
     template = 'general/recent.html'
     return render(request, template, context)
 
-@permission_required
+
 def search(request):
     """Search Scan by MD5 Route."""
     md5 = request.GET['md5']
@@ -247,7 +247,7 @@ def search(request):
             return HttpResponseRedirect('/not_found/')
     return print_n_send_error_response(request, 'Invalid Scan Hash')
 
-@permission_required
+
 def download(request):
     """Download from Kensa Route."""
     msg = 'Error Downloading File '
@@ -273,7 +273,7 @@ def download(request):
         return print_n_send_error_response(request, msg)
     return HttpResponse('')
 
-@permission_required
+
 def delete_scan(request, api=False):
     """Delete Scan from DB and remove the scan related files."""
     try:

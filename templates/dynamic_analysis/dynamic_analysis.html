@@ -6,7 +6,7 @@
 {% endblock %}
 {% block extra_css %}
  <!-- DataTables -->
-<link rel="stylesheet" href="{% static "adminlte/plugins/datatables-bs4/dataTables.bootstrap4.min.css" %}">
+<link rel="stylesheet" href="{% static 'adminlte/plugins/datatables-bs4/dataTables.bootstrap4.min.css' %}">
 <style>
    #app_icon{
             width: 64px;
@@ -374,8 +374,8 @@ div.loading{
 {% endblock %}
 {% block extra_scripts %}
 <!-- DataTables -->
-<script src="{% static "adminlte/plugins/datatables/jquery.dataTables.min.js" %} "></script>
-<script src="{% static "adminlte/plugins/datatables-bs4/dataTables.bootstrap4.min.js" %}"></script>
+<script src="{% static 'adminlte/plugins/datatables/jquery.dataTables.min.js' %} "></script>
+<script src="{% static 'adminlte/plugins/datatables-bs4/dataTables.bootstrap4.min.js' %}"></script>
 <script>
 function dynamic_loader(){
     var loadingOverlay = document.querySelector('.loading');

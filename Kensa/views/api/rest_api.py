@@ -1,5 +1,7 @@
 # -*- coding: utf_8 -*-
 """Kensa REST API V 1."""
+import pdb
+import re
 
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -10,10 +12,13 @@ from Kensa.views.home import RecentScans, Upload, delete_scan
 
 from StaticAnalyzer.views.android import view_source
 from StaticAnalyzer.views.android.static_analyzer import static_analyzer
+from StaticAnalyzer.views.android.java import run
 from StaticAnalyzer.views.ios import view_source as ios_view_source
 from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios
 from StaticAnalyzer.views.shared_func import pdf
 from StaticAnalyzer.views.windows import windows
+from StaticAnalyzer import models
+
 
 BAD_REQUEST = 400
 OK = 200
@@ -181,3 +186,74 @@ def api_view_source(request):
     else:
         response = make_api_response({'error': 'Missing Parameters'}, 422)
     return response
+
+ 
+@request_method(["GET"])
+def api_get_recent_scans(request):
+    """Get Recent Scans """
+    data = models.RecentScansDB.get_recent_scans()
+    if data is not None:
+        if isinstance(data, dict):
+            return make_api_response(data=data, status=OK)
+        return JsonResponse(data=data, safe=False, status=OK)
+    return make_api_response(data={"error" : "<error here>"}, status=BAD_REQUEST)
+
+
+@request_method(["GET"])
+def api_get_signer_certificate(request):
+    """Get certificate"""
+    if not request.GET["md5"]:
+        return make_api_response(data={"error" : "missing md5"}, status=BAD_REQUEST)
+    id = request.GET["md5"]
+    if not re.match(r"^[0-9a-f]{32}$", id):
+        return make_api_response(data={"error" : "Invalid identifier"}, status=404)
+    data = models.StaticAnalyzerAndroid.get_certificate_analysis_data(id)
+    if data is None:
+        return make_api_response(data={"info" : "No data to preview"}, status=404)
+    return make_api_response(data=data, status=200)
+    
+
+@request_method(["GET"])
+def api_get_manifest(request):
+    """Get manifest"""
+    if not request.GET["md5"]:
+        return make_api_response(data={"error" : "missing md5"}, status=BAD_REQUEST)
+    id = request.GET["md5"]
+    if not re.match(r"^[0-9a-f]{32}$", id):
+        return make_api_response(data={"error" : "invalid identifier"}, status=404)
+    data = models.StaticAnalyzerAndroid.get_manifest(id)
+    if data is None:
+        return make_api_response(data={"info" : "No data to preview"})
+    return JsonResponse(data=data, status=200)
+
+
+@request_method(["GET"])
+def api_get_recon_data(request):
+    """Get reconaisance data"""
+    if not request.GET["md5"]:
+        return make_api_response(data={"error": "Missing md5"}, status=BAD_REQUEST)
+    id = request.GET["md5"]
+    if not re.match(r"^[0-9a-f]{32}$", id):
+        return make_api_response(data={"error": "Invalid identifier"}, status=BAD_REQUEST)
+    data = models.StaticAnalyzerAndroid.get_recon_data(id)
+    if data is None:
+        return make_api_response(data={"error": "No data to preview"}, status=404)
+    return make_api_response(data=data, status=200)
+
+
+@request_method(["GET"])
+def api_get_domains_data(request):
+    """Get domains data"""
+    if not request.GET["md5"]:
+        return make_api_response({"error" : "Missing identifier"}, status=400)
+    id = request.GET["md5"]
+    if not re.match(r"^[0-9a-f]{32}$", id):
+        return make_api_response({"error" : "Invalid identifier"}, status=400)
+    data = models.StaticAnalyzerAndroid.get_domains_data(id)
+    if data is None:
+        return make_api_response({"error": "No data to preview"}, status=500)
+    return make_api_response(data=data, status=200)
+
+
+
+

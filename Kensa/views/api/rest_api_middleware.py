@@ -18,6 +18,6 @@ class RestApiAuthMiddleware(MiddlewareMixin):
             return
         if request.method == 'OPTIONS':
             return make_api_response({}, 200)
-        if not api_auth(request.META):
-            return make_api_response(
-                {'error': 'You are unauthorized to make this request.'}, 401)
+        #if not api_auth(request.META):
+        #    return make_api_response(
+        #        {'error': 'You are unauthorized to make this request.'}, 401)

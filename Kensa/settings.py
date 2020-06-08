@@ -59,7 +59,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'kensa',
         'USER': 'kensa',
-        'PASSWORD': '',
+        'PASSWORD': 'kensa-password',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -185,7 +185,9 @@ TEMPLATES = [
         'APP_DIRS': True,
         'DIRS':
             [
-                os.path.join(BASE_DIR, 'templates'), os.path.join(BASE_DIR, 'templates', 'allauth'), os.path.join(BASE_DIR, 'templates', 'admin'),
+                os.path.join(BASE_DIR, 'templates'), 
+                os.path.join(BASE_DIR, 'templates', 'allauth'), 
+                os.path.join(BASE_DIR, 'templates', 'admin'),
             ],
         'OPTIONS':
             {

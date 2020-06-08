@@ -47,6 +47,7 @@ urlpatterns = [
     url(r'^mac_only/$', home.mac_only),
     # Static Analysis
     # Android
+    
     url(r'^StaticAnalyzer/$', android_sa.static_analyzer),
     url(r'^ViewSource/$', view_source.run),
     url(r'^Smali/$', smali.run),
@@ -95,7 +96,6 @@ urlpatterns = [
     url(r'^list_frida_scripts/$', tests_frida.list_frida_scripts),
     url(r'^get_script/$', tests_frida.get_script),
 
-
     # Report
     url(r'^dynamic_report/$', report.view_report),
     url(r'^dynamic_view_file/$', report.view_file),
@@ -108,7 +108,12 @@ urlpatterns = [
     url(r'^api/v1/report_json$', rest_api.api_json_report),
     url(r'^api/v1/view_source$', rest_api.api_view_source),
     url(r'^api/v1/scans$', rest_api.api_recent_scans),
-
+    # Static Analyzer
+    url(r"^api/v1/recent_scans$", rest_api.api_get_recent_scans),
+    url(r"^api/v1/signer_certificate$",rest_api.api_get_signer_certificate),
+    url(r"^api/v1/code/manifest$", rest_api.api_get_manifest),
+    url(r"^api/v1/summary/reconnaissance$", rest_api.api_get_recon_data),
+    url(r"^api/v1/summary/domain_analysis_country", rest_api.api_get_domains_data),
     # Test
     url(r'^tests/$', tests.start_test),
 

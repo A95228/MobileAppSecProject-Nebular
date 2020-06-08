@@ -1,5 +1,11 @@
+import logging
+import pdb
+
 from django.db import models
+from django.core.paginator import Paginator
 # Create your models here.
+
+logger = logging.getLogger(__name__)
 
 
 class RecentScansDB(models.Model):
@@ -10,6 +16,30 @@ class RecentScansDB(models.Model):
     APP_NAME = models.CharField(max_length=260)
     PACKAGE_NAME = models.CharField(max_length=260)
     VERSION_NAME = models.CharField(max_length=50)
+
+
+    @classmethod
+    def get_recent_scans(cls):
+        scans = cls.objects.all().order_by("-TIMESTAMP")
+        if scans.count() == 0:
+            return None
+        scans_values = scans.values(
+            "APP_NAME",
+            "FILE_NAME",
+            "TIMESTAMP",
+            "MD5",
+            "PACKAGE_NAME",
+            "URL",
+            "VERSION_NAME"
+        )
+        try:
+            to_return = list(scans_values)
+        except Exception as e:
+            e = str(e) + " Sending back None"
+            logger.warning(msg=e)
+            return None
+        else:
+            return to_return
 
 
 class StaticAnalyzerAndroid(models.Model):
@@ -54,6 +84,81 @@ class StaticAnalyzerAndroid(models.Model):
     TRACKERS = models.TextField(default={})
     PLAYSTORE_DETAILS = models.TextField(default={})
 
+
+    @classmethod
+    def get_certificate_analysis_data(cls, md5):
+        """Get a certificate return None otherwise"""
+        try:
+            cert = cls.objects.get(MD5=md5)
+            cert = cert.CERTIFICATE_ANALYSIS
+        except:
+            return None
+        else:
+            return eval(cert)
+
+
+    @classmethod
+    def get_manifest(cls, md5):
+        """Get a manifest return None otherwise"""
+        try:
+            cert = cls.objects.get(MD5=md5)
+            manifest = cert.MANIFEST_ANALYSIS
+        except:
+            return None
+        else:
+            manifest = dict(manifest_analysis=eval(manifest))
+        finally:
+            return manifest
+
+
+    @classmethod
+    def get_recon_data(cls, md5):
+        try:
+            query = cls.objects.get(MD5=md5)
+        except:
+            return None
+        else:
+            data = {
+                "emails" : eval(query.EMAILS),
+                "firebase_urls" : eval(query.FIREBASE_URLS),
+                "trackers" : eval(query.TRACKERS),
+                "urls" : eval(query.URLS)
+            }
+        return data
+    
+    @classmethod
+    def get_domains_data(cls, md5):
+        try:
+            query = cls.objects.get(MD5=md5)
+        except:
+            return None
+        else:
+            countries = []
+            try:
+                domains = eval(query.DOMAINS)
+                for key, value in domains.items():
+                    holder = {}
+                    geolocation = value.get("geolocation", None)
+                    if geolocation is None:
+                        holder[key] = {}
+                        for k in value.keys():
+                            if k in ('good', 'bad'):
+                                holder[key][k] = value.get(k, None)
+                        holder[key]["domain"] = key 
+                        countries.append(holder)
+                        continue
+                    country = geolocation.pop("country_long")
+                    holder[country] = {}
+                    holder[country]["domain"] = key
+                    for k in value.keys():
+                        if k in ('good', 'bad'):
+                            holder[country][k] = value.get(k, None)
+                    holder[country].update(geolocation)
+                    countries.append(holder)
+            except:
+                return None
+            return {"countries" : countries}
+            
 
 class StaticAnalyzerIOS(models.Model):
     FILE_NAME = models.CharField(max_length=255)
@@ -112,3 +217,5 @@ class StaticAnalyzerWindows(models.Model):
     STRINGS = models.TextField()
     BINARY_ANALYSIS = models.TextField()
     BINARY_WARNINGS = models.TextField()
+
+
