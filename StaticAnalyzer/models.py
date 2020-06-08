@@ -1,9 +1,9 @@
 import logging
-import pdb
 
 from django.db import models
+# Unsused for now.
 from django.core.paginator import Paginator
-# Create your models here.
+
 
 logger = logging.getLogger(__name__)
 
@@ -125,9 +125,11 @@ class StaticAnalyzerAndroid(models.Model):
                 "urls" : eval(query.URLS)
             }
         return data
-    
+
+
     @classmethod
     def get_domains_data(cls, md5):
+        """Get domains"""
         try:
             query = cls.objects.get(MD5=md5)
         except:
