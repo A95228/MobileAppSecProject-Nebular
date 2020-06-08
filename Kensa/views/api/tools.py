@@ -10,7 +10,15 @@ class JavaCodeSerializer(serializers.Serializer):
     _type = serializers.CharField()
     version = serializers.CharField()
 
+
+class ReconDataSerializer(serializers.Serializer):
+    pass
+
+
 class RecentScansSerializer(serializers.Serializer):
     pass
 
-        
+
+class RecentScansSerializer(serializers.Serializer):
+    pass
+
