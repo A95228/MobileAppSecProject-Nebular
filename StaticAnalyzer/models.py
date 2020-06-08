@@ -1,8 +1,6 @@
 import logging
 
 from django.db import models
-# Unsused for now.
-from django.core.paginator import Paginator
 
 
 logger = logging.getLogger(__name__)
@@ -39,6 +37,7 @@ class RecentScansDB(models.Model):
             logger.warning(msg=e)
             return None
         else:
+            #lower_case_keys
             return to_return
 
 
@@ -88,10 +87,12 @@ class StaticAnalyzerAndroid(models.Model):
     @classmethod
     def get_certificate_analysis_data(cls, md5):
         """Get a certificate return None otherwise"""
+        logger.info("Getting certificate analysis of %s" % md5)
         try:
             cert = cls.objects.get(MD5=md5)
             cert = cert.CERTIFICATE_ANALYSIS
-        except:
+        except: 
+            logger.error("Possibly ObjectNotFound with md5 %s" % md5)
             return None
         else:
             return eval(cert)
@@ -100,67 +101,70 @@ class StaticAnalyzerAndroid(models.Model):
     @classmethod
     def get_manifest(cls, md5):
         """Get a manifest return None otherwise"""
+        logger.info("Getting manifest data of %s" % md5)
         try:
             cert = cls.objects.get(MD5=md5)
             manifest = cert.MANIFEST_ANALYSIS
         except:
+            logger.error("Possibly ObjectNotFound with md5 %s" % md5)
             return None
-        else:
-            manifest = dict(manifest_analysis=eval(manifest))
-        finally:
-            return manifest
+        manifest = dict(manifest_analysis=eval(manifest))
+        return manifest
 
 
     @classmethod
     def get_recon_data(cls, md5):
+        """Get recon data"""
+        logger.info("Getting reconnassaince data of %s " % md5)
         try:
             query = cls.objects.get(MD5=md5)
         except:
+            logger.error("Possibly ObjectNotFound with md5 %s" % md5)
             return None
-        else:
-            data = {
-                "emails" : eval(query.EMAILS),
-                "firebase_urls" : eval(query.FIREBASE_URLS),
-                "trackers" : eval(query.TRACKERS),
-                "urls" : eval(query.URLS)
-            }
+        data = {
+            "emails" : eval(query.EMAILS),
+            "firebase_urls" : eval(query.FIREBASE_URLS),
+            "trackers" : eval(query.TRACKERS),
+            "urls" : eval(query.URLS)
+        }
         return data
 
 
     @classmethod
     def get_domains_data(cls, md5):
         """Get domains"""
+        countries = []
+        logger.info("Getting domains data of %s" % md5)
         try:
             query = cls.objects.get(MD5=md5)
         except:
             return None
-        else:
-            countries = []
-            try:
-                domains = eval(query.DOMAINS)
-                for key, value in domains.items():
-                    holder = {}
-                    geolocation = value.get("geolocation", None)
-                    if geolocation is None:
-                        holder[key] = {}
-                        for k in value.keys():
-                            if k in ('good', 'bad'):
-                                holder[key][k] = value.get(k, None)
-                        holder[key]["domain"] = key 
-                        countries.append(holder)
-                        continue
-                    country = geolocation.pop("country_long")
-                    holder[country] = {}
-                    holder[country]["domain"] = key
+        try:
+            domains = eval(query.DOMAINS)
+            for key, value in domains.items():
+                holder = {}
+                geolocation = value.get("geolocation", None)
+                if geolocation is None:
+                    holder[key] = {}
                     for k in value.keys():
                         if k in ('good', 'bad'):
-                            holder[country][k] = value.get(k, None)
-                    holder[country].update(geolocation)
+                            holder[key][k] = value.get(k, None)
+                    holder[key]["domain"] = key 
                     countries.append(holder)
-            except:
-                return None
-            return {"countries" : countries}
-    
+                    continue
+                country = geolocation.pop("country_long")
+                holder[country] = {}
+                holder[country]["domain"] = key
+                for k in value.keys():
+                    if k in ('good', 'bad'):
+                        holder[country][k] = value.get(k, None)
+                holder[country].update(geolocation)
+                countries.append(holder)
+        except:
+            logger.info("Issue getting domains for object : %s" % md5)
+            return None
+        return {"countries" : countries}
+
 
 class StaticAnalyzerIOS(models.Model):
     FILE_NAME = models.CharField(max_length=255)
