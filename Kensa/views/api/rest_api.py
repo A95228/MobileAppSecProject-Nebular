@@ -195,18 +195,18 @@ def api_get_recent_scans(request):
     if data is not None:
         if isinstance(data, dict):
             return make_api_response(data=data, status=OK)
-        return JsonResponse(data=data, safe=False, status=OK)
+        return JsonResponse(data=data, safe=False, status=OK) # strange case
     return make_api_response(data={"error" : "<error here>"}, status=BAD_REQUEST)
 
 
 @request_method(["GET"])
 def api_get_signer_certificate(request):
     """Get certificate"""
-    if not request.GET["md5"]:
+    if request.GET.get("md5", None) is None:
         return make_api_response(data={"error" : "missing md5"}, status=BAD_REQUEST)
     id = request.GET["md5"]
     if not re.match(r"^[0-9a-f]{32}$", id):
-        return make_api_response(data={"error" : "Invalid identifier"}, status=404)
+        return make_api_response(data={"error" : "Invalid identifier"}, status=BAD_REQUEST)
     data = models.StaticAnalyzerAndroid.get_certificate_analysis_data(id)
     if data is None:
         return make_api_response(data={"info" : "No data to preview"}, status=404)
@@ -216,7 +216,7 @@ def api_get_signer_certificate(request):
 @request_method(["GET"])
 def api_get_manifest(request):
     """Get manifest"""
-    if not request.GET["md5"]:
+    if request.GET.get("md5", None) is None:
         return make_api_response(data={"error" : "missing md5"}, status=BAD_REQUEST)
     id = request.GET["md5"]
     if not re.match(r"^[0-9a-f]{32}$", id):
@@ -230,7 +230,7 @@ def api_get_manifest(request):
 @request_method(["GET"])
 def api_get_recon_data(request):
     """Get reconaisance data"""
-    if not request.GET["md5"]:
+    if request.GET.get("md5", None) is None:
         return make_api_response(data={"error": "Missing md5"}, status=BAD_REQUEST)
     id = request.GET["md5"]
     if not re.match(r"^[0-9a-f]{32}$", id):
@@ -244,14 +244,14 @@ def api_get_recon_data(request):
 @request_method(["GET"])
 def api_get_domains_data(request):
     """Get domains data"""
-    if not request.GET["md5"]:
-        return make_api_response({"error" : "Missing identifier"}, status=400)
+    if request.GET.get("md5", None) is None:
+        return make_api_response({"error" : "Missing identifier"}, status=BAD_REQUEST)
     id = request.GET["md5"]
     if not re.match(r"^[0-9a-f]{32}$", id):
-        return make_api_response({"error" : "Invalid identifier"}, status=400)
+        return make_api_response({"error" : "Invalid identifier"}, status=BAD_REQUEST)
     data = models.StaticAnalyzerAndroid.get_domains_data(id)
     if data is None:
-        return make_api_response({"error": "No data to preview"}, status=500)
+        return make_api_response({"error": "No data to preview"}, status=404)
     return make_api_response(data=data, status=200)
 
 
