@@ -292,7 +292,7 @@ def api_get_smali_code(request):
     if request.GET.get("md5", None) is None:
         return make_api_response({"error" : "Missing identifier"}, status=BAD_REQUEST)
     id = request.GET["md5"]
-    ctx = tools.get_smali(md5=id)
+    ctx = tools.get_smali_drop(md5=id)
     if ctx is None:
         drop = {"error" : "error getting smali files"}
         return make_api_response(data=drop, status=NOT_FOUND)
