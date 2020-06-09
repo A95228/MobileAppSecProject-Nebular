@@ -1,21 +1,23 @@
 import logging 
 import os
+import re
 import subprocess
-import pdb
 
 from django.conf import settings
+from django.utils.html import escape
 
 
 logger = logging.getLogger(__name__)
 
 
-def get_smali(md5):
+
+def get_smali_drop(md5):
     """Get smali code"""
     if subprocess.run(["which", "find"], capture_output=True).returncode != 0:
         logger.error("Can't find 'find' command, contact sysadmin")
         return None
     try:
-        tgt = os.path.join(settings.UPLD_DIR, md5)
+        tgt = os.path.join(settings.UPLD_DIR, md5, "smali_source")
     except AttributeError as error:
         logger.error(str(error))
         return None
@@ -31,15 +33,24 @@ def get_smali(md5):
     drop = runner.stdout.decode('utf-8').split("\n")
     if drop.__len__() == 0:
         logger.info("No .smali files for  scan %s" % md5)
+    files = []
+    for each in drop:
+        match = re.match(r'.+\/smali_source\/(?P<path>.+\.smali)$', each)
+        if not match:
+            continue
+        this = match.group("path")
+        if not this.endswith(".smali"):
+            continue
+        files.append(escape(this))
     context = {
         'title': 'Smali Source',
-        'files': [f for f in drop if f.endswith(".smali")],
+        'files': sorted(files),
         '_type': 'apk',
         '_hash': md5,
         'version': settings.KENSA_VER,
     }
     logger.info("Fetching %s smali files for scan %s" % (len(drop), md5))
     return context 
-
+    
 
 
