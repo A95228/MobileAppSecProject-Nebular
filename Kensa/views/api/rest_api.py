@@ -194,8 +194,6 @@ def api_view_source(request):
 @request_method(["GET"])
 def api_get_recent_scans(request):
     """Get Recent Scans """
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "Not authorized"}, status=401)
     data = models.RecentScansDB.get_recent_scans()
     if data is not None:
         if isinstance(data, dict):
@@ -207,79 +205,80 @@ def api_get_recent_scans(request):
 @request_method(["GET"])
 def api_get_signer_certificate(request):
     """Get certificate"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "Not authorized"}, status=401)
     if request.GET.get("md5", None) is None:
-        return make_api_response(data={"error" : "missing md5"}, status=BAD_REQUEST)
+        return make_api_response(data={"error" : "missing md5"}, 
+            status=BAD_REQUEST)
+
     id = request.GET["md5"]
+
     if not re.match(r"^[0-9a-f]{32}$", id):
-        return make_api_response(data={"error" : "Invalid identifier"}, status=BAD_REQUEST)
+        return make_api_response(data={"error" : "Invalid identifier"}, 
+            status=BAD_REQUEST)
+
     data = models.StaticAnalyzerAndroid.get_certificate_analysis_data(id)
     if data is None:
-        return make_api_response(data={"info" : "No data to preview"}, status=404)
+        return make_api_response(data={"info" : "No data to preview"}, 
+            status=404)
     return make_api_response(data=data, status=OK)
     
 
 @request_method(["GET"])
 def api_get_manifest(request):
     """Get manifest"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "Not authorized"}, status=401)
     if request.GET.get("md5", None) is None:
-        return make_api_response(data={"error" : "missing md5"}, status=BAD_REQUEST)
+        return make_api_response(data={"error" : "missing md5"}, 
+            status=BAD_REQUEST)
+
     id = request.GET["md5"]
     if not re.match(r"^[0-9a-f]{32}$", id):
-        return make_api_response(data={"error" : "invalid identifier"}, status=404)
+        return make_api_response(data={"error" : "invalid identifier"}, 
+            status=404)
+
     data = models.StaticAnalyzerAndroid.get_manifest(id)
+
     if data is None:
         return make_api_response(data={"info" : "No data to preview"})
+
     return JsonResponse(data=data, status=200)
-
-
-@request_method(["GET"])
-def api_get_recon_data(request):
-    """Get reconaissance data"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "Not authorized"}, status=401)
-    if request.GET.get("md5", None) is None:
-        return make_api_response(data={"error": "Missing md5"}, status=BAD_REQUEST)
-    id = request.GET["md5"]
-    if not re.match(r"^[0-9a-f]{32}$", id):
-        return make_api_response(data={"error": "Invalid identifier"}, status=BAD_REQUEST)
-    data = models.StaticAnalyzerAndroid.get_recon_data(id)
-    if data is None:
-        return make_api_response(data={"error": "No data to preview"}, status=404)
-    return make_api_response(data=data, status=OK)
 
 
 @request_method(["GET"])
 def api_get_domains_data(request):
     """Get domains data"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "Not authorized"}, status=401)
     if request.GET.get("md5", None) is None:
-        return make_api_response({"error" : "Missing identifier"}, status=BAD_REQUEST)
+        return make_api_response({"error" : "Missing identifier"}, 
+            status=BAD_REQUEST)
+
     id = request.GET["md5"]
+    
     if not re.match(r"^[0-9a-f]{32}$", id):
-        return make_api_response({"error" : "Invalid identifier"}, status=BAD_REQUEST)
+        return make_api_response({"error" : "Invalid identifier"}, 
+            status=BAD_REQUEST)
+    
     data = models.StaticAnalyzerAndroid.get_domains_data(id)
     if data is None:
-        return make_api_response({"error": "No data to preview"}, status=404)
+        return make_api_response({"error": "No data to preview"}, 
+            status=404)
+    
     return make_api_response(data=data, status=OK)
 
 
 @request_method(["GET"])
 def api_get_java_code(request):
     """Get a list of java code files"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "Not authorized"}, status=401)
     if request.GET.get("md5", None) is None:
-        return make_api_response({"error" : "Missing identifier"}, status=BAD_REQUEST)
+        return make_api_response({"error" : "Missing identifier"}, 
+            status=BAD_REQUEST)
+    
     if request.GET.get("type", None) is None:
-        return make_api_response({"error" : "Missing type"}, status=BAD_REQUEST)
-    ctx = api_run_java_code(request) # Potential RecursionError here too.
+        return make_api_response({"error" : "Missing type"}, 
+            status=BAD_REQUEST)
+    
+    ctx = api_run_java_code(request)
+    
     if 'error' in ctx:
         return make_api_response(data=ctx, status=BAD_REQUEST)
+
     data = serializers.JavaCodeSerializer(ctx)
     return make_api_response(data=data.data, status=OK)
 
@@ -287,16 +286,118 @@ def api_get_java_code(request):
 @request_method(["GET"])
 def api_get_smali_code(request):
     """Get smali code"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "Not authorized"}, status=401)
     if request.GET.get("md5", None) is None:
-        return make_api_response({"error" : "Missing identifier"}, status=BAD_REQUEST)
+        return make_api_response({"error" : "Missing identifier"}, 
+            status=BAD_REQUEST)
+    
     id = request.GET["md5"]
     ctx = tools.get_smali_drop(md5=id)
+    
     if ctx is None:
         drop = {"error" : "error getting smali files"}
         return make_api_response(data=drop, status=NOT_FOUND)
+
     data = serializers.JavaCodeSerializer(ctx)
     return make_api_response(data=data.data, status=OK)
 
 
+@request_method(["GET"])
+def api_get_recon_emails(request):
+    """Get recon emails or error"""
+    if request.GET.get("md5", None) is None:
+        return make_api_response({"error" : "Missing identifier"}, 
+            status=BAD_REQUEST)
+
+    id = request.GET["md5"]
+
+    if not re.match(r"^[0-9a-f]{32}$", id):
+        return make_api_response(
+            {"error" : "Invalid identifier"}, 
+            status=BAD_REQUEST)
+
+    emails = models.StaticAnalyzerAndroid.get_recon_emails(id)
+
+    if emails is None:
+        return make_api_response({"error" : "no emails for %s" % id}, 
+            status=NOT_FOUND)
+
+    return make_api_response(emails, status=OK)
+
+
+@request_method(["GET"])
+def api_get_recon_urls(request):
+    """Get recon urls or error"""
+    if request.GET.get("md5", None) is None:
+        return make_api_response({"error" : "Missing identifier"}, 
+            status=BAD_REQUEST)
+
+    id = request.GET["md5"]
+
+    if not re.match(r"^[0-9a-f]{32}$", id):
+        return make_api_response({"error" : "Invalid identifier"}, 
+            status=BAD_REQUEST)
+
+    urls = models.StaticAnalyzerAndroid.get_recon_urls(md5=id)
+    
+    if urls is None:
+        return make_api_response({"error" : "no emails for %s" % id}, 
+            status=NOT_FOUND)
+    
+    return make_api_response(urls, status=OK)
+
+
+@request_method(["GET"])
+def api_get_recon_firebase_db_urls(request):
+    """Get recon firebase or error"""
+    if request.GET.get("md5", None) is None:
+        return make_api_response({"error" : "Missing identifier"}, status=BAD_REQUEST)
+
+    id = request.GET["md5"]
+
+    if not re.match(r"^[0-9a-f]{32}$", id):
+        return make_api_response({"error" : "Invalid identifier"},
+            status=BAD_REQUEST)
+
+    firebase_urls = models.StaticAnalyzerAndroid.get_recon_firebase_db(md5=id)
+
+    if firebase_urls is None:
+        return make_api_response({"error" : "no firebase urls for %s" % id}, 
+            status=NOT_FOUND)
+
+    return make_api_response(firebase_urls, status=OK)
+
+
+@request_method(["GET"])
+def api_get_recon_trackers(request):
+    """Get recon trackers or error"""
+    if request.GET.get("md5", None) is None:
+        return make_api_response({"error" : "Missing identifier"}, 
+            status=BAD_REQUEST)
+
+    id = request.GET["md5"]
+
+    if not re.match(r"^[0-9a-f]{32}$", id):
+        return make_api_response({"error" : "Invalid identifier"}, 
+            status=BAD_REQUEST)
+
+    trackers = models.StaticAnalyzerAndroid.get_recon_trackers(md5=id)
+
+    if trackers is None:
+        return make_api_response({"error" : "no trackers for %s" % id}, 
+            status=NOT_FOUND)
+
+    return make_api_response(trackers, status=OK)
+
+
+@request_method(["GET"])
+def api_get_search(request):
+    """Get search results"""
+    if request.GET.get("md5",None) is None:
+        return make_api_response({"error" : "Missing Identifier"}, 
+            status=BAD_REQUEST)
+
+    if not re.match(r"^[0-9a-f]{32}$", id):
+        return make_api_response({"error" : "Invalid identifier"}, 
+            status=BAD_REQUEST)
+    
+    id = request.GET.get("md5")
