@@ -33,6 +33,7 @@ def get_smali_drop(md5):
     drop = runner.stdout.decode('utf-8').split("\n")
     if drop.__len__() == 0:
         logger.info("No .smali files for  scan %s" % md5)
+        return None
     files = []
     for each in drop:
         match = re.match(r'.+\/smali_source\/(?P<path>.+\.smali)$', each)
