@@ -1,6 +1,7 @@
 import logging
 
 from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
 
 
 logger = logging.getLogger(__name__)
@@ -112,24 +113,6 @@ class StaticAnalyzerAndroid(models.Model):
 
 
     @classmethod
-    def get_recon_data(cls, md5):
-        """Get recon data"""
-        logger.info("Getting reconnassaince data of %s " % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-        except:
-            logger.error("Possibly ObjectNotFound with md5 %s" % md5)
-            return None
-        data = {
-            "emails" : eval(query.EMAILS),
-            "firebase_urls" : eval(query.FIREBASE_URLS),
-            "trackers" : eval(query.TRACKERS),
-            "urls" : eval(query.URLS)
-        }
-        return data
-
-
-    @classmethod
     def get_domains_data(cls, md5):
         """Get domains"""
         countries = []
@@ -163,6 +146,70 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("Issue getting domains for object : %s" % md5)
             return None
         return {"countries" : countries}
+
+
+    @classmethod
+    def get_recon_emails(cls, md5):
+        """Get Recon emails or None"""
+        logger.info("Getting reconnassaince emails of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            emails = eval(query.EMAILS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting recon emails of %s" % md5)
+            return None
+        return {"emails": emails}
+
+
+    @classmethod
+    def get_recon_urls(cls, md5):
+        """Get recon urls or None"""
+        logger.info("Getting urls of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            urls = eval(query.URLS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting recon urls of %s" % md5)
+            return None
+        return {"urls": urls}
+
+
+    @classmethod
+    def get_recon_firebase_db(cls, md5):
+        """Get recon firebase url"""
+        logger.info("Getting firebase urls of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            firebase_urls = eval(query.FIREBASE_URLS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting fb_db_urls of %s" % md5)
+            return None
+        return {"firebase_urls": firebase_urls}
+
+
+    @classmethod
+    def get_recon_trackers(cls, md5):
+        """Get recon trackers"""
+        logger.info("Getting reconnassaince trackers of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            trackers = eval(query.TRACKERS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting recon trackers of %s" % md5)
+            return None
+        return {"trackers": trackers}
 
 
 class StaticAnalyzerIOS(models.Model):
