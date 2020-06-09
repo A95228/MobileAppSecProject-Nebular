@@ -28,6 +28,7 @@ from StaticAnalyzer.views.ios import static_analyzer as ios_sa
 from StaticAnalyzer.views.ios import view_source as io_view_source
 
 urlpatterns = [
+
     # General
     url(r'^$', home.index, name='home'),
     path('grappelli/', include('grappelli.urls')), # grappelli URLS
@@ -45,9 +46,8 @@ urlpatterns = [
     url(r'^not_found/$', home.not_found),
     url(r'^zip_format/$', home.zip_format),
     url(r'^mac_only/$', home.mac_only),
-    # Static Analysis
+
     # Android
-    
     url(r'^StaticAnalyzer/$', android_sa.static_analyzer),
     url(r'^ViewSource/$', view_source.run),
     url(r'^Smali/$', smali.run),
@@ -55,13 +55,17 @@ urlpatterns = [
     url(r'^Find/$', find.run),
     url(r'^generate_downloads/$', generate_downloads.run),
     url(r'^ManifestView/$', manifest_view.run),
+
     # IOS
     url(r'^StaticAnalyzer_iOS/$', ios_sa.static_analyzer_ios),
     url(r'^ViewFile/$', io_view_source.run),
+
     # Windows
     url(r'^StaticAnalyzer_Windows/$', windows.staticanalyzer_windows),
+
     # Shared
     url(r'^PDF/$', shared_func.pdf),
+
     # App Compare
     url(r'^compare/(?P<hash1>[0-9a-f]{32})/(?P<hash2>[0-9a-f]{32})/$',
         shared_func.compare_apps),
@@ -77,6 +81,7 @@ urlpatterns = [
         dz.httptools_start,
         name='httptools'),
     url(r'^logcat/$', dz.logcat),
+
     # Android Operations
     url(r'^kensay/$', operations.kensay),
     url(r'^screenshot/$', operations.take_screenshot),
@@ -85,10 +90,12 @@ urlpatterns = [
     url(r'^touch_events/$', operations.touch),
     url(r'^get_component/$', operations.get_component),
     url(r'^kensa_ca/$', operations.kensa_ca),
+
     # Dynamic Tests
     url(r'^activity_tester/$', tests_common.activity_tester),
     url(r'^download_data/$', tests_common.download_data),
     url(r'^collect_logs/$', tests_common.collect_logs),
+
     # Frida
     url(r'^frida_instrument/$', tests_frida.instrument),
     url(r'^live_api/$', tests_frida.live_api),
@@ -108,21 +115,24 @@ urlpatterns = [
     url(r'^api/v1/report_json$', rest_api.api_json_report),
     url(r'^api/v1/view_source$', rest_api.api_view_source),
     url(r'^api/v1/scans$', rest_api.api_recent_scans),
-    # Static Analyzer
     url(r"^api/v1/recent_scans$", rest_api.api_get_recent_scans),
     url(r"^api/v1/signer_certificate$",rest_api.api_get_signer_certificate),
     url(r"^api/v1/code/manifest$", rest_api.api_get_manifest),
-    url(r"^api/v1/summary/reconnaissance$", rest_api.api_get_recon_data),
     url(r"^api/v1/summary/domain_analysis_country$", rest_api.api_get_domains_data),
     url(r"^api/v1/code/java$", rest_api.api_get_java_code),
-    # This view raises a RecursionError, read message in rest_api.py
     url(r"^api/v1/code/smali$", rest_api.api_get_smali_code),
+
+    # REST API Reconnaissance Routes
+    url(r"^api/v1/recon_emails$", rest_api.api_get_recon_emails),
+    url(r"^api/v1/recon_firebase$", rest_api.api_get_recon_firebase_db_urls),
+    url(r"^api/v1/recon_urls$", rest_api.api_get_recon_urls),
+    url(r"^api/v1/recon_trackers$", rest_api.api_get_recon_trackers),
+    
 
     #url(r"^api/v1/code/java/page/(?P<page_num>\d+)/$", rest_api.paginate_java_code),
     
     # Test
     url(r'^tests/$', tests.start_test),
-
 ]
 
 utils.print_version()
