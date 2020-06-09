@@ -8,7 +8,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from Kensa.utils import api_key
-from Kensa.views.api import tools
+from Kensa.views.api import tools, serializers
 from Kensa.views.helpers import request_method
 from Kensa.views.home import RecentScans, Upload, delete_scan
 
@@ -18,13 +18,13 @@ from StaticAnalyzer.views.android.java import run, api_run_java_code
 from StaticAnalyzer.views.ios import view_source as ios_view_source
 from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios
 from StaticAnalyzer.views.shared_func import pdf
-from StaticAnalyzer.views.android.smali import api_smali_run
 from StaticAnalyzer.views.windows import windows
 from StaticAnalyzer import models
 
 
 BAD_REQUEST = 400
 OK = 200
+NOT_FOUND = 404
 
 
 def make_api_response(data, status=OK):
@@ -270,12 +270,7 @@ def api_get_domains_data(request):
 
 @request_method(["GET"])
 def api_get_java_code(request):
-    """
-    Get a list of java code files
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    This view is not prone to RecursionErrors for the same reason as the
-    api_get_smoli_code.
-    """
+    """Get a list of java code files"""
     #if not request.user.is_authenticated:
     #    return make_api_response({"error" : "Not authorized"}, status=401)
     if request.GET.get("md5", None) is None:
@@ -285,27 +280,23 @@ def api_get_java_code(request):
     ctx = api_run_java_code(request) # Potential RecursionError here too.
     if 'error' in ctx:
         return make_api_response(data=ctx, status=BAD_REQUEST)
-    data = tools.JavaCodeSerializer(ctx)
+    data = serializers.JavaCodeSerializer(ctx)
     return make_api_response(data=data.data, status=OK)
 
 
 @request_method(["GET"])
 def api_get_smali_code(request):
-    """
-    Get smoli code
-    ~~~~~~~~~~~~~~~
-    This view raises a RecursionError, must fetch files another way.
-    """
+    """Get smali code"""
+    #if not request.user.is_authenticated:
+    #    return make_api_response({"error" : "Not authorized"}, status=401)
     if request.GET.get("md5", None) is None:
         return make_api_response({"error" : "Missing identifier"}, status=BAD_REQUEST)
     id = request.GET["md5"]
-    ctx = api_get_smali_code(request)
-    if 'error' in ctx:
-        return make_api_response(data=ctx, status=BAD_REQUEST)
-    data = tools.JavaCodeSerializer(ctx)
+    ctx = tools.get_smali(md5=id)
+    if ctx is None:
+        drop = {"error" : "error getting smali files"}
+        return make_api_response(data=drop, status=NOT_FOUND)
+    data = serializers.JavaCodeSerializer(ctx)
     return make_api_response(data=data.data, status=OK)
-
-
-
 
 
