@@ -26,4 +26,4 @@ cryptography<2.5,>=2.1.4 # pyup: ignore
 pyOpenSSL==19.0.0 # pyup: ignore
 http-tools==1.1.0
 django-allauth==0.41.0
-django-grappelli==2.14.2
+django-guardian==2.2.0

@@ -104,6 +104,7 @@ def print_version():
 
 
 def check_update():
+    return
     try:
         logger.info('Checking for Update.')
         github_url = settings.GITHUB_URL

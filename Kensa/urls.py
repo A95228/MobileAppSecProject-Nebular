@@ -30,7 +30,6 @@ from StaticAnalyzer.views.ios import view_source as io_view_source
 urlpatterns = [
     # General
     url(r'^$', home.index, name='home'),
-    path('grappelli/', include('grappelli.urls')), # grappelli URLS
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
 

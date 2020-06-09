@@ -30,7 +30,6 @@ from django.contrib.auth.decorators import permission_required
 
 logger = logging.getLogger(__name__)
 
-@permission_required
 def dynamic_analysis(request):
     """Android Dynamic Analysis Entry point."""
     try:
@@ -59,7 +58,6 @@ def dynamic_analysis(request):
         return print_n_send_error_response(request,
                                            exp)
 
-@permission_required
 def dynamic_analyzer(request):
     """Android Dynamic Analyzer Environment."""
     logger.info('Creating Dynamic Analysis Environment')

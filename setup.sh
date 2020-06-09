@@ -66,8 +66,8 @@ echo '[INSTALL] Clean Up'
 bash scripts/clean.sh y
 
 echo '[INSTALL] Migrating Database'
-python manage.py makemigrations users
 python manage.py makemigrations
+python manage.py makemigrations users
 python manage.py makemigrations StaticAnalyzer
 python manage.py migrate
 wkhtmltopdf -V
