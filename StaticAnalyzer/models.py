@@ -37,7 +37,6 @@ class RecentScansDB(models.Model):
             logger.warning(msg=e)
             return None
         else:
-            #lower_case_keys
             return to_return
 
 
