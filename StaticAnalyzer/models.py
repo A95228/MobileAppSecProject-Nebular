@@ -94,18 +94,24 @@ class StaticAnalyzerAndroid(models.Model):
 
 
     @staticmethod
-    def paginate(load, page):
+    def paginate(load, page, count=30):
         """Paginate a context"""
-        paginator = Paginator(load, 30)
         try:
+            if 'trackers' in load:
+                paginator = Paginator(load["trackers"], count)
+            else:
+                paginator = Paginator(load, count)
             activities = paginator.page(page)
         except PageNotAnInteger:
             activities = paginator.page(1)
         except EmptyPage:
             activities = paginator.page(paginator.num_pages)
-
+        except:
+            return None
+        
         resp = {
             'page': activities.number,
+            "total_pages" : paginator.num_pages,
             'limit': 30,
             'list': activities.object_list
         }
@@ -314,18 +320,24 @@ class StaticAnalyzerIOS(models.Model):
     
 
     @staticmethod
-    def paginate(load, page):
+    def paginate(load, page, count=30):
         """Paginate a context"""
-        paginator = Paginator(load, 30)
         try:
+            if 'trackers' in load:
+                paginator = Paginator(load["trackers"], count)
+            else:
+                paginator = Paginator(load, count)
             activities = paginator.page(page)
         except PageNotAnInteger:
             activities = paginator.page(1)
         except EmptyPage:
             activities = paginator.page(paginator.num_pages)
-
+        except:
+            return None
+        
         resp = {
             'page': activities.number,
+            "total_pages" : paginator.num_pages,
             'limit': 30,
             'list': activities.object_list
         }
