@@ -3,6 +3,8 @@
 import logging
 import os
 import re
+# from rest_framework.pagination import PageNumberPagination
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from shelljob import proc
 import shutil
 
@@ -19,7 +21,7 @@ from StaticAnalyzer.views.ios import view_source as ios_view_source
 from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios
 from StaticAnalyzer.views.shared_func import pdf, score
 from StaticAnalyzer.views.windows import windows
-from StaticAnalyzer.models import StaticAnalyzerAndroid
+from StaticAnalyzer.models import StaticAnalyzerAndroid, StaticAnalyzerIOS
 from django.contrib.auth.decorators import permission_required
 
 from django.conf import settings
@@ -221,99 +223,29 @@ def make_app_info_response(app_dic, man_data_dic):
 
 
 @request_method(['GET'])
-@csrf_exempt
 def api_app_info(request):
     """Do static analysis on an request and save to db."""
     try:
 
-        typ = request.GET['type']
-        checksum = request.GET['checksum']
-        filename = request.GET['name']
-
+        system = request.GET['system']
+        md5 = request.GET['hash']
         # Input validation
-        app_dic = {}
-        match = re.match('^[0-9a-f]{32}$', checksum)
-        if match and (filename.lower().endswith('.apk') or filename.lower().endswith('.zip')) and (
-                typ in ['zip', 'apk']):
-            base_dir = settings.BASE_DIR  # BASE DIR
-            app_dic['app_name'] = filename  # APP ORGINAL NAME
-            app_dic['md5'] = checksum  # MD5
-            app_dir = os.path.join(settings.UPLD_DIR, app_dic['md5'] + '/')  # APP DIRECTORY
-
-            tools_dir = os.path.join(base_dir, 'StaticAnalyzer/tools/')  # TOOLS DIR
-
-            logger.info('Starting Analysis on : %s', app_dic['app_name'])
-
-            if typ == 'apk':
-                db_entry = StaticAnalyzerAndroid.objects.filter(
-                    MD5=app_dic['md5'])
-                if db_entry.exists():
-                    context = get_context_from_db_entry(db_entry)
-                    ok_response_dic = {
-                        'file_name': context['file_name'],
-                        'size': context['size'],
-                        'md5': context['md5'],
-                        'sha1': context['sha1'],
-                        'sha256': context['sha256'],
-                        'app_name': context['app_name'],
-                        'package_name': context['package_name'],
-                        'main_activity': context['main_activity'],
-                        'target_sdk': context['target_sdk'],
-                        'max_sdk': context['max_sdk'],
-                        'min_sdk': context['min_sdk'],
-                        'version_name': context['version_name'],
-                        'version_code': context['version_code']
-                    }
-                    return make_api_response(ok_response_dic, OK)
-                else:
-                    app_file = app_dic['md5'] + '.apk'  # NEW FILENAME
-                    app_path = (app_dir + app_file)  # APP PATH
-
-                    app_dic['size'] = str(
-                        file_size(app_path)) + 'MB'  # FILE SIZE
-                    app_dic['sha1'], app_dic['sha256'] = hash_gen(app_path)
-
-                    app_file = app_dic['md5'] + '.apk'  # NEW FILENAME
-                    app_path = (app_dir + app_file)  # APP PATH
-                    files = unzip(app_path, app_dir)
-                    if not files:
-                        msg = 'APK file is invalid or corrupt'
-                        return make_api_response({'error': msg}, INTERNAL_SERVER_ERR)
-                    logger.info('APK Extracted')
-                    parsed_xml = get_manifest(app_path, app_dir, tools_dir, '', True, )
-
-                    # get app_name
-                    app_dic['real_name'] = get_app_name(
-                        app_path, app_dir, tools_dir,
-                        True,
-                    )
-                    man_data_dic = manifest_data(parsed_xml)
-                    ok_response_dic = make_app_info_response(app_dic, man_data_dic)
-                    return make_api_response(ok_response_dic, OK)
-            elif typ == 'zip':
-                db_entry = StaticAnalyzerAndroid.objects.filter(MD5=app_dic['md5'])
-                if db_entry.exists():
-                    context = get_context_from_db_entry(db_entry)
-                else:
-                    app_file = app_dic['md5'] + '.zip'  # NEW FILENAME
-                    app_path = app_dir + app_file  # APP PATH
-                    files = unzip(app_path, app_dir)
-                    pro_type, valid = valid_android_zip(app_dir)
-                    if valid and pro_type == 'ios':
-                        logger.info('Redirecting to iOS Source Code Analyzer')
-                        return make_api_response({'type': 'ios'}, BAD_REQUEST)
-                    if valid and (pro_type in ['eclipse', 'studio']):
-                        app_dic['size'] = str(file_size(app_path)) + 'MB'  # FILE SIZE
-                        app_dic['sha1'], app_dic[
-                            'sha256'] = hash_gen(app_path)
-                        parsed_xml = get_manifest('', app_dir, tools_dir, pro_type, False)
-                        # get app_name
-                        app_dic['real_name'] = get_app_name(
-                            app_path, app_dir, tools_dir, False, )
-                        man_data_dic = manifest_data(parsed_xml)
-                        ok_response_dic = make_app_info_response(app_dic, man_data_dic)
-                        return make_api_response(ok_response_dic, OK)
-        return make_api_response({'error': 'Input File Error'}, BAD_REQUEST)
+        match = re.match('^[0-9a-f]{32}$', md5)
+        if match:
+            app_info = {}
+            if system == 'android':
+                app_info = StaticAnalyzerAndroid.get_app_info(md5)
+            elif system == 'ios':
+                app_info = StaticAnalyzerIOS.get_app_info(md5)
+            # else system == 'windows':
+            #     app_info = StaticAnalyzerWindows.get_app_info(md5)
+            else:
+                return make_api_response({'error': 'SYSTEM type error'}, BAD_REQUEST)
+            if app_info is not None:
+                return make_api_response(app_info, OK)
+            return make_api_response({'msg': 'Not exist'}, OK)
+        else:
+            return make_api_response({'error': 'HASH err'}, BAD_REQUEST)
     except Exception as excep:
         logger.exception('Error Performing Static Analysis')
         msg = str(excep)
@@ -322,21 +254,22 @@ def api_app_info(request):
 
 
 @request_method(['GET'])
-@csrf_exempt
 def api_app_store(request):
     try:
         md5 = request.GET['hash']
+        system = request.GET['system']
         match = re.match('^[0-9a-f]{32}$', md5)
         if match:
-            db_entry = StaticAnalyzerAndroid.objects.filter(
-                MD5=md5)
-            if db_entry.exists():
-                context = get_context_from_db_entry(db_entry)
-                ok_response_dic = {
-                    'playstore_details': context['playstore_details'],
-                }
-                return make_api_response(ok_response_dic, OK)
-            return make_api_response({'error': 'Data Entry not exist'}, OK)
+            app_store_info = {}
+            if system == 'android':
+                app_store_info = StaticAnalyzerAndroid.get_app_store(md5)
+            elif system == 'ios':
+                app_store_info = StaticAnalyzerIOS.get_app_store(md5)
+            # else system == 'windows':
+            #     app_info = StaticAnalyzerWindows.get_app_info(md5)
+            else:
+                return make_api_response({'error': 'SYSTEM type error'}, BAD_REQUEST)
+            return make_api_response(app_store_info, OK)
         else:
             return make_api_response({'error': 'HASH err'}, BAD_REQUEST)
     except Exception as excep:
@@ -347,7 +280,6 @@ def api_app_store(request):
 
 
 @request_method(['GET'])
-@csrf_exempt
 def api_code_smali(request):
     # try:
     #     page = request.GET.get('page', 0)
@@ -385,65 +317,19 @@ def api_code_smali(request):
 
 
 @request_method(['GET'])
-@csrf_exempt
 def api_security_overview(request):
     try:
         md5 = request.GET['hash']
         match = re.match('^[0-9a-f]{32}$', md5)
+        system = request.GET['system']
         if match:
-            db_entry = StaticAnalyzerAndroid.objects.filter(
-                MD5=md5)
-            if db_entry.exists():
-                context = get_context_from_db_entry(db_entry)
-                mani_high = mani_medium = mani_info = 0
-                for item in context['manifest_analysis']:
-                    if item['stat'] == 'high':
-                        mani_high = mani_high + 1
-                    elif item['stat'] == 'medium':
-                        mani_medium = mani_medium + 1
-                    elif item['stat'] == 'info':
-                        mani_info = mani_info + 1
-
-                code_high = code_good = code_warning = code_info = 0
-                if context['code_analysis'] and 'items' in context['code_analysis'].keys():
-                    for _, details in context['code_analysis']['items']:
-                        if details['level'] == 'high':
-                            code_high = code_high + 1
-                        elif details['level'] == 'good':
-                            code_good = code_good + 1
-                        elif details['level'] == 'warning':
-                            code_warning = code_warning + 1
-                        elif details['level'] == 'info':
-                            code_info = code_info + 1
-
-                binary_high = binary_medium = binary_info = 0
-                for item in context['binary_analysis']:
-                    if item['stat'] == 'high':
-                        binary_high = binary_high + 1
-                    elif item['stat'] == 'medium':
-                        binary_medium = binary_medium + 1
-                    elif item['stat'] == 'info':
-                        binary_info = binary_info + 1
-
-                resp = {
-                    'manifest': {
-                        'high': mani_high,
-                        'medium': mani_medium,
-                        'info': mani_info
-                        },
-                    'code': {
-                        'high': code_high,
-                        'good': code_good,
-                        'warning': code_warning,
-                        'info': code_info
-                        },
-                    'binary': {
-                        'high': binary_high,
-                        'medium': binary_medium,
-                        'info': binary_info
-                    }
-                }
-                return make_api_response(resp, OK)
+            security_overview = {}
+            if system == 'android':
+                security_overview = StaticAnalyzerAndroid.get_security_overview(md5)
+            elif system == 'ios':
+                security_overview = StaticAnalyzerIOS.get_security_overview(md5)
+            if security_overview is not None:
+                return make_api_response(security_overview, OK)
             return make_api_response({'msg': 'Not exist'}, OK)
         else:
             return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
@@ -455,21 +341,22 @@ def api_security_overview(request):
 
 
 @request_method(['GET'])
-@csrf_exempt
 def api_malware_overview(request):
     try:
         md5 = request.GET['hash']
         match = re.match('^[0-9a-f]{32}$', md5)
+        system = request.GET['system']
         if match:
-            db_entry = StaticAnalyzerAndroid.objects.filter(
-                MD5=md5)
-            if db_entry.exists():
-                context = get_context_from_db_entry(db_entry)
-                _, security_score = score(context['code_analysis'])
-                ok_response_dic = {
-                    'security_score': security_score,
-                }
-                return make_api_response(ok_response_dic, OK)
+            malware_overview = {}
+            if system == 'android':
+                _, malware_overview = score(StaticAnalyzerAndroid.get_code_analysis(md5))
+            elif system == 'ios':
+                _, malware_overview = score(StaticAnalyzerIOS.get_code_analysis(md5))
+            # elif system == 'windows':
+            #     malware_overview = StaticAnalyzerWindows.get_malware_overview(md5)
+
+            if malware_overview is not None:
+                return make_api_response({'security_score': malware_overview}, OK)
             return make_api_response({'msg': 'Not exist'}, OK)
         else:
             return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
@@ -480,43 +367,36 @@ def api_malware_overview(request):
         return make_api_response({'error': msg}, BAD_REQUEST)
 
 
+def create_pagination_response(context, page):
+    paginator = Paginator(context, 30)
+    try:
+        activities = paginator.page(page)
+    except PageNotAnInteger:
+        activities = paginator.page(1)
+    except EmptyPage:
+        activities = paginator.page(paginator.num_pages)
+
+    resp = {
+        'page': activities.number,
+        'limit': 30,
+        'list': activities.object_list
+    }
+    return resp
+
+
 @request_method(['GET'])
-@csrf_exempt
-def api_components(request):
+def api_components_activities(request):
     try:
         md5 = request.GET['hash']
+        page = int(request.GET.get('page', 1))
+        system = request.GET['system']
         match = re.match('^[0-9a-f]{32}$', md5)
+        if system != 'android':
+            return make_api_response({'error': 'This API only supports for Android'}, BAD_REQUEST)
         if match:
-            db_entry = StaticAnalyzerAndroid.objects.filter(
-                MD5=md5)
-            if db_entry.exists():
-                context = get_context_from_db_entry(db_entry)
-                resp = {
-                    'activity': {
-                        'count': len(context['activities']),
-                        'list': context['activities']
-                    },
-                    'services': {
-                        'count': len(context['services']),
-                        'list': context['services']
-                    },
-                    'receivers': {
-                        'count': len(context['receivers']),
-                        'list': context['receivers']
-                    },
-                    'providers': {
-                        'count': len(context['providers']),
-                        'list': context['providers']
-                    },
-                    'libraries': {
-                        'count': len(context['libraries']),
-                        'list': context['libraries']
-                    },
-                    'files': {
-                        'count': len(context['files']),
-                        'list': context['files']
-                    },
-                }
+            activities = StaticAnalyzerAndroid.get_components_activities(md5)
+            if activities is not None:
+                resp = create_pagination_response(activities, page)
                 return make_api_response(resp, OK)
             return make_api_response({'msg': 'Not exist'}, OK)
         else:
@@ -529,151 +409,274 @@ def api_components(request):
 
 
 @request_method(['GET'])
-@csrf_exempt
+def api_components_services(request):
+    try:
+        md5 = request.GET['hash']
+        page = int(request.GET.get('page', 1))
+        match = re.match('^[0-9a-f]{32}$', md5)
+        system = request.GET['system']
+        if system != 'android':
+            return make_api_response({'error': 'This API only supports for Android'}, BAD_REQUEST)
+        if match:
+            services = StaticAnalyzerAndroid.get_components_services(md5)
+            if services is not None:
+                resp = create_pagination_response(services, page)
+                return make_api_response(resp, OK)
+            return make_api_response({'msg': 'Not exist'}, OK)
+        else:
+            return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
+    except Exception as excep:
+        logger.exception('Error calling api_malware_overview')
+        msg = str(excep)
+        exp = excep.__doc__
+        return make_api_response({'error': msg}, BAD_REQUEST)
+
+
+@request_method(['GET'])
+def api_components_receivers(request):
+    try:
+        md5 = request.GET['hash']
+        page = int(request.GET.get('page', 1))
+        match = re.match('^[0-9a-f]{32}$', md5)
+        system = request.GET['system']
+        if system != 'android':
+            return make_api_response({'error': 'This API only supports for Android'}, BAD_REQUEST)
+        if match:
+            receivers = StaticAnalyzerAndroid.get_components_services(md5)
+            if receivers is not None:
+                resp = create_pagination_response(receivers, page)
+                return make_api_response(resp, OK)
+            return make_api_response({'msg': 'Not exist'}, OK)
+        else:
+            return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
+    except Exception as excep:
+        logger.exception('Error calling api_malware_overview')
+        msg = str(excep)
+        exp = excep.__doc__
+        return make_api_response({'error': msg}, BAD_REQUEST)
+
+
+@request_method(['GET'])
+def api_components_providers(request):
+    try:
+        md5 = request.GET['hash']
+        page = int(request.GET.get('page', 1))
+        match = re.match('^[0-9a-f]{32}$', md5)
+        system = request.GET['system']
+        if system != 'android':
+            return make_api_response({'error': 'This API only supports for Android'}, BAD_REQUEST)
+        if match:
+            providers = StaticAnalyzerAndroid.get_components_providers(md5)
+            if providers is not None:
+                resp = create_pagination_response(providers, page)
+                return make_api_response(resp, OK)
+            return make_api_response({'msg': 'Not exist'}, OK)
+        else:
+            return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
+    except Exception as excep:
+        logger.exception('Error calling api_malware_overview')
+        msg = str(excep)
+        exp = excep.__doc__
+        return make_api_response({'error': msg}, BAD_REQUEST)
+
+
+@request_method(['GET'])
+def api_components_libraries(request):
+    try:
+        md5 = request.GET['hash']
+        page = int(request.GET.get('page', 1))
+        match = re.match('^[0-9a-f]{32}$', md5)
+        system = request.GET['system']
+
+        if match:
+            libraries = []
+            if system == 'android':
+                libraries = StaticAnalyzerAndroid.get_components_libraries(md5)
+            elif system == 'ios':
+                libraries = StaticAnalyzerIOS.get_components_libraries(md5)
+
+            if libraries is not None:
+                resp = create_pagination_response(libraries, page)
+                return make_api_response(resp, OK)
+            return make_api_response({'msg': 'Not exist'}, OK)
+        else:
+            return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
+    except Exception as excep:
+        logger.exception('Error calling api_malware_overview')
+        msg = str(excep)
+        exp = excep.__doc__
+        return make_api_response({'error': msg}, BAD_REQUEST)
+
+
+@request_method(['GET'])
+def api_components_files(request):
+    try:
+        md5 = request.GET['hash']
+        page = int(request.GET.get('page', 1))
+        match = re.match('^[0-9a-f]{32}$', md5)
+        system = request.GET['system']
+        if match:
+            files = []
+            if system == 'android':
+                files = StaticAnalyzerAndroid.get_components_files(md5)
+            elif system == 'ios':
+                files = StaticAnalyzerIOS.get_components_files(md5)
+            if files is not None:
+                resp = create_pagination_response(files, page)
+                return make_api_response(resp, OK)
+            return make_api_response({'msg': 'Not exist'}, OK)
+        else:
+            return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
+    except Exception as excep:
+        logger.exception('Error calling api_malware_overview')
+        msg = str(excep)
+        exp = excep.__doc__
+        return make_api_response({'error': msg}, BAD_REQUEST)
+
+
+@request_method(['GET'])
 def api_domain_analysis(request):
     try:
         md5 = request.GET['hash']
         match = re.match('^[0-9a-f]{32}$', md5)
+        system = request.GET['system']
         if match:
-            db_entry = StaticAnalyzerAndroid.objects.filter(
-                MD5=md5)
-            if db_entry.exists():
-                context = get_context_from_db_entry(db_entry)
-                if context['domains']:
-                    return make_api_response(context['domains'], OK)
+            domains = {}
+            if system == 'android':
+                domains = StaticAnalyzerAndroid.get_domain_analysis(md5)
+            # elif system == 'ios':
+            #     domains = StaticAnalyzerIOS.get_malware_overview(md5)
+            #
+            # db_entry = StaticAnalyzerAndroid.objects.filter(
+            #     MD5=md5)
+            # if db_entry.exists():
+            #     context = get_context_from_db_entry(db_entry)
+            #     if context['domains']:
+            #         return make_api_response(context['domains'], OK)
             return make_api_response({'msg': 'Not exist'}, OK)
         else:
             return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
     except Exception as excep:
-        logger.exception('Error calling api_malware_overview')
+        logger.exception('Error calling api_domain_analysis')
         msg = str(excep)
         exp = excep.__doc__
         return make_api_response({'error': msg}, BAD_REQUEST)
 
 
 @request_method(['GET'])
-@csrf_exempt
 def api_manifest_analysis(request):
     try:
         md5 = request.GET['hash']
         match = re.match('^[0-9a-f]{32}$', md5)
+        system = request.GET['system']
+        if system != 'android':
+            return make_api_response({'error': 'This API only supports for Android'}, OK)
         if match:
-            db_entry = StaticAnalyzerAndroid.objects.filter(
-                MD5=md5)
-            if db_entry.exists():
-                context = get_context_from_db_entry(db_entry)
-                resp = {
-                    'count': len(context['manifest_analysis']),
-                    'list': context['manifest_analysis']
-                }
-                return make_api_response(resp, OK)
+            manifest = StaticAnalyzerAndroid.get_manifest_analysis(md5)
+            if match is not None:
+                return make_api_response({'count': len(manifest), 'list': manifest}. OK)
             return make_api_response({'msg': 'Not exist'}, OK)
         else:
             return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
     except Exception as excep:
-        logger.exception('Error calling api_security_overview')
+        logger.exception('Error calling api_manifest_analysis')
         msg = str(excep)
         exp = excep.__doc__
         return make_api_response({'error': msg}, BAD_REQUEST)
 
 
 @request_method(['GET'])
-@csrf_exempt
 def api_code_analysis(request):
     try:
         md5 = request.GET['hash']
         match = re.match('^[0-9a-f]{32}$', md5)
+        system = request.GET['system']
         if match:
-            db_entry = StaticAnalyzerAndroid.objects.filter(
-                MD5=md5)
-            if db_entry.exists():
-                context = get_context_from_db_entry(db_entry)
-                if context['code_analysis'] and 'items' in context['code_analysis'].keys():
-                    resp = {
-                        'count': len(context['code_analysis']['items']),
-                        'list': context['code_analysis']['items']
-                    }
-                    return make_api_response(resp, OK)
+            code_analysis = {}
+            if system == 'android':
+                code_analysis = StaticAnalyzerAndroid.get_code_analysis(md5)
+            elif system == 'ios':
+                code_analysis = StaticAnalyzerIOS.get_code_analysis(md5)
+            if code_analysis is not None:
+                return make_api_response(code_analysis, OK)
             return make_api_response({'msg': 'Not exist'}, OK)
         else:
             return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
     except Exception as excep:
-        logger.exception('Error calling api_security_overview')
+        logger.exception('Error calling api_code_analysis')
         msg = str(excep)
         exp = excep.__doc__
         return make_api_response({'error': msg}, BAD_REQUEST)
 
 
 @request_method(['GET'])
-@csrf_exempt
-def api_app_permissions(request):
-    try:
-        md5 = request.GET['checksum']
-        match = re.match('^[0-9a-f]{32}$', md5)
-        if match:
-            db_entry = StaticAnalyzerAndroid.objects.filter(
-                MD5=md5)
-            if db_entry.exists():
-                context = get_context_from_db_entry(db_entry)
-                if context['permissions']:
-                    return make_api_response(context['permissions'], OK)
-            return make_api_response({'msg': 'Not exist'}, OK)
-        else:
-            return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
-    except Exception as excep:
-        logger.exception('Error calling api_security_overview')
-        msg = str(excep)
-        exp = excep.__doc__
-        return make_api_response({'error': msg}, BAD_REQUEST)
-
-
-@request_method(['GET'])
-@csrf_exempt
-def api_binary_analysis(request):
-    try:
-        md5 = request.GET['hash']
-        match = re.match('^[0-9a-f]{32}$', md5)
-        if match:
-            db_entry = StaticAnalyzerAndroid.objects.filter(
-                MD5=md5)
-            if db_entry.exists():
-                context = get_context_from_db_entry(db_entry)
-                resp = {
-                    'count': len(context['binary_analysis']),
-                    'list': context['binary_analysis']
-                }
-                return make_api_response(resp, OK)
-            return make_api_response({'msg': 'Not exist'}, OK)
-        else:
-            return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
-    except Exception as excep:
-        logger.exception('Error calling api_security_overview')
-        msg = str(excep)
-        exp = excep.__doc__
-        return make_api_response({'error': msg}, BAD_REQUEST)
-
-
-@request_method(['GET'])
-@csrf_exempt
 def api_file_analysis(request):
     try:
         md5 = request.GET['hash']
         match = re.match('^[0-9a-f]{32}$', md5)
+        system = request.GET['system']
         if match:
-            db_entry = StaticAnalyzerAndroid.objects.filter(
-                MD5=md5)
-            if db_entry.exists():
-                context = get_context_from_db_entry(db_entry)
-                resp = {
-                    'count': len(context['file_analysis']),
-                    'list': context['file_analysis']
-                }
-                return make_api_response(resp, OK)
+            file_analysis = []
+            if system == 'android':
+                file_analysis = StaticAnalyzerAndroid.get_file_analysis(md5)
+            elif system == 'ios':
+                file_analysis = StaticAnalyzerIOS.get_file_analysis(md5)
+            if file_analysis is not None:
+                return make_api_response({'count': len(file_analysis), 'list': file_analysis}, OK)
             return make_api_response({'msg': 'Not exist'}, OK)
         else:
             return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
     except Exception as excep:
-        logger.exception('Error calling api_security_overview')
+        logger.exception('Error calling api_file_analysis')
         msg = str(excep)
         exp = excep.__doc__
         return make_api_response({'error': msg}, BAD_REQUEST)
+
+
+@request_method(['GET'])
+def api_app_permissions(request):
+    try:
+        md5 = request.GET['hash']
+        match = re.match('^[0-9a-f]{32}$', md5)
+        system = request.GET['system']
+        if match:
+            app_permissions = []
+            if system == 'android':
+                app_permissions = StaticAnalyzerAndroid.get_app_permissions(md5)
+            elif system == 'ios':
+                app_permissions = StaticAnalyzerIOS.get_app_permissions(md5)
+            if app_permissions is not None:
+                return make_api_response({'count': len(app_permissions), 'list': app_permissions}, OK)
+            return make_api_response({'msg': 'Not exist'}, OK)
+        else:
+            return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
+    except Exception as excep:
+        logger.exception('Error calling api_binary_analysis')
+        msg = str(excep)
+        exp = excep.__doc__
+        return make_api_response({'error': msg}, BAD_REQUEST)
+
+
+@request_method(['GET'])
+def api_binary_analysis(request):
+    try:
+        md5 = request.GET['hash']
+        match = re.match('^[0-9a-f]{32}$', md5)
+        system = request.GET['system']
+        if match:
+            binary_analysis = []
+            if system == 'android':
+                binary_analysis = StaticAnalyzerAndroid.get_binary_analysis(md5)
+            elif system == 'ios':
+                binary_analysis = StaticAnalyzerIOS.get_binary_analysis(md5)
+            if binary_analysis is not None:
+                return make_api_response({'count': len(binary_analysis), 'list': binary_analysis}, OK)
+            return make_api_response({'msg': 'Not exist'}, OK)
+        else:
+            return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
+    except Exception as excep:
+        logger.exception('Error calling api_binary_analysis')
+        msg = str(excep)
+        exp = excep.__doc__
+        return make_api_response({'error': msg}, BAD_REQUEST)
+

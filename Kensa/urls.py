@@ -110,11 +110,17 @@ urlpatterns = [
     url(r'^api/v1/app_info$', rest_api.api_app_info),
     url(r'^api/v1/appstore_info$', rest_api.api_app_store),
 
-    url(r'^api/v1/code/smali/$', rest_api.api_code_smali),
+    # url(r'^api/v1/code/smali/$', rest_api.api_code_smali),
 
     url(r'^api/v1/summary/security_overview$', rest_api.api_security_overview),
     url(r'^api/v1/summary/malware_overview$', rest_api.api_malware_overview),
-    url(r'^api/v1/summary/components$', rest_api.api_components),
+    url(r'^api/v1/summary/components/activities$', rest_api.api_components_activities),
+    url(r'^api/v1/summary/components/services$', rest_api.api_components_services),
+    url(r'^api/v1/summary/components/receivers$', rest_api.api_components_receivers),
+    url(r'^api/v1/summary/components/providers$', rest_api.api_components_providers),
+    url(r'^api/v1/summary/components/libraries$', rest_api.api_components_libraries),
+    url(r'^api/v1/summary/components/files$', rest_api.api_components_files),
+
     url(r'^api/v1/summary/domain_analaysis$', rest_api.api_domain_analysis),
 
     url(r'^api/v1/security_analysis/manifest_analysis$', rest_api.api_manifest_analysis),
