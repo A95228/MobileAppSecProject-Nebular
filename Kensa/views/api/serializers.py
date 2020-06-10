@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from StaticAnalyzer import models
+
 
 class JavaCodeSerializer(serializers.Serializer):
     title = serializers.CharField()
@@ -11,13 +13,9 @@ class JavaCodeSerializer(serializers.Serializer):
     version = serializers.CharField()
 
 
-class ReconDataSerializer(serializers.Serializer):
-    pass
-
-
-class RecentScansSerializer(serializers.Serializer):
-    pass
-
-
-class RecentScansSerializer(serializers.Serializer):
-    pass
+class ReconDataSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        fields = ("URLS",)
+        model = models.StaticAnalyzerAndroid
+    
