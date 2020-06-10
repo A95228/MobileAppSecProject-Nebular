@@ -115,6 +115,7 @@ urlpatterns = [
     url(r'^api/v1/report_json$', rest_api.api_json_report),
     url(r'^api/v1/view_source$', rest_api.api_view_source),
     url(r'^api/v1/scans$', rest_api.api_recent_scans),
+
     url(r"^api/v1/recent_scans$", rest_api.api_get_recent_scans),
     url(r"^api/v1/signer_certificate$",rest_api.api_get_signer_certificate),
     url(r"^api/v1/code/manifest$", rest_api.api_get_manifest),
@@ -128,11 +129,12 @@ urlpatterns = [
     url(r"^api/v1/recon_urls$", rest_api.api_get_recon_urls),
     url(r"^api/v1/recon_trackers$", rest_api.api_get_recon_trackers),
     
+    # API Search Route
+    url(r"^api/v1/api_md5_search$", rest_api.api_get_search),
 
-    #url(r"^api/v1/code/java/page/(?P<page_num>\d+)/$", rest_api.paginate_java_code),
-    
     # Test
     url(r'^tests/$', tests.start_test),
+    
 ]
 
 utils.print_version()
