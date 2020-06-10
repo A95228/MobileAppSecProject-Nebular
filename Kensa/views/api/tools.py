@@ -1,5 +1,6 @@
 import logging 
 import os
+import pdb
 import re
 import subprocess
 
@@ -76,4 +77,22 @@ def merge_search(*args):
         except KeyError:
             continue
     return i
+
+
+def clean_string_field(strings):
+    """Clean strings from the model field STRING"""
+    strings_list = strings["strings"]["list"]
+    clean_strings = []
+    for each in strings_list:
+        each_split = each.split("\"")
+        for item in each_split:
+            if re.match("^\s*$|^\s?:{1}\s?$", item):
+                each_split.pop(each_split.index(item))
+                continue
+        clean_strings.append(" : ".join(each_split))
+    strings["strings"].update({"list" : clean_strings})
+    return strings
+
+
+
 

@@ -3,9 +3,10 @@
 import pdb 
 import re
 
-from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+
 from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.views import APIView
@@ -378,7 +379,7 @@ def api_get_smali_code(request):
         page = 1
 
     md5 = request.GET["md5"]
-    
+    pdb.set_trace()
     # get files
     try:
         ctx = tools.get_smali_drop(md5)
@@ -550,6 +551,51 @@ def api_get_recon_firebase_db_urls(request):
 
 
 @request_method(["GET"])
+def api_get_recon_strings(request):
+    """Get recon strings or error"""
+    if request.GET.get("md5", None) is None:
+        return make_api_response({"error" : "Missing identifier"}, 
+            status=BAD_REQUEST)
+
+    if not re.match(r"^[0-9a-f]{32}$", request.GET["md5"]):
+        return make_api_response({"error" : "Invalid identifier"},
+            status=BAD_REQUEST)
+
+    if request.GET.get("system", None) is None:
+        return make_api_response({"error" : "missing system type"},
+            status=BAD_REQUEST)
+    
+    if not request.GET.get("system").lower() in SYSTEMS:
+        return make_api_response(
+            {"error" : "Systems allowed: %s" % ", ".join(SYSTEMS)},
+            status=BAD_REQUEST)
+
+    if request.GET.get("page", None) is not None:
+        if re.match(r"^\d+$", request.GET["page"]):
+            page = request.GET["page"]
+        else:
+            page = 1
+    else:
+        page = 1
+   
+    system = request.GET.get("system")
+    md5 = request.GET.get("md5")
+
+    if system == "android":
+        strings = models.StaticAnalyzerAndroid.get_recon_strings(md5, page)
+    elif system == "ios":
+        strings = models.StaticAnalyzerIOS.get_recon_strings(md5, page)
+    
+    if strings is None:
+        return make_api_response({"error" : "no strings for %s" % md5}, 
+            status=NOT_FOUND)
+
+    strings = tools.clean_string_field(strings)
+    
+    return make_api_response(strings, status=OK)
+
+
+@request_method(["GET"])
 def api_get_recon_trackers(request):
     """Get recon trackers or error"""
     if request.GET.get("md5", None) is None:
@@ -582,3 +628,35 @@ def api_get_recon_trackers(request):
 
     return make_api_response(trackers, status=OK)
 
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# USER PROFILE API
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+@request_method(["POST"])
+def api_change_image(request):
+    #if not request.user.is_authenticated:
+    #    return make_api_response({"error" : "login and try again"},
+    #        status=401)
+    #if len(request.user.get_user_permissions()) > 0:
+    #    return make_api_response({"error" : "login and try again"},
+    #        status=403)
+    pass 
+
+
+@request_method(["POST"])
+def api_change_password(request):
+    #if not request.user.is_authenticated:
+    #    return make_api_response({"error" : "login and try again"},
+    #        status=401)
+    #if len(request.user.get_user_permissions()) > 0:
+    #    return make_api_response({"error" : "login and try again"},
+    #        status=403)
+    pass
+
+
+@request_method(["GET"])
+def get_basic_user_info(request):
+    pass 
+    

@@ -128,6 +128,7 @@ urlpatterns = [
     url(r"^api/v1/recon_firebase$", rest_api.api_get_recon_firebase_db_urls),
     url(r"^api/v1/recon_urls$", rest_api.api_get_recon_urls),
     url(r"^api/v1/recon_trackers$", rest_api.api_get_recon_trackers),
+    url(r"^api/v1/recon_strings$", rest_api.api_get_recon_strings),
     
     # API Search Route
     url(r"^api/v1/api_md5_search$", rest_api.api_get_search),

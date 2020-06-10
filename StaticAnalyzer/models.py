@@ -9,6 +9,7 @@ from django.core.paginator import (
     PageNotAnInteger
 ) 
 
+from Kensa.views.api.tools import clean_string_field
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +89,9 @@ class StaticAnalyzerAndroid(models.Model):
     APKID = models.TextField(default={})
     TRACKERS = models.TextField(default={})
     PLAYSTORE_DETAILS = models.TextField(default={})
+    USER_ID = models.IntegerField(verbose_name="user_id_android")
+    ORGANIZATION_ID = models.IntegerField(
+        verbose_name="organization_id_android")
 
 
     @staticmethod
@@ -240,6 +244,21 @@ class StaticAnalyzerAndroid(models.Model):
             return None
         return {"firebase_urls": cls.paginate(firebase_urls, page)}
 
+    @classmethod
+    def get_recon_strings(cls, md5, page):
+        """Get recon firebase url. Requires pagination."""
+        logger.info("Getting firebase urls of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            strings = eval(query.STRINGS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting strings of %s" % md5)
+            return None
+        return {"strings": cls.paginate(strings, page)}
+
 
     @classmethod
     def get_recon_trackers(cls, md5, page):
@@ -255,7 +274,6 @@ class StaticAnalyzerAndroid(models.Model):
             logger.error("Unexpected error geting recon trackers of %s" % md5)
             return None
         return {"trackers": cls.paginate(trackers, page)}
-
 
 
 class StaticAnalyzerIOS(models.Model):
@@ -291,6 +309,8 @@ class StaticAnalyzerIOS(models.Model):
     STRINGS = models.TextField(default=[])
     FIREBASE_URLS = models.TextField(default=[])
     APPSTORE_DETAILS = models.TextField(default={})
+    USER_ID = models.IntegerField(verbose_name="user_id_ios")
+    ORGANIZATION_ID = models.IntegerField(verbose_name="organization_id_ios")
     
 
     @staticmethod
@@ -314,6 +334,7 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def get_single_or_none(cls, md5):
+        """Get a single model or None"""
         try:
             return cls.objects.get(MD5=md5)
         except (cls.DoesNotExist, ObjectDoesNotExist):
@@ -324,6 +345,7 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def get_md5s(cls, md5):
+        """Get md5s that match the pattern"""
         md5s = cls.objects.filter(MD5__icontains=md5).values("MD5")
         if md5s.count() == 0:
             return []
@@ -412,6 +434,22 @@ class StaticAnalyzerIOS(models.Model):
             logger.error("Unexpected error geting fb_db_urls of %s" % md5)
             return None
         return {"firebase_urls": cls.paginate(firebase_urls, page)}
+
+
+    @classmethod
+    def get_recon_strings(cls, md5, page):
+        """Get recon firebase url. Requires pagination."""
+        logger.info("Getting firebase urls of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            strings = eval(query.STRINGS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting strings of %s" % md5)
+            return None
+        return {"strings": cls.paginate(strings, page)}
 
 
 class StaticAnalyzerWindows(models.Model):
