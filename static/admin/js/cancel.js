@@ -10,4 +10,4 @@
             }
         });
     });
-})(grp.jQuery);
+})(django.jQuery);

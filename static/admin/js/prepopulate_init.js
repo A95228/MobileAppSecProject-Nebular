@@ -7,4 +7,4 @@
             field.dependency_ids, field.maxLength, field.allowUnicode
         );
     });
-})(grp.jQuery);
+})(django.jQuery);
