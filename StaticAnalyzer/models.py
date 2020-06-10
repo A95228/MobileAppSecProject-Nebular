@@ -9,7 +9,6 @@ from django.core.paginator import (
     PageNotAnInteger
 ) 
 
-from Kensa.views.api.tools import clean_string_field
 
 logger = logging.getLogger(__name__)
 
@@ -243,6 +242,7 @@ class StaticAnalyzerAndroid(models.Model):
             logger.error("Unexpected error geting fb_db_urls of %s" % md5)
             return None
         return {"firebase_urls": cls.paginate(firebase_urls, page)}
+
 
     @classmethod
     def get_recon_strings(cls, md5, page):
