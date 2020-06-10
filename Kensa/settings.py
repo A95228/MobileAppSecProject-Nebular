@@ -26,6 +26,7 @@ BANNER = """
 # ASCII Standard
 # ==============================================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+print(BASE_DIR)
 # ==========Kensa Home Directory=================
 USE_HOME = False
 
@@ -59,7 +60,11 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'kensa',
         'USER': 'kensa',
+<<<<<<< HEAD
         'PASSWORD': 'kensa-password',
+=======
+        'PASSWORD': 'kensa',
+>>>>>>> evgeny_dynamic
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -185,7 +190,13 @@ TEMPLATES = [
         'APP_DIRS': True,
         'DIRS':
             [
+<<<<<<< HEAD
                 os.path.join(BASE_DIR, 'templates'), os.path.join(BASE_DIR, 'templates', 'allauth'),
+=======
+                os.path.join(BASE_DIR, 'templates'),
+                os.path.join(BASE_DIR, 'templates', 'allauth'),
+                os.path.join(BASE_DIR, 'templates', 'admin'),
+>>>>>>> evgeny_dynamic
             ],
         'OPTIONS':
             {
@@ -214,12 +225,18 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
+
 SITE_ID = 1
 LOGIN_REDIRECT_URL = '/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
 MEDIA_URL = '/uploads/'
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 # 256MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 268435456
