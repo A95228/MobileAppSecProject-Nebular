@@ -1,7 +1,13 @@
 import logging
-from django.db import models
+import pdb
 
-# Create your models here.
+from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import (
+    EmptyPage,
+    Paginator,
+    PageNotAnInteger
+) 
 from users.models import User
 
 logger = logging.getLogger(__name__)
@@ -15,6 +21,29 @@ class RecentScansDB(models.Model):
     APP_NAME = models.CharField(max_length=260)
     PACKAGE_NAME = models.CharField(max_length=260)
     VERSION_NAME = models.CharField(max_length=50)
+
+    @classmethod
+    def get_recent_scans(cls):
+        scans = cls.objects.all().order_by("-TIMESTAMP")
+        if scans.count() == 0:
+            return None
+        scans_values = scans.values(
+            "APP_NAME",
+            "FILE_NAME",
+            "TIMESTAMP",
+            "MD5",
+            "PACKAGE_NAME",
+            "URL",
+            "VERSION_NAME"
+        )
+        try:
+            to_return = list(scans_values)
+        except Exception as e:
+            e = str(e) + " Sending back None"
+            logger.warning(msg=e)
+            return None
+        else:
+            return to_return
 
 
 class StaticAnalyzerAndroid(models.Model):
@@ -62,6 +91,193 @@ class StaticAnalyzerAndroid(models.Model):
     USER = models.ForeignKey(User, on_delete=models.CASCADE)
     ORG_ID = models.TextField()
 
+
+    @staticmethod
+    def paginate(load, page, count=30):
+        """Paginate a context"""
+        try:
+            if 'trackers' in load:
+                paginator = Paginator(load["trackers"], count)
+            else:
+                paginator = Paginator(load, count)
+            activities = paginator.page(page)
+        except PageNotAnInteger:
+            activities = paginator.page(1)
+        except EmptyPage:
+            activities = paginator.page(paginator.num_pages)
+        except:
+            return None
+        
+        resp = {
+            'page': activities.number,
+            "total_pages" : paginator.num_pages,
+            'limit': 30,
+            'list': activities.object_list
+        }
+        return resp
+
+
+    @classmethod
+    def get_single_or_none(cls, md5):
+        try:
+            return cls.objects.get(MD5=md5)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            return None
+
+
+    @classmethod
+    def get_md5s(cls, md5):
+        md5s = cls.objects.filter(MD5__icontains=md5).values("MD5")
+        if md5s.count() == 0:
+            return []
+        return md5s
+
+
+    @classmethod
+    def get_certificate_analysis_data(cls, md5):
+        """Get a certificate return None otherwise.
+        Requires no pagination."""
+        logger.info("Getting certificate analysis of %s" % md5)
+        try:
+            cert = cls.objects.get(MD5=md5)
+            cert = cert.CERTIFICATE_ANALYSIS
+        except: 
+            logger.error("Possibly ObjectNotFound with md5 %s" % md5)
+            return None
+        else:
+            return eval(cert)
+
+
+    @classmethod
+    def get_manifest(cls, md5):
+        """Get a manifest return None otherwise.
+        Requires no pagination."""
+        logger.info("Getting manifest data of %s" % md5)
+        try:
+            cert = cls.objects.get(MD5=md5)
+            manifest = cert.MANIFEST_ANALYSIS
+        except:
+            logger.error("Possibly ObjectNotFound with md5 %s" % md5)
+            return None
+        manifest = dict(manifest_analysis=eval(manifest))
+        return manifest
+
+
+    @classmethod
+    def get_domains_data(cls, md5):
+        """Get domains. Requires pagination"""
+        countries = []
+        logger.info("Getting domains data of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+        except:
+            return None
+        try:
+            domains = eval(query.DOMAINS)
+            for key, value in domains.items():
+                holder = {}
+                geolocation = value.get("geolocation", None)
+                if geolocation is None:
+                    holder[key] = {}
+                    for k in value.keys():
+                        if k in ('good', 'bad'):
+                            holder[key][k] = value.get(k, None)
+                    holder[key]["domain"] = key 
+                    countries.append(holder)
+                    continue
+                country = geolocation.pop("country_long")
+                holder[country] = {}
+                holder[country]["domain"] = key
+                for k in value.keys():
+                    if k in ('good', 'bad'):
+                        holder[country][k] = value.get(k, None)
+                holder[country].update(geolocation)
+                countries.append(holder)
+        except:
+            logger.info("Issue getting domains for object : %s" % md5)
+            return None
+        return {"countries" : countries}
+
+
+    @classmethod
+    def get_recon_emails(cls, md5, page):
+        """Get Recon emails or None. Requires pagination"""
+        logger.info("Getting reconnassaince emails of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            emails = eval(query.EMAILS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting recon emails of %s" % md5)
+            return None
+        return {"emails": cls.paginate(emails, page)}
+
+
+    @classmethod
+    def get_recon_urls(cls, md5, page):
+        """Get recon urls or None. Requires pagination."""
+        logger.info("Getting urls of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            urls = eval(query.URLS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting recon urls of %s" % md5)
+            return None
+        return {"urls": cls.paginate(urls, page)}
+
+
+    @classmethod
+    def get_recon_firebase_db(cls, md5, page):
+        """Get recon firebase url. Requires pagination."""
+        logger.info("Getting firebase urls of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            firebase_urls = eval(query.FIREBASE_URLS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting fb_db_urls of %s" % md5)
+            return None
+        return {"firebase_urls": cls.paginate(firebase_urls, page)}
+
+
+    @classmethod
+    def get_recon_strings(cls, md5, page):
+        """Get recon strings. Requires pagination."""
+        logger.info("Getting strings of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            strings = eval(query.STRINGS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting strings of %s" % md5)
+            return None
+        return {"strings": cls.paginate(strings, page)}
+
+
+    @classmethod
+    def get_recon_trackers(cls, md5, page):
+        """Get recon trackers. Requires pagination."""
+        logger.info("Getting reconnassaince trackers of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            trackers = eval(query.TRACKERS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting recon trackers of %s" % md5)
+            return None
+        return {"trackers": cls.paginate(trackers, page)}
+	
     @classmethod
     def get_app_info(cls, md5):
         logger.info("get_app_info of %s" % md5)
@@ -309,6 +525,7 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("get_app_permissions error %s" % md5)
             return None
 
+
     @classmethod
     def get_org_user(cls, md5):
         logger.info("get_org_user of %s" % md5)
@@ -358,6 +575,144 @@ class StaticAnalyzerIOS(models.Model):
 
     USER = models.ForeignKey(User, on_delete=models.CASCADE)
     ORG_ID = models.TextField()
+	
+    @staticmethod
+    def paginate(load, page, count=30):
+        """Paginate a context"""
+        try:
+            if 'trackers' in load:
+                paginator = Paginator(load["trackers"], count)
+            else:
+                paginator = Paginator(load, count)
+            activities = paginator.page(page)
+        except PageNotAnInteger:
+            activities = paginator.page(1)
+        except EmptyPage:
+            activities = paginator.page(paginator.num_pages)
+        except:
+            return None
+        
+        resp = {
+            'page': activities.number,
+            "total_pages" : paginator.num_pages,
+            'limit': 30,
+            'list': activities.object_list
+        }
+        return resp
+
+
+    @classmethod
+    def get_single_or_none(cls, md5):
+        """Get a single model or None"""
+        try:
+            return cls.objects.get(MD5=md5)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            return None
+
+
+    @classmethod
+    def get_md5s(cls, md5):
+        """Get md5s that match the pattern"""
+        md5s = cls.objects.filter(MD5__icontains=md5).values("MD5")
+        if md5s.count() == 0:
+            return []
+        return md5s
+
+
+    @classmethod
+    def get_domains_data(cls, md5):
+        """Get domains"""
+        countries = []
+        logger.info("Getting domains data of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+        except:
+            return None
+        try:
+            domains = eval(query.DOMAINS)
+            for key, value in domains.items():
+                holder = {}
+                geolocation = value.get("geolocation", None)
+                if geolocation is None:
+                    holder[key] = {}
+                    for k in value.keys():
+                        if k in ('good', 'bad'):
+                            holder[key][k] = value.get(k, None)
+                    holder[key]["domain"] = key 
+                    countries.append(holder)
+                    continue
+                country = geolocation.pop("country_long")
+                holder[country] = {}
+                holder[country]["domain"] = key
+                for k in value.keys():
+                    if k in ('good', 'bad'):
+                        holder[country][k] = value.get(k, None)
+                holder[country].update(geolocation)
+                countries.append(holder)
+        except:
+            logger.info("Issue getting domains for object : %s" % md5)
+            return None
+        return {"countries": countries}
+
+    @classmethod
+    def get_recon_emails(cls, md5, page):
+        """Get Recon emails or None"""
+        logger.info("Getting reconnassaince emails of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            emails = eval(query.EMAILS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting recon emails of %s" % md5)
+            return None
+        return {"emails": cls.paginate(emails, page)}
+
+    @classmethod
+    def get_recon_urls(cls, md5, page):
+        """Get recon urls or None"""
+        logger.info("Getting urls of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            urls = eval(query.URLS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting recon urls of %s" % md5)
+            return None
+        return {"urls": cls.paginate(urls, page)}
+
+    @classmethod
+    def get_recon_firebase_db(cls, md5, page):
+        """Get recon firebase url"""
+        logger.info("Getting firebase urls of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            firebase_urls = eval(query.FIREBASE_URLS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting fb_db_urls of %s" % md5)
+            return None
+        return {"firebase_urls": cls.paginate(firebase_urls, page)}
+
+    @classmethod
+    def get_recon_strings(cls, md5, page):
+        """Get recon strings. Requires pagination."""
+        logger.info("Getting strings of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            strings = eval(query.STRINGS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting strings of %s" % md5)
+            return None
+        return {"strings": cls.paginate(strings, page)}
 
     @classmethod
     def get_app_info(cls, md5):
@@ -537,6 +892,7 @@ class StaticAnalyzerIOS(models.Model):
         except:
             logger.info("get_org_user error %s" % md5)
             return None, None
+
 
 class StaticAnalyzerWindows(models.Model):
     FILE_NAME = models.CharField(max_length=260)
