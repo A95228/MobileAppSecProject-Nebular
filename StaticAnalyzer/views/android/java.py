@@ -105,8 +105,8 @@ def api_run_java_code(request):
         context = {
             'title': 'Java Source',
             'files': java_files,
-            '_hash': md5,
-            '_type': typ,
+            'hash': md5,
+            'type': typ,
             'version': settings.KENSA_VER,
         }
         return context
