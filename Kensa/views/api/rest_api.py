@@ -6,6 +6,9 @@ import re
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework.response import Response
+from rest_framework import viewsets
+from rest_framework.views import APIView
 
 from Kensa.utils import api_key
 from Kensa.views.api import tools, serializers
@@ -25,6 +28,10 @@ from StaticAnalyzer import models
 BAD_REQUEST = 400
 OK = 200
 NOT_FOUND = 404
+SYSTEMS = [
+    "ios",
+    "android"
+]
 
 
 def make_api_response(data, status=OK):
@@ -192,6 +199,29 @@ def api_view_source(request):
 
 
 @request_method(["GET"])
+def api_get_search(request):
+    """Get search results"""
+    if request.GET.get("md5",None) is None:
+        return make_api_response({"error" : "Missing Identifier"}, 
+            status=BAD_REQUEST)
+
+    if not re.match(r"^[0-9a-f]{1,32}$", request.GET["md5"]):
+        return make_api_response({"error" : "Invalid identifier"}, 
+            status=BAD_REQUEST)
+
+    md5 = request.GET["md5"]
+    ios_md5s = models.StaticAnalyzerIOS.get_md5s(md5)
+    android_md5s = models.StaticAnalyzerAndroid.get_md5s(md5)
+    search_results = tools.merge_search(ios_md5s, android_md5s)
+    
+    if not len(search_results) > 0:
+        return make_api_response({"error" : "0 search results for %s." % md5},
+            status=NOT_FOUND)
+        
+    return make_api_response({"results" : search_results}, status=OK)
+
+
+@request_method(["GET"])
 def api_get_recent_scans(request):
     """Get Recent Scans """
     data = models.RecentScansDB.get_recent_scans()
@@ -199,7 +229,7 @@ def api_get_recent_scans(request):
         if isinstance(data, dict):
             return make_api_response(data=data, status=OK)
         return JsonResponse(data=data, safe=False, status=OK) # strange case
-    return make_api_response(data={"error" : "<error here>"}, status=BAD_REQUEST)
+    return make_api_response(data={"error" : "no data"}, status=BAD_REQUEST)
 
 
 @request_method(["GET"])
@@ -209,16 +239,22 @@ def api_get_signer_certificate(request):
         return make_api_response(data={"error" : "missing md5"}, 
             status=BAD_REQUEST)
 
-    id = request.GET["md5"]
-
-    if not re.match(r"^[0-9a-f]{32}$", id):
+    if not re.match(r"^[0-9a-f]{32}$", request.GET["md5"]):
         return make_api_response(data={"error" : "Invalid identifier"}, 
             status=BAD_REQUEST)
+    
+    md5 = request.GET["md5"]
 
-    data = models.StaticAnalyzerAndroid.get_certificate_analysis_data(id)
+    try:
+        data = models.StaticAnalyzerAndroid.get_certificate_analysis_data(md5)
+    except:
+        return make_api_response({"error" : "contact sysadmin"},
+            status=500)
+
     if data is None:
         return make_api_response(data={"info" : "No data to preview"}, 
-            status=404)
+            status=NOT_FOUND)
+
     return make_api_response(data=data, status=OK)
     
 
@@ -229,17 +265,22 @@ def api_get_manifest(request):
         return make_api_response(data={"error" : "missing md5"}, 
             status=BAD_REQUEST)
 
-    id = request.GET["md5"]
-    if not re.match(r"^[0-9a-f]{32}$", id):
+    if not re.match(r"^[0-9a-f]{32}$", request.GET["md5"]):
         return make_api_response(data={"error" : "invalid identifier"}, 
-            status=404)
+            status=NOT_FOUND)
 
-    data = models.StaticAnalyzerAndroid.get_manifest(id)
+    md5 = request.GET["md5"]
+
+    try:
+        data = models.StaticAnalyzerAndroid.get_manifest(md5)
+    except:
+        return make_api_response({"error" : "contact sysadmin"},
+            status=500)
 
     if data is None:
         return make_api_response(data={"info" : "No data to preview"})
 
-    return JsonResponse(data=data, status=200)
+    return JsonResponse(data=data, status=OK)
 
 
 @request_method(["GET"])
@@ -248,19 +289,33 @@ def api_get_domains_data(request):
     if request.GET.get("md5", None) is None:
         return make_api_response({"error" : "Missing identifier"}, 
             status=BAD_REQUEST)
-
-    id = request.GET["md5"]
     
-    if not re.match(r"^[0-9a-f]{32}$", id):
+    if not re.match(r"^[0-9a-f]{32}$", request.GET["md5"]):
         return make_api_response({"error" : "Invalid identifier"}, 
             status=BAD_REQUEST)
+
+    md5 = request.GET["md5"]
     
-    data = models.StaticAnalyzerAndroid.get_domains_data(id)
+    try:
+        data = models.StaticAnalyzerAndroid.get_domains_data(md5)
+    except:
+        return make_api_response({"error" : "contact sysadmin"},
+            status=500)
+
     if data is None:
         return make_api_response({"error": "No data to preview"}, 
-            status=404)
+            status=NOT_FOUND)
     
     return make_api_response(data=data, status=OK)
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# API JAVA & SMALI ROUTES
+# Both routes are paginated.
+#   Examples:
+#       /api/v1/code/java?md5=<md5>&page=<page_num> 
+#       /api/v1/code/smali?md5=<md5>&page=<page_num>
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 @request_method(["GET"])
@@ -274,13 +329,33 @@ def api_get_java_code(request):
         return make_api_response({"error" : "Missing type"}, 
             status=BAD_REQUEST)
     
-    ctx = api_run_java_code(request)
-    
+    if request.GET.get("page", None) is not None:
+        if re.match(r"^\d+$", request.GET["page"]):
+            page = request.GET["page"]
+        else:
+            page = 1
+    else:
+        page = 1
+
+    # get files
+    try:
+        ctx = api_run_java_code(request)
+    except:
+        return make_api_response({"error" : "contact sysadmin"},
+            status=500)
+
     if 'error' in ctx:
         return make_api_response(data=ctx, status=BAD_REQUEST)
 
-    data = serializers.JavaCodeSerializer(ctx)
-    return make_api_response(data=data.data, status=OK)
+    # inject pagination
+    try:
+        files = models.StaticAnalyzerAndroid.paginate(ctx["files"], page)
+    except:
+        pass
+    else:
+        ctx.update({"files" : files})
+
+    return make_api_response(data=ctx, status=OK)
 
 
 @request_method(["GET"])
@@ -289,36 +364,99 @@ def api_get_smali_code(request):
     if request.GET.get("md5", None) is None:
         return make_api_response({"error" : "Missing identifier"}, 
             status=BAD_REQUEST)
-    
-    id = request.GET["md5"]
-    ctx = tools.get_smali_drop(md5=id)
-    
-    if ctx is None:
-        drop = {"error" : "error getting smali files"}
-        return make_api_response(data=drop, status=NOT_FOUND)
 
-    data = serializers.JavaCodeSerializer(ctx)
-    return make_api_response(data=data.data, status=OK)
+    if not re.match(r"^[0-9a-f]{32}$", request.GET["md5"]):
+        return make_api_response({"error" : "Invalid identifier"}, 
+            status=BAD_REQUEST)
+
+    if request.GET.get("page", None) is not None:
+        if re.match(r"^\d+$", request.GET["page"]):
+            page = request.GET["page"]
+        else:
+            page = 1
+    else:
+        page = 1
+
+    md5 = request.GET["md5"]
+    
+    # get files
+    try:
+        ctx = tools.get_smali_drop(md5)
+    except:
+        return make_api_response({"error" : "contact sysadmin"},
+            status=500)
+
+    if ctx is None:
+        return make_api_response({"error" : "error getting smali files"},
+            status=NOT_FOUND)
+
+    # inject pagination
+    try:
+        files = models.StaticAnalyzerAndroid.paginate(ctx["files"], page)
+    except:
+        pass
+    else:
+        ctx.update({"files" : files})
+
+    return make_api_response(data=ctx, status=OK)
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# API RECONNAISSANCE ROUTES
+# Routes are paginated.
+#
+#   Examples for routes that are for Android and IOS
+#   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#       /api/v1/recon_emails?md5=<md5>&system=<ios|android>page=<page_num>
+#       /api/v1/recon_firebase?md5=<md5>&system=<ios|android>page=<page_num>
+#       /api/v1/recon_urls?md5=<md5>&system=<ios|android>page=<page_num> 
+#
+#   Examples for routes that are just for Android
+#   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#       /api/v1/recon_trackers?md5=<md5>&page=<page_num>
+#
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 @request_method(["GET"])
 def api_get_recon_emails(request):
-    """Get recon emails or error"""
+    """Get reconnaissance emails or error"""
     if request.GET.get("md5", None) is None:
         return make_api_response({"error" : "Missing identifier"}, 
             status=BAD_REQUEST)
 
-    id = request.GET["md5"]
-
-    if not re.match(r"^[0-9a-f]{32}$", id):
+    if not re.match(r"^[0-9a-f]{32}$", request.GET["md5"]):
         return make_api_response(
             {"error" : "Invalid identifier"}, 
             status=BAD_REQUEST)
 
-    emails = models.StaticAnalyzerAndroid.get_recon_emails(id)
+    if request.GET.get("system", None) is None:
+        return make_api_response({"error" : "missing system type"},
+            status=BAD_REQUEST)
+    
+    if not request.GET.get("system").lower() in SYSTEMS:
+        return make_api_response(
+            {"error" : "Systems allowed: %s" % ", ".join(SYSTEMS)},
+            status=BAD_REQUEST)
 
+    if request.GET.get("page", None) is not None:
+        if re.match(r"^\d+$", request.GET["page"]):
+            page = request.GET["page"]
+        else:
+            page = 1
+    else:
+        page = 1
+
+    system = request.GET.get("system")
+    md5 = request.GET.get("md5")
+    
+    if system == "android":
+        emails = models.StaticAnalyzerAndroid.get_recon_emails(md5, page)
+    elif system == "ios":
+        emails = models.StaticAnalyzerIOS.get_recon_emails(md5, page)
+    
     if emails is None:
-        return make_api_response({"error" : "no emails for %s" % id}, 
+        return make_api_response({"error" : "no emails for %s" % md5}, 
             status=NOT_FOUND)
 
     return make_api_response(emails, status=OK)
@@ -326,21 +464,43 @@ def api_get_recon_emails(request):
 
 @request_method(["GET"])
 def api_get_recon_urls(request):
-    """Get recon urls or error"""
+    """Get reconnaissance urls"""
     if request.GET.get("md5", None) is None:
         return make_api_response({"error" : "Missing identifier"}, 
             status=BAD_REQUEST)
 
-    id = request.GET["md5"]
-
-    if not re.match(r"^[0-9a-f]{32}$", id):
-        return make_api_response({"error" : "Invalid identifier"}, 
+    if not re.match(r"^[0-9a-f]{32}$", request.GET["md5"]):
+        return make_api_response(
+            {"error" : "Invalid identifier"}, 
             status=BAD_REQUEST)
 
-    urls = models.StaticAnalyzerAndroid.get_recon_urls(md5=id)
+    if request.GET.get("system", None) is None:
+        return make_api_response({"error" : "missing system type"},
+            status=BAD_REQUEST)
+    
+    if not request.GET.get("system").lower() in SYSTEMS:
+        return make_api_response(
+            {"error" : "Systems allowed: %s" % ", ".join(SYSTEMS)},
+            status=BAD_REQUEST)
+
+    if request.GET.get("page", None) is not None:
+        if re.match(r"^\d+$", request.GET["page"]):
+            page = request.GET["page"]
+        else:
+            page = 1
+    else:
+        page = 1
+       
+    system = request.GET.get("system")
+    md5 = request.GET.get("md5")
+
+    if system == "android":
+        urls = models.StaticAnalyzerAndroid.get_recon_urls(md5, page)
+    elif system == "ios":
+        urls = models.StaticAnalyzerIOS.get_recon_urls(md5, page)
     
     if urls is None:
-        return make_api_response({"error" : "no emails for %s" % id}, 
+        return make_api_response({"error" : "no urls for %s" % md5}, 
             status=NOT_FOUND)
     
     return make_api_response(urls, status=OK)
@@ -350,18 +510,40 @@ def api_get_recon_urls(request):
 def api_get_recon_firebase_db_urls(request):
     """Get recon firebase or error"""
     if request.GET.get("md5", None) is None:
-        return make_api_response({"error" : "Missing identifier"}, status=BAD_REQUEST)
+        return make_api_response({"error" : "Missing identifier"}, 
+            status=BAD_REQUEST)
 
-    id = request.GET["md5"]
-
-    if not re.match(r"^[0-9a-f]{32}$", id):
+    if not re.match(r"^[0-9a-f]{32}$", request.GET["md5"]):
         return make_api_response({"error" : "Invalid identifier"},
             status=BAD_REQUEST)
 
-    firebase_urls = models.StaticAnalyzerAndroid.get_recon_firebase_db(md5=id)
+    if request.GET.get("system", None) is None:
+        return make_api_response({"error" : "missing system type"},
+            status=BAD_REQUEST)
+    
+    if not request.GET.get("system").lower() in SYSTEMS:
+        return make_api_response(
+            {"error" : "Systems allowed: %s" % ", ".join(SYSTEMS)},
+            status=BAD_REQUEST)
+
+    if request.GET.get("page", None) is not None:
+        if re.match(r"^\d+$", request.GET["page"]):
+            page = request.GET["page"]
+        else:
+            page = 1
+    else:
+        page = 1
+   
+    system = request.GET.get("system")
+    md5 = request.GET.get("md5")
+
+    if system == "android":
+        firebase_urls = models.StaticAnalyzerAndroid.get_recon_firebase_db(md5, page)
+    elif system == "ios":
+        firebase_urls = models.StaticAnalyzerIOS.get_recon_firebase_db(md5, page)
 
     if firebase_urls is None:
-        return make_api_response({"error" : "no firebase urls for %s" % id}, 
+        return make_api_response({"error" : "no firebase urls for %s" % md5}, 
             status=NOT_FOUND)
 
     return make_api_response(firebase_urls, status=OK)
@@ -374,30 +556,29 @@ def api_get_recon_trackers(request):
         return make_api_response({"error" : "Missing identifier"}, 
             status=BAD_REQUEST)
 
-    id = request.GET["md5"]
-
-    if not re.match(r"^[0-9a-f]{32}$", id):
+    if not re.match(r"^[0-9a-f]{32}$", request.GET["md5"]):
         return make_api_response({"error" : "Invalid identifier"}, 
             status=BAD_REQUEST)
 
-    trackers = models.StaticAnalyzerAndroid.get_recon_trackers(md5=id)
+    if request.GET.get("page", None) is not None:
+        if re.match(r"^\d+$", request.GET["page"]):
+            page = request.GET["page"]
+        else:
+            page = 1
+    else:
+        page = 1
+
+    md5 = request.GET["md5"]
+
+    try:
+        trackers = models.StaticAnalyzerAndroid.get_recon_trackers(md5, page)
+    except:
+        return make_api_response({"error" : "contact sysadmin"},
+            status=500)
 
     if trackers is None:
-        return make_api_response({"error" : "no trackers for %s" % id}, 
+        return make_api_response({"error" : "no trackers for %s" % md5}, 
             status=NOT_FOUND)
 
     return make_api_response(trackers, status=OK)
 
-
-@request_method(["GET"])
-def api_get_search(request):
-    """Get search results"""
-    if request.GET.get("md5",None) is None:
-        return make_api_response({"error" : "Missing Identifier"}, 
-            status=BAD_REQUEST)
-
-    if not re.match(r"^[0-9a-f]{32}$", id):
-        return make_api_response({"error" : "Invalid identifier"}, 
-            status=BAD_REQUEST)
-    
-    id = request.GET.get("md5")
