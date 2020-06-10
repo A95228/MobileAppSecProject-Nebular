@@ -246,8 +246,8 @@ class StaticAnalyzerAndroid(models.Model):
 
     @classmethod
     def get_recon_strings(cls, md5, page):
-        """Get recon firebase url. Requires pagination."""
-        logger.info("Getting firebase urls of %s" % md5)
+        """Get recon strings. Requires pagination."""
+        logger.info("Getting strings of %s" % md5)
         try:
             query = cls.objects.get(MD5=md5)
             strings = eval(query.STRINGS)
@@ -438,8 +438,8 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def get_recon_strings(cls, md5, page):
-        """Get recon firebase url. Requires pagination."""
-        logger.info("Getting firebase urls of %s" % md5)
+        """Get recon strings. Requires pagination."""
+        logger.info("Getting strings of %s" % md5)
         try:
             query = cls.objects.get(MD5=md5)
             strings = eval(query.STRINGS)
