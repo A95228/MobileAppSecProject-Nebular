@@ -312,7 +312,7 @@ def api_get_domains_data(request):
 # API JAVA & SMALI ROUTES
 # Both routes are paginated.
 #   Examples:
-#       /api/v1/code/java?md5=<md5>&page=<page_num> 
+#       /api/v1/code/java?md5=<md5>&type=<apk>&page=<page_num> 
 #       /api/v1/code/smali?md5=<md5>&page=<page_num>
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
