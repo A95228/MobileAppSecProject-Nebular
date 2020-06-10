@@ -230,9 +230,6 @@ def api_get_search(request):
 @request_method(["GET"])
 def api_get_recent_scans(request):
     """Get Recent Scans """
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "login and try again"},
-    #        status=401)
     data = RecentScansDB.get_recent_scans()
     if data is not None:
         if isinstance(data, dict):
@@ -244,9 +241,6 @@ def api_get_recent_scans(request):
 @request_method(["GET"])
 def api_get_signer_certificate(request):
     """Get certificate"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "login and try again"},
-    #        status=401)
     request_ok = tools.request_check(request)
 
     if not request_ok[0]:
@@ -269,9 +263,6 @@ def api_get_signer_certificate(request):
 @request_method(["GET"])
 def api_get_manifest(request):
     """Get manifest"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "login and try again"},
-    #        status=401)
     request_ok = tools.request_check(request)
 
     if not request_ok[0]:
@@ -292,9 +283,6 @@ def api_get_manifest(request):
 @request_method(["GET"])
 def api_get_domains_data(request):
     """Get domains data"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "login and try again"},
-    #        status=401)
     request_ok = tools.request_check(request)
 
     if not request_ok[0]:
@@ -317,9 +305,6 @@ def api_get_domains_data(request):
 @request_method(["GET"])
 def api_get_java_code(request):
     """Get a list of java code files"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "login and try again"},
-    #        status=401)
     request_ok = tools.request_check(request)
     
     if not request_ok[0]:
@@ -348,9 +333,6 @@ def api_get_java_code(request):
 @request_method(["GET"])
 def api_get_smali_code(request):
     """Get smali code"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "login and try again"},
-    #        status=401)
     request_ok = tools.request_check(request)
 
     if not request_ok[0]:
@@ -365,14 +347,16 @@ def api_get_smali_code(request):
         logger.error(str(error))
         return make_api_response({"error" : "contact sysadmin"},
             status=500)
+
     if 'error' in ctx:
         return make_api_response(ctx, 500)
     elif 'files' in ctx:
         pass
+
     if ctx["files"].__len__() == 0:
         return make_api_response(
             {"error" : "no smali files for %s" % request.GET["md5"]}, 500)
-    # inject pagination
+
     try:
         page = tools.get_page(request)
         files = StaticAnalyzerAndroid.paginate(ctx["files"], page)
@@ -388,9 +372,6 @@ def api_get_smali_code(request):
 @request_method(["GET"])
 def api_get_recon_emails(request):
     """Get reconnaissance emails or error"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "login and try again"},
-    #        status=401)
     request_ok = tools.request_check(request)
     system_ok = tools.system_check(request)
 
@@ -419,9 +400,6 @@ def api_get_recon_emails(request):
 @request_method(["GET"])
 def api_get_recon_urls(request):
     """Get reconnaissance urls"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "login and try again"},
-    #        status=401)
     request_ok = tools.request_check(request)
     system_ok = tools.system_check(request)
 
@@ -450,9 +428,6 @@ def api_get_recon_urls(request):
 @request_method(["GET"])
 def api_get_recon_firebase_db_urls(request):
     """Get recon firebase or error"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "login and try again"},
-    #        status=401)
     request_ok = tools.request_check(request)
     system_ok = tools.system_check(request)
 
@@ -479,9 +454,6 @@ def api_get_recon_firebase_db_urls(request):
 @request_method(["GET"])
 def api_get_recon_strings(request):
     """Get recon strings or error"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "login and try again"},
-    #        status=401)
     request_ok = tools.request_check(request)
     system_ok = tools.system_check(request)
 
@@ -510,9 +482,6 @@ def api_get_recon_strings(request):
 @request_method(["GET"])
 def api_get_recon_trackers(request):
     """Get recon trackers or error"""
-    #if not request.user.is_authenticated:
-    #    return make_api_response({"error" : "login and try again"},
-    #        status=401)
     request_ok = tools.request_check(request)
 
     if not request_ok[0]: 
