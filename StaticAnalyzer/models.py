@@ -196,7 +196,7 @@ class StaticAnalyzerAndroid(models.Model):
         logger.info("get_components_servicees of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
-            services = data_entry.SERVICES
+            services = eval(data_entry.SERVICES)
         except:
             logger.info("get_components_servicees error %s" % md5)
             return None
@@ -267,6 +267,7 @@ class StaticAnalyzerAndroid(models.Model):
                         temp = domain_analysis[i]
                         domain_analysis[i] = domain_analysis[j]
                         domain_analysis[j] = temp
+            return {'count': len(domain_analysis), 'list': domain_analysis}
         except:
             logger.info("get_components_files error %s" % md5)
             return None
@@ -299,7 +300,11 @@ class StaticAnalyzerAndroid(models.Model):
         try:
             data_entry = cls.objects.get(MD5=md5)
             permissions = eval(data_entry.PERMISSIONS)
-            return permissions
+            permissions_list = []
+            for key, value in permissions.items():
+                temp = {key: value}
+                permissions_list.append(temp)
+            return permissions_list
         except:
             logger.info("get_app_permissions error %s" % md5)
             return None

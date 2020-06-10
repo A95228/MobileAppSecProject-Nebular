@@ -57,17 +57,27 @@ def api_auth(meta):
     return False
 
 
-def api_user_permission(request_user, md5, system):
-    org_id = user = None
-    if system == 'android':
-        org_id, user = StaticAnalyzerAndroid.get_org_user(md5)
-    elif system == 'ios':
-        org_id, user = StaticAnalyzerIOS.get_org_user(md5)
-    if org_id == '1':
+def api_user_permission(request):
+    try:
+        if request.path.startswith('api/v1/upload') or request.path.startswith('api/v1/scan'):
+            return True
+        request_user = request.user
+        system = request.GET['system']
+        md5 = request.GET['md5']
+        org_id = user = None
+        if system == 'android':
+            org_id, user = StaticAnalyzerAndroid.get_org_user(md5)
+        elif system == 'ios':
+            org_id, user = StaticAnalyzerIOS.get_org_user(md5)
+        if org_id == '1':
+            return True
+        if request_user != user or user.organization != org_id:
+            return False
         return True
-    if request_user != user or user.organization != org_id:
+    except:
         return False
-    return True
+
+
 
 @request_method(['POST'])
 @csrf_exempt
@@ -241,11 +251,11 @@ def api_app_info(request):
     try:
 
         system = request.GET['system']
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         # Input validation
         match = re.match('^[0-9a-f]{32}$', md5)
-        if not api_user_permission(request.user, md5, system):
-            return make_api_response({'error': 'You have not proper permission'}, FORBIDDEN)
+        # if not api_user_permission(request.user, md5, system):
+        #     return make_api_response({'error': 'You have not proper permission'}, FORBIDDEN)
         if match:
             app_info = {}
             if system == 'android':
@@ -271,7 +281,7 @@ def api_app_info(request):
 @request_method(['GET'])
 def api_app_store(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         system = request.GET['system']
         match = re.match('^[0-9a-f]{32}$', md5)
         if match:
@@ -334,7 +344,7 @@ def api_code_smali(request):
 @request_method(['GET'])
 def api_security_overview(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         match = re.match('^[0-9a-f]{32}$', md5)
         system = request.GET['system']
         if match:
@@ -358,7 +368,7 @@ def api_security_overview(request):
 @request_method(['GET'])
 def api_malware_overview(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         match = re.match('^[0-9a-f]{32}$', md5)
         system = request.GET['system']
         if match:
@@ -402,7 +412,7 @@ def create_pagination_response(context, page):
 @request_method(['GET'])
 def api_components_activities(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         page = int(request.GET.get('page', 1))
         system = request.GET['system']
         match = re.match('^[0-9a-f]{32}$', md5)
@@ -426,7 +436,7 @@ def api_components_activities(request):
 @request_method(['GET'])
 def api_components_services(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         page = int(request.GET.get('page', 1))
         match = re.match('^[0-9a-f]{32}$', md5)
         system = request.GET['system']
@@ -450,7 +460,7 @@ def api_components_services(request):
 @request_method(['GET'])
 def api_components_receivers(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         page = int(request.GET.get('page', 1))
         match = re.match('^[0-9a-f]{32}$', md5)
         system = request.GET['system']
@@ -474,7 +484,7 @@ def api_components_receivers(request):
 @request_method(['GET'])
 def api_components_providers(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         page = int(request.GET.get('page', 1))
         match = re.match('^[0-9a-f]{32}$', md5)
         system = request.GET['system']
@@ -498,7 +508,7 @@ def api_components_providers(request):
 @request_method(['GET'])
 def api_components_libraries(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         page = int(request.GET.get('page', 1))
         match = re.match('^[0-9a-f]{32}$', md5)
         system = request.GET['system']
@@ -526,7 +536,7 @@ def api_components_libraries(request):
 @request_method(['GET'])
 def api_components_files(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         page = int(request.GET.get('page', 1))
         match = re.match('^[0-9a-f]{32}$', md5)
         system = request.GET['system']
@@ -552,7 +562,7 @@ def api_components_files(request):
 @request_method(['GET'])
 def api_domain_analysis(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         match = re.match('^[0-9a-f]{32}$', md5)
         system = request.GET['system']
         if match:
@@ -561,13 +571,7 @@ def api_domain_analysis(request):
                 domains = StaticAnalyzerAndroid.get_domain_analysis(md5)
             # elif system == 'ios':
             #     domains = StaticAnalyzerIOS.get_malware_overview(md5)
-            #
-            # db_entry = StaticAnalyzerAndroid.objects.filter(
-            #     MD5=md5)
-            # if db_entry.exists():
-            #     context = get_context_from_db_entry(db_entry)
-            #     if context['domains']:
-            #         return make_api_response(context['domains'], OK)
+                return make_api_response(domains, OK)
             return make_api_response({'msg': 'Not exist'}, OK)
         else:
             return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
@@ -581,7 +585,7 @@ def api_domain_analysis(request):
 @request_method(['GET'])
 def api_manifest_analysis(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         match = re.match('^[0-9a-f]{32}$', md5)
         system = request.GET['system']
         if system != 'android':
@@ -589,7 +593,7 @@ def api_manifest_analysis(request):
         if match:
             manifest = StaticAnalyzerAndroid.get_manifest_analysis(md5)
             if match is not None:
-                return make_api_response({'count': len(manifest), 'list': manifest}. OK)
+                return make_api_response({'count': len(manifest), 'list': manifest}, OK)
             return make_api_response({'msg': 'Not exist'}, OK)
         else:
             return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
@@ -603,7 +607,7 @@ def api_manifest_analysis(request):
 @request_method(['GET'])
 def api_code_analysis(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         match = re.match('^[0-9a-f]{32}$', md5)
         system = request.GET['system']
         if match:
@@ -613,7 +617,7 @@ def api_code_analysis(request):
             elif system == 'ios':
                 code_analysis = StaticAnalyzerIOS.get_code_analysis(md5)
             if code_analysis is not None:
-                return make_api_response(code_analysis, OK)
+                return make_api_response({'count': len(code_analysis), 'list': code_analysis}, OK)
             return make_api_response({'msg': 'Not exist'}, OK)
         else:
             return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
@@ -627,7 +631,7 @@ def api_code_analysis(request):
 @request_method(['GET'])
 def api_file_analysis(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         match = re.match('^[0-9a-f]{32}$', md5)
         system = request.GET['system']
         if match:
@@ -651,7 +655,7 @@ def api_file_analysis(request):
 @request_method(['GET'])
 def api_app_permissions(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         match = re.match('^[0-9a-f]{32}$', md5)
         system = request.GET['system']
         if match:
@@ -675,7 +679,7 @@ def api_app_permissions(request):
 @request_method(['GET'])
 def api_binary_analysis(request):
     try:
-        md5 = request.GET['hash']
+        md5 = request.GET['md5']
         match = re.match('^[0-9a-f]{32}$', md5)
         system = request.GET['system']
         if match:
