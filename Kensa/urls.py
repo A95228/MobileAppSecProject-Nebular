@@ -26,6 +26,7 @@ from StaticAnalyzer.views.windows import windows
 from StaticAnalyzer.views.android import static_analyzer as android_sa
 from StaticAnalyzer.views.ios import static_analyzer as ios_sa
 from StaticAnalyzer.views.ios import view_source as io_view_source
+from users.views import ProfileView
 
 urlpatterns = [
     # General
@@ -33,6 +34,8 @@ urlpatterns = [
     path('grappelli/', include('grappelli.urls')), # grappelli URLS
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
+
+    url(r'^profile/$', ProfileView),
 
     url(r'^upload/$', home.Upload.as_view),
     url(r'^download/', home.download),

@@ -33,6 +33,7 @@ from StaticAnalyzer.views.android.manifest_analysis import (get_manifest, manife
 from StaticAnalyzer.views.shared_func import (hash_gen, unzip)
 
 BAD_REQUEST = 400
+FORBIDDEN = 403
 OK = 200
 INTERNAL_SERVER_ERR = 500
 
@@ -55,6 +56,18 @@ def api_auth(meta):
         return bool(api_key() == meta['HTTP_AUTHORIZATION'])
     return False
 
+
+def api_user_permission(request_user, md5, system):
+    org_id = user = None
+    if system == 'android':
+        org_id, user = StaticAnalyzerAndroid.get_org_user(md5)
+    elif system == 'ios':
+        org_id, user = StaticAnalyzerIOS.get_org_user(md5)
+    if org_id == '1':
+        return True
+    if request_user != user or user.organization != org_id:
+        return False
+    return True
 
 @request_method(['POST'])
 @csrf_exempt
@@ -231,6 +244,8 @@ def api_app_info(request):
         md5 = request.GET['hash']
         # Input validation
         match = re.match('^[0-9a-f]{32}$', md5)
+        if not api_user_permission(request.user, md5, system):
+            return make_api_response({'error': 'You have not proper permission'}, FORBIDDEN)
         if match:
             app_info = {}
             if system == 'android':

@@ -53,7 +53,7 @@ def index(request):
 
 class Upload(object):
     """Handle File Upload based on App type."""
-    @permission_required
+    # @permission_required
     def __init__(self, request):
         self.request = request
         self.form = UploadFileForm(request.POST, request.FILES)
@@ -133,7 +133,8 @@ class Upload(object):
             'file_name': data['file_name'],
         }
         return api_response, 200
-    @permission_required
+
+    # @permission_required
     def upload(self):
         request = self.request
         scanning = Scanning(request)
@@ -150,6 +151,7 @@ class Upload(object):
         # Windows APPX
         elif self.file_type.is_appx():
             return scanning.scan_appx()
+
 
 @permission_required
 def api_docs(request):
@@ -212,7 +214,7 @@ def not_found(request):
     template = 'general/not_found.html'
     return render(request, template, context)
 
-@permission_required
+# @permission_required
 def recent_scans(request):
     """Show Recent Scans Route."""
     entries = []
@@ -272,6 +274,7 @@ def download(request):
         msg += filename
         return print_n_send_error_response(request, msg)
     return HttpResponse('')
+
 
 @permission_required
 def delete_scan(request, api=False):

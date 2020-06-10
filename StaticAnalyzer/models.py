@@ -2,6 +2,8 @@ import logging
 from django.db import models
 
 # Create your models here.
+from users.models import User
+
 logger = logging.getLogger(__name__)
 
 
@@ -56,6 +58,9 @@ class StaticAnalyzerAndroid(models.Model):
     APKID = models.TextField(default={})
     TRACKERS = models.TextField(default={})
     PLAYSTORE_DETAILS = models.TextField(default={})
+
+    USER = models.ForeignKey(User, on_delete=models.CASCADE)
+    ORG_ID = models.TextField()
 
     @classmethod
     def get_app_info(cls, md5):
@@ -299,6 +304,18 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("get_app_permissions error %s" % md5)
             return None
 
+    @classmethod
+    def get_org_user(cls, md5):
+        logger.info("get_org_user of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            org_id = data_entry.ORG_ID
+            user = data_entry.USER
+            return org_id, user
+        except:
+            logger.info("get_app_permissions error %s" % md5)
+            return None, None
+
 
 class StaticAnalyzerIOS(models.Model):
     FILE_NAME = models.CharField(max_length=255)
@@ -333,6 +350,9 @@ class StaticAnalyzerIOS(models.Model):
     STRINGS = models.TextField(default=[])
     FIREBASE_URLS = models.TextField(default=[])
     APPSTORE_DETAILS = models.TextField(default={})
+
+    USER = models.ForeignKey(User, on_delete=models.CASCADE)
+    ORG_ID = models.TextField()
 
     @classmethod
     def get_app_info(cls, md5):
@@ -500,6 +520,18 @@ class StaticAnalyzerIOS(models.Model):
             logger.info("get_components_files error %s" % md5)
             return None
         return files
+
+    @classmethod
+    def get_org_user(cls, md5):
+        logger.info("get_org_user of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            org_id = data_entry.ORG_ID
+            user = data_entry.USER
+            return org_id, user
+        except:
+            logger.info("get_org_user error %s" % md5)
+            return None, None
 
 class StaticAnalyzerWindows(models.Model):
     FILE_NAME = models.CharField(max_length=260)
