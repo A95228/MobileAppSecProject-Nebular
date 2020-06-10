@@ -136,6 +136,6 @@ urlpatterns = [
     # Test
     url(r'^tests/$', tests.start_test),
     
-]
+] + rest_api.api_user_urls
 
 utils.print_version()
