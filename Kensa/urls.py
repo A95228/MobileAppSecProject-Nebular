@@ -1,3 +1,5 @@
+# This module contains global urls for Kensa
+
 from django.contrib import admin
 from django.urls import path
 from django.conf.urls import include, url
@@ -9,6 +11,7 @@ from DynamicAnalyzer.views.android import (
     tests_frida)
 
 from Kensa import utils
+from users.views import api_user_urls
 from Kensa.views import home
 from Kensa.views.api import rest_api
 
@@ -33,7 +36,6 @@ urlpatterns = [
     url(r'^$', home.index, name='home'),
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
-
     url(r'^upload/$', home.Upload.as_view),
     url(r'^download/', home.download),
     url(r'^about$', home.about, name='about'),
@@ -54,31 +56,23 @@ urlpatterns = [
     url(r'^Find/$', find.run),
     url(r'^generate_downloads/$', generate_downloads.run),
     url(r'^ManifestView/$', manifest_view.run),
-
+    
     # IOS
     url(r'^StaticAnalyzer_iOS/$', ios_sa.static_analyzer_ios),
     url(r'^ViewFile/$', io_view_source.run),
-
+    
     # Windows
     url(r'^StaticAnalyzer_Windows/$', windows.staticanalyzer_windows),
-
     # Shared
     url(r'^PDF/$', shared_func.pdf),
-
     # App Compare
     url(r'^compare/(?P<hash1>[0-9a-f]{32})/(?P<hash2>[0-9a-f]{32})/$',
         shared_func.compare_apps),
-
+    
     # Dynamic Analysis
-    url(r'^dynamic_analysis/$',
-        dz.dynamic_analysis,
-        name='dynamic'),
-    url(r'^android_dynamic/$',
-        dz.dynamic_analyzer,
-        name='dynamic_analyzer'),
-    url(r'^httptools$',
-        dz.httptools_start,
-        name='httptools'),
+    url(r'^dynamic_analysis/$',dz.dynamic_analysis, name='dynamic'),
+    url(r'^android_dynamic/$', dz.dynamic_analyzer, name='dynamic_analyzer'),
+    url(r'^httptools$',dz.httptools_start, name='httptools'),
     url(r'^logcat/$', dz.logcat),
 
     # Android Operations
@@ -114,25 +108,18 @@ urlpatterns = [
     url(r'^api/v1/report_json$', rest_api.api_json_report),
     url(r'^api/v1/view_source$', rest_api.api_view_source),
     url(r'^api/v1/scans$', rest_api.api_recent_scans),
-
     url(r"^api/v1/recent_scans$", rest_api.api_get_recent_scans),
     url(r"^api/v1/signer_certificate$",rest_api.api_get_signer_certificate),
     url(r"^api/v1/code/manifest$", rest_api.api_get_manifest),
     url(r"^api/v1/summary/domain_analysis_country$", rest_api.api_get_domains_data),
     url(r"^api/v1/code/java$", rest_api.api_get_java_code),
     url(r"^api/v1/code/smali$", rest_api.api_get_smali_code),
-
-    # API Search Route
     url(r"^api/v1/api_md5_search$", rest_api.api_get_search),
-    
-    # REST API Reconnaissance Routes
     url(r"^api/v1/recon_emails$", rest_api.api_get_recon_emails),
     url(r"^api/v1/recon_firebase$", rest_api.api_get_recon_firebase_db_urls),
     url(r"^api/v1/recon_urls$", rest_api.api_get_recon_urls),
     url(r"^api/v1/recon_trackers$", rest_api.api_get_recon_trackers),
     url(r"^api/v1/recon_strings$", rest_api.api_get_recon_strings),
-
-    
     url(r'^api/v1/app_info$', rest_api.api_app_info),
     url(r'^api/v1/appstore_info$', rest_api.api_app_store),
     url(r'^api/v1/summary/security_overview$', rest_api.api_security_overview),
@@ -153,6 +140,6 @@ urlpatterns = [
     # Test
     url(r'^tests/$', tests.start_test),
     
-] + rest_api.api_user_urls
+] + api_user_urls
 
 utils.print_version()
