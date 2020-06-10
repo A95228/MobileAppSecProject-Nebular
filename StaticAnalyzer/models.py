@@ -508,7 +508,7 @@ class StaticAnalyzerAndroid(models.Model):
             elif len(bad_country_list) == 1:
                  return {
                      bad_country_list[0]['country']: {'bad_count': bad_country_list[0]['count'],
-                                                      'domain': bad_country_list[0]['domains']},
+                                                      'domain': bad_country_list[0]['domains'][:3]},
                  }
             elif len(bad_country_list) == 2:
                 if len(bad_country_list[0]['domains']) > 1:
