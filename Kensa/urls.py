@@ -123,15 +123,15 @@ urlpatterns = [
     url(r"^api/v1/code/java$", rest_api.api_get_java_code),
     url(r"^api/v1/code/smali$", rest_api.api_get_smali_code),
 
+    # API Search Route
+    url(r"^api/v1/api_md5_search$", rest_api.api_get_search),
+    
     # REST API Reconnaissance Routes
     url(r"^api/v1/recon_emails$", rest_api.api_get_recon_emails),
     url(r"^api/v1/recon_firebase$", rest_api.api_get_recon_firebase_db_urls),
     url(r"^api/v1/recon_urls$", rest_api.api_get_recon_urls),
     url(r"^api/v1/recon_trackers$", rest_api.api_get_recon_trackers),
     url(r"^api/v1/recon_strings$", rest_api.api_get_recon_strings),
-    
-    # API Search Route
-    url(r"^api/v1/api_md5_search$", rest_api.api_get_search),
 
     # Test
     url(r'^tests/$', tests.start_test),

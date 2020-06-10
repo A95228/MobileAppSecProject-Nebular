@@ -26,7 +26,11 @@ from StaticAnalyzer.views.ios import view_source as ios_view_source
 from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios
 from StaticAnalyzer.views.shared_func import pdf
 from StaticAnalyzer.views.windows import windows
-from StaticAnalyzer.models import StaticAnalyzerAndroid, StaticAnalyzerIOS
+from StaticAnalyzer.models import(
+    RecentScansDB,
+    StaticAnalyzerAndroid,
+    StaticAnalyzerIOS
+)
 
 
 logger = logging.getLogger(__name__)
@@ -581,7 +585,7 @@ def api_get_recon_trackers(request):
         return make_api_response({"error" : "Missing identifier"}, 
             status=BAD_REQUEST)
     if not re.match(r"^[0-9a-f]{32}$", request.GET["md5"]):
-        return make_api_response({"error" : "Invalid identifier"}, 
+        return make_api_response({"error" : "Invalid identifier"},
             status=BAD_REQUEST)
     if request.GET.get("page", None) is not None:
         if re.match(r"^\d+$", request.GET["page"]):
