@@ -95,7 +95,7 @@ class StaticAnalyzerAndroid(models.Model):
     PLAYSTORE_DETAILS = models.TextField(default={})
     USER_ID = models.IntegerField(verbose_name="user_id_android")
     ORGANIZATION_ID = models.IntegerField(
-        verbose_name="organization_id_android")
+        verbose_name="organization_id_android", )
 
 
     @staticmethod
@@ -265,8 +265,8 @@ class StaticAnalyzerAndroid(models.Model):
         except (cls.DoesNotExist, ObjectDoesNotExist):
             logger.error("Object %s does not exists")
             return None
-        except Exception:
-            logger.error("Unexpected error geting strings of %s" % md5)
+        except Exception as error:
+            logger.error("%s : object -> %s" % (str(error),md5))
             return None
         return {"strings": cls.paginate(strings, page)}
 

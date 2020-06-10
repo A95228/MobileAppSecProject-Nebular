@@ -24,12 +24,7 @@ from StaticAnalyzer.views.android.static_analyzer import static_analyzer
 from StaticAnalyzer.views.android.java import run, api_run_java_code
 from StaticAnalyzer.views.android.smali import api_run_smali
 from StaticAnalyzer.views.ios import view_source as ios_view_source
-from StaticAnalyzer.views.ios.static_analyzer import (
-    static_analyzer_ios, 
-    static_analyzer, 
-    get_app_name, 
-    valid_android_zip
-)
+from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios
 from StaticAnalyzer.views.shared_func import pdf, score
 from StaticAnalyzer.views.windows import windows
 from StaticAnalyzer.models import(
