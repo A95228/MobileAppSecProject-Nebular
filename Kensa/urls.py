@@ -31,7 +31,6 @@ urlpatterns = [
 
     # General
     url(r'^$', home.index, name='home'),
-    path('grappelli/', include('grappelli.urls')), # grappelli URLS
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
 

@@ -133,10 +133,10 @@ APPX_MIME = [
 DEBUG = True
 DJANGO_LOG_LEVEL = DEBUG
 ALLOWED_HOSTS = ['127.0.0.1', 'kensa', '*']
-GRAPPELLI_ADMIN_TITLE = "Kensa Admin"
+#GRAPPELLI_ADMIN_TITLE = "Kensa Admin"
 # Application definition
 INSTALLED_APPS = (
-    'grappelli',
+    #'grappelli',
     'django.contrib.admin',
     'allauth',
     'allauth.account',
@@ -185,12 +185,11 @@ TEMPLATES = [
         'APP_DIRS': True,
         'DIRS':
             [
-                os.path.join(BASE_DIR, 'templates'), 
-                os.path.join(BASE_DIR, 'templates', 'allauth'), 
-                os.path.join(BASE_DIR, 'templates', 'admin'),
+                os.path.join(BASE_DIR, 'templates'), os.path.join(BASE_DIR, 'templates', 'allauth'),
             ],
         'OPTIONS':
             {
+                'debug': DEBUG,
                 'context_processors': [
                     # Already defined Django-related contexts here
                     # `allauth` needs this from django
