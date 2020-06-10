@@ -1,7 +1,6 @@
 # Tools for rest_api.py
 
 BAD_REQUEST = 400
-BAD_REQUEST = 400
 OK = 200
 NOT_FOUND = 404
 

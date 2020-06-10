@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.views.generic import UpdateView
+from rest_framework.generics import CreateAPIView, RetrieveUpdateDestroyAPIView
 # Create your views here.
 from rest_framework import serializers, status
 from rest_framework.response import Response
@@ -11,16 +11,20 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'name', 'last_name', 'phone_number', 'addr_city', 'addr_state', 'addr_country',
+        fields = ('id', 'email', 'name', 'short_name', 'first_name', 'last_name', 'phone_number',
+                  'addr_city', 'addr_state', 'addr_country',
                   'organization')
 
 
-class ProfileView(UpdateView):
+class ProfileView(CreateAPIView, RetrieveUpdateDestroyAPIView):
 
     def get(self, request, *args, **kwargs):
         user = User.objects.get(request.user)
         UserSerializer(user)
         return Response(data=UserSerializer(user).data, status=status.HTTP_200_OK)
+
+    def partial_update(self, request, *args, **kwargs):
+        return super(ProfileView, self).partial_update(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         user = User.objects.get(request.user)

@@ -24,19 +24,9 @@ from StaticAnalyzer.models import(
     StaticAnalyzerIOS
 )
 
-from StaticAnalyzer.views.android.java import run, api_run_java_code
+from StaticAnalyzer.views.android.java import api_run_java_code
 from StaticAnalyzer.views.android.smali import api_run_smali
 
-from django.contrib.auth.decorators import permission_required
-
-from django.conf import settings
-from Kensa.utils import (file_size)
-from StaticAnalyzer.views.android.db_interaction import (
-    get_context_from_db_entry)
-	
-from StaticAnalyzer.views.android.manifest_analysis import (get_manifest, manifest_data)
-
-from StaticAnalyzer.views.shared_func import (hash_gen, unzip)
 
 BAD_REQUEST = 400
 FORBIDDEN = 403
@@ -80,7 +70,7 @@ def api_user_permission(request):
             org_id, user = StaticAnalyzerAndroid.get_org_user(md5)
         elif system == 'ios':
             org_id, user = StaticAnalyzerIOS.get_org_user(md5)
-        if org_id == '1':
+        if org_id == '1' or request_user.id == 1:
             return True
         if request_user != user or user.organization != org_id:
             return False

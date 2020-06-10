@@ -53,6 +53,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_login = models.DateTimeField(null=True, blank=True)
     date_joined = models.DateTimeField(auto_now_add=True)
 
+    addr_city = models.CharField(max_length=254, null=True, blank=True)
+    addr_state = models.CharField(max_length=254, null=True, blank=True)
+    addr_country = models.CharField(max_length=254, null=True, blank=True)
 
     USERNAME_FIELD = 'email'
     EMAIL_FIELD = 'email'
