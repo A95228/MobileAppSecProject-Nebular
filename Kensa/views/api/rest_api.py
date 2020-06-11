@@ -6,8 +6,10 @@ import re
 
 
 from django.conf.urls import url
+from django.contrib import messages
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
 from rest_framework.response import Response
@@ -230,7 +232,8 @@ def api_get_search(request):
 @request_method(["GET"])
 def api_get_recent_scans(request):
     """Get Recent Scans """
-    data = RecentScansDB.get_recent_scans()
+    page = tools.get_page(request)
+    data = RecentScansDB.get_recent_scans(page)
     if data is not None:
         if isinstance(data, dict):
             return make_api_response(data=data, status=OK)
@@ -333,9 +336,12 @@ def api_get_java_code(request):
 @request_method(["GET"])
 def api_get_smali_code(request):
     """Get smali code"""
+
     request_ok = tools.request_check(request)
 
     if not request_ok[0]:
+        messages
+        return HttpResponseRedirect(reverse("error"))
         return make_api_response(*request_ok[1:])
 
     try:
