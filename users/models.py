@@ -61,10 +61,11 @@ class UserManager(BaseUserManager):
 		return user
 
 
-  def create_admin(self, email, password, **extra_fields):
-    user=self._create_user(email, password, False, True, True **extra_fields)
-    user.save(using=self._db)
-    return user
+	def create_admin(self, email, password, **extra_fields):
+		user=self._create_user(email, password, False, True, True **extra_fields)
+		user.save(using=self._db)
+		return user
+
 
 class User(AbstractBaseUser, PermissionsMixin):
 
