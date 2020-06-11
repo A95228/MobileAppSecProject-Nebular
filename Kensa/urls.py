@@ -108,8 +108,9 @@ urlpatterns = [
     url(r'^api/v1/report_json$', rest_api.api_json_report),
     url(r'^api/v1/view_source$', rest_api.api_view_source),
     url(r'^api/v1/scans$', rest_api.api_recent_scans),
-    url(r"^api/v1/recent_scans$", rest_api.api_get_recent_scans),
-    url(r"^api/v1/signer_certificate$",rest_api.api_get_signer_certificate),
+
+    url(r"^api/v1/recent_scans$", rest_api.api_get_recent_scans), # works
+    url(r"^api/v1/signer_certificate$",rest_api.api_get_signer_certificate), # works
     url(r"^api/v1/code/manifest$", rest_api.api_get_manifest),
     url(r"^api/v1/summary/domain_analysis_country$", rest_api.api_get_domains_data),
     url(r"^api/v1/code/java$", rest_api.api_get_java_code),
@@ -131,7 +132,6 @@ urlpatterns = [
     url(r'^api/v1/summary/components/libraries$', rest_api.api_components_libraries),
     url(r'^api/v1/summary/components/files$', rest_api.api_components_files),
     url(r'^api/v1/summary/domain_analaysis$', rest_api.api_domain_analysis),
-    url(r'^api/v1/malware_analysis/apk_id', rest_api.api_get_apkid_analysis),
     url(r'^api/v1/security_analysis/manifest_analysis$', rest_api.api_manifest_analysis),
     url(r'^api/v1/security_analysis/code_analysis$', rest_api.api_code_analysis),
     url(r'^api/v1/security_analysis/binary_analysis$', rest_api.api_binary_analysis),
