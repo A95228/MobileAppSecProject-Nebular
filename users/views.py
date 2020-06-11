@@ -125,7 +125,7 @@ def api_logout(request):
     if request.user.is_authenticated:
         username = request.user.username 
         logout(request)
-        messages.success(request, message="See you later %s !" % usernme)
+        messages.success(request, message="See you later %s !" % username)
         return HttpResponseRedirect(reverse("home"))
     else:
         messages.info(request, message="You can't logout if you are not signed in.")
