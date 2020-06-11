@@ -12,6 +12,8 @@ MODELS_TO_HIDE_STD_PERMISSIONS = (
 )
 
 
+
+
 class UserAdmin(BaseUserAdmin):
     admin.site.site_title = 'Kensa'
     admin.site.site_header = 'Kensa Administration'

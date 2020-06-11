@@ -11,7 +11,6 @@ from django.contrib.auth.decorators import permission_required
 
 logger = logging.getLogger(__name__)
 
-
 def add_to_recent_scan(name, md5, url):
     """Add Entry to Database under Recent Scan."""
     try:
@@ -22,7 +21,6 @@ def add_to_recent_scan(name, md5, url):
             new_db_obj.save()
     except Exception:
         logger.exception('Adding Scan URL to Database')
-
 
 def handle_uploaded_file(filecnt, typ):
     """Write Uploaded File."""
@@ -45,7 +43,6 @@ class Scanning(object):
         self.request = request
         self.file = request.FILES['file']
         self.file_name = request.FILES['file'].name
-    # @permission_required
     def scan_apk(self):
         """Android APK."""
         md5 = handle_uploaded_file(self.file, '.apk')
@@ -63,8 +60,6 @@ class Scanning(object):
 
         logger.info('Performing Static Analysis of Android APK')
         return data
-
-    #@permission_required
     def scan_zip(self):
         """Android /iOS Zipped Source."""
         md5 = handle_uploaded_file(self.file, '.zip')
@@ -81,7 +76,6 @@ class Scanning(object):
         add_to_recent_scan(self.file_name, md5, data['url'])
         logger.info('Performing Static Analysis of Android/iOS Source Code')
         return data
-
     def scan_ipa(self):
         """IOS Binary."""
         md5 = handle_uploaded_file(self.file, '.ipa')
@@ -98,7 +92,6 @@ class Scanning(object):
         add_to_recent_scan(self.file_name, md5, data['url'])
         logger.info('Performing Static Analysis of iOS IPA')
         return data
-
     def scan_appx(self):
         """Windows appx."""
         md5 = handle_uploaded_file(self.file, '.appx')

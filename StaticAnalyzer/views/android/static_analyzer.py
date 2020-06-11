@@ -62,6 +62,7 @@ def key(data, key_name):
 
 def static_analyzer(request, api=False):
     """Do static analysis on an request and save to db."""
+        
     try:
         if api:
             typ = request.POST['scan_type']

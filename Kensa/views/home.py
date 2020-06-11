@@ -13,7 +13,7 @@ from django.core.paginator import Paginator
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.template.defaulttags import register
-from django.contrib.auth.decorators import permission_required,login_required
+from django.contrib.auth.decorators import user_passes_test,login_required
 
 from Kensa.forms import FormUtil, UploadFileForm
 from Kensa.utils import (api_key, is_dir_exists, is_file_exists,
@@ -53,7 +53,6 @@ def index(request):
 
 class Upload(object):
     """Handle File Upload based on App type."""
-    # @permission_required
     def __init__(self, request):
         self.request = request
         self.form = UploadFileForm(request.POST, request.FILES)
@@ -133,7 +132,13 @@ class Upload(object):
             'file_name': data['file_name'],
         }
         return api_response, 200
-    
+
+    #def user_can_upload(user):
+    #    if user.is_authenticated() and user.has_perm("upload.can_upload"):
+    #        return True
+    #    else:
+    #        return False
+    #@user_passes_test(user_can_upload)
     def upload(self):
         request = self.request
         scanning = Scanning(request)
@@ -151,7 +156,6 @@ class Upload(object):
         elif self.file_type.is_appx():
             return scanning.scan_appx()
 
-
 def api_docs(request):
     """Api Docs Route."""
     context = {
@@ -161,7 +165,6 @@ def api_docs(request):
     }
     template = 'general/apidocs.html'
     return render(request, template, context)
-
 
 def about(request):
     """About Route."""
@@ -212,7 +215,6 @@ def not_found(request):
     template = 'general/not_found.html'
     return render(request, template, context)
 
-
 def recent_scans(request):
     """Show Recent Scans Route."""
     entries = []
@@ -235,7 +237,6 @@ def recent_scans(request):
     template = 'general/recent.html'
     return render(request, template, context)
 
-
 def search(request):
     """Search Scan by MD5 Route."""
     md5 = request.GET['md5']
@@ -246,7 +247,6 @@ def search(request):
         else:
             return HttpResponseRedirect('/not_found/')
     return print_n_send_error_response(request, 'Invalid Scan Hash')
-
 
 def download(request):
     """Download from Kensa Route."""
@@ -272,7 +272,6 @@ def download(request):
         msg += filename
         return print_n_send_error_response(request, msg)
     return HttpResponse('')
-
 
 def delete_scan(request, api=False):
     """Delete Scan from DB and remove the scan related files."""
