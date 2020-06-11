@@ -27,7 +27,7 @@ def merge_searches(*args):
 
 
 def request_check(request):
-    """ """
+    """Check if the request is okay"""
     if request.GET.get("md5", None) is None:
         return False, {"error" : "Missing md5 param"}, BAD_REQUEST
     if not re.match(r"^[0-9a-f]{32}$", request.GET["md5"]):

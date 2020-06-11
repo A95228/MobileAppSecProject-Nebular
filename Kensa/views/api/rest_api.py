@@ -1,14 +1,6 @@
 # -*- coding: utf_8 -*-
 """Kensa REST API V 1."""
 import logging
-<<<<<<< HEAD
-import re
-
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-
-=======
 import pdb 
 import re
 
@@ -22,7 +14,6 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.views import APIView
 
->>>>>>> char_branch
 from Kensa.utils import api_key
 from Kensa.views.api import tools, serializers
 from Kensa.views.helpers import request_method
@@ -599,8 +590,6 @@ def api_app_store(request):
         msg = str(excep)
         exp = excep.__doc__
         return make_api_response({'error': msg}, BAD_REQUEST)
-
-
 
 
 @request_method(['GET'])
