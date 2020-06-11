@@ -7,8 +7,12 @@ import re
 
 from django.conf.urls import url
 from django.contrib import messages
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.core.paginator import (
+    Paginator,
+    PageNotAnInteger,
+    EmptyPage
+)
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -328,8 +332,6 @@ def api_get_smali_code(request):
     request_ok = tools.request_check(request)
 
     if not request_ok[0]:
-        messages
-        return HttpResponseRedirect(reverse("error"))
         return make_api_response(*request_ok[1:])
 
     try:
