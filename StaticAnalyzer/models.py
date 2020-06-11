@@ -941,6 +941,78 @@ class StaticAnalyzerIOS(models.Model):
             logger.info("get_org_user error %s" % md5)
             return None, None
 
+    @classmethod
+    def get_domain_analysis(cls, md5):
+        logger.info("get_components_files of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            domains = eval(data_entry.DOMAINS)
+            bad_country = {}
+            for key, value in domains.items():
+                bad = value.get('bad', None)
+                if bad is None:
+                    continue
+                geolocation = value.get('geolocation', None)
+                if geolocation is None:
+                    continue
+                country_long = geolocation['country_long']
+                # country_short = geolocation['country_short']
+                if country_long in bad_country.keys():
+                    bad_country[country_long]['domain'].append(key)
+                else:
+                    bad_country[country_long] = {'count': 0, 'domain': [key]}
+                if bad == 'yes':
+                    bad_country[country_long]['count'] = bad_country[country_long]['count'] + 1
+
+            bad_country_list = []
+            for key, value in bad_country.items():
+                bad_country_list.append({'count': value['count'],
+                                         'domains': value['domain'],
+                                         'country': key})
+            for i in range(len(bad_country_list) - 1):
+                for j in range(i + 1, len(bad_country_list)):
+                    if bad_country_list[i]['count'] < bad_country_list[j]['count']:
+                        temp = bad_country_list[j]
+                        bad_country_list[j] = bad_country_list[i]
+                        bad_country_list[i] = temp
+            if len(bad_country_list) >= 3:
+                return {
+                    bad_country_list[0]['country']: {'bad_count': bad_country_list[0]['count'],
+                                                     'domain': bad_country_list[0]['domains'][0]},
+                    bad_country_list[1]['country']: {'bad_count': bad_country_list[1]['count'],
+                                                     'domain': bad_country_list[1]['domains'][0]},
+                    bad_country_list[2]['country']: {'bad_count': bad_country_list[2]['count'],
+                                                     'domain': bad_country_list[2]['domains'][0]}}
+            elif len(bad_country_list) == 1:
+                return {
+                    bad_country_list[0]['country']: {'bad_count': bad_country_list[0]['count'],
+                                                     'domain': bad_country_list[0]['domains'][:3]},
+                }
+            elif len(bad_country_list) == 2:
+                if len(bad_country_list[0]['domains']) > 1:
+                    return {
+                        bad_country_list[0]['country']: {'bad_count': bad_country_list[0]['count'],
+                                                         'domain': bad_country_list[0]['domains'][:2]},
+                        bad_country_list[1]['country']: {'bad_count': bad_country_list[1]['count'],
+                                                         'domain': bad_country_list[1]['domains'][0]},
+                    }
+                elif len(bad_country_list[1]['domains']) > 1:
+                    return {
+                        bad_country_list[0]['country']: {'bad_count': bad_country_list[0]['count'],
+                                                         'domain': bad_country_list[0]['domains'][0]},
+                        bad_country_list[1]['country']: {'bad_count': bad_country_list[1]['count'],
+                                                         'domain': bad_country_list[1]['domains'][:2]},
+                    }
+                else:
+                    return {
+                        bad_country_list[0]['country']: {'bad_count': bad_country_list[0]['count'],
+                                                         'domain': bad_country_list[0]['domains'][0]},
+                        bad_country_list[1]['country']: {'bad_count': bad_country_list[1]['count'],
+                                                         'domain': bad_country_list[1]['domains'][0]},
+                    }
+        except:
+            logger.info("get_components_files error %s" % md5)
+            return None
 
 class StaticAnalyzerWindows(models.Model):
     FILE_NAME = models.CharField(max_length=260)

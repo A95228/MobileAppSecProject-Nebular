@@ -931,8 +931,8 @@ def api_domain_analysis(request):
             domains = {}
             if system == 'android':
                 domains = StaticAnalyzerAndroid.get_domain_analysis(md5)
-            # elif system == 'ios':
-            #     domains = StaticAnalyzerIOS.get_malware_overview(md5)
+            elif system == 'ios':
+                domains = StaticAnalyzerIOS.get_domain_analysis(md5)
                 return make_api_response(domains, OK)
             return make_api_response({'msg': 'Not exist'}, OK)
         else:
