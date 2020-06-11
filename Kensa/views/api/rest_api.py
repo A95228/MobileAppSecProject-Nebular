@@ -16,10 +16,6 @@ from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
-from rest_framework.response import Response
-from rest_framework import viewsets
-from rest_framework.views import APIView
-
 from Kensa.utils import api_key
 from Kensa.views.api import tools, serializers
 from Kensa.views.helpers import request_method
@@ -208,16 +204,20 @@ def api_get_search(request):
     if request.GET.get("md5",None) is None:
         return make_api_response({"error" : "Missing Identifier"}, 
             status=BAD_REQUEST)
+    
     if not re.match(r"^[0-9a-f]{1,32}$", request.GET["md5"]):
         return make_api_response({"error" : "Invalid identifier"}, 
             status=BAD_REQUEST)
+
     md5 = request.GET["md5"]
     ios_md5s = StaticAnalyzerIOS.get_md5s(md5)
     android_md5s = StaticAnalyzerAndroid.get_md5s(md5)
     search_results = tools.merge_searches(ios_md5s, android_md5s)
+    
     if not len(search_results) > 0:
         return make_api_response({"error" : "0 search results for %s." % md5},
             status=NOT_FOUND)
+    
     return make_api_response({"results" : search_results}, status=OK)
 
 
