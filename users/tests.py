@@ -135,6 +135,11 @@ class TestUserFunk(TestCase):
         user.save()
 
 
+    def test_user_api_creation(self):
+        """Test creating an api key """
+        pass
+
+
     def tearDown(self):
         """Delete the user on each test run"""
         pass

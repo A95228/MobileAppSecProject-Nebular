@@ -1,10 +1,19 @@
 # -*- coding: utf_8 -*-
 """Kensa REST API V 1."""
 import logging
+import pdb 
 import re
 
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import JsonResponse
+
+from django.conf.urls import url
+from django.contrib import messages
+from django.core.paginator import (
+    Paginator,
+    PageNotAnInteger,
+    EmptyPage
+)
+from django.http import HttpResponse, JsonResponse
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
 from Kensa.utils import api_key
@@ -211,7 +220,8 @@ def api_get_search(request):
 @request_method(["GET"])
 def api_get_recent_scans(request):
     """Get Recent Scans """
-    data = RecentScansDB.get_recent_scans()
+    page = tools.get_page(request)
+    data = RecentScansDB.get_recent_scans(page)
     if data is not None:
         if isinstance(data, dict):
             return make_api_response(data=data, status=OK)
@@ -314,6 +324,7 @@ def api_get_java_code(request):
 @request_method(["GET"])
 def api_get_smali_code(request):
     """Get smali code"""
+
     request_ok = tools.request_check(request)
 
     if not request_ok[0]:
@@ -583,8 +594,6 @@ def api_app_store(request):
         msg = str(excep)
         exp = excep.__doc__
         return make_api_response({'error': msg}, BAD_REQUEST)
-
-
 
 
 @request_method(['GET'])

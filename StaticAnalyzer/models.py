@@ -1,4 +1,6 @@
+import datetime
 import logging
+import json
 import pdb
 
 from django.db import models
@@ -25,8 +27,29 @@ class RecentScansDB(models.Model):
     PACKAGE_NAME = models.CharField(max_length=260)
     VERSION_NAME = models.CharField(max_length=50)
 
+
+    @staticmethod
+    def paginate(load, page, count=30):
+        """Paginate a context"""
+        try:
+            paginator = Paginator(load["scans"], count)
+            activities = paginator.page(page)
+        except PageNotAnInteger:
+            activities = paginator.page(1)
+        except EmptyPage:
+            activities = paginator.page(paginator.num_pages)
+        except Exception as e:
+            return None
+        resp = {
+            'page': activities.number,
+            "total_pages" : paginator.num_pages,
+            'limit': 30,
+            'list': activities.object_list
+        }
+        return resp
+
     @classmethod
-    def get_recent_scans(cls):
+    def get_recent_scans(cls, page):
         scans = cls.objects.all().order_by("-TIMESTAMP")
         if scans.count() == 0:
             return None
@@ -40,13 +63,29 @@ class RecentScansDB(models.Model):
             "VERSION_NAME"
         )
         try:
-            to_return = list(scans_values)
-        except Exception as e:
-            e = str(e) + " Sending back None"
-            logger.warning(msg=e)
+            scan_values = list(scans_values)
+        except Exception:
+            logger.warning("Sending back None")
             return None
-        else:
-            return to_return
+    
+        loads = {"count" : 0, "scans" : []}
+        for each in scans_values:
+            try:
+                keys, values, load = [], [], {}
+                for key, value in each.items():
+                    keys.append(key.lower())
+                    if isinstance(value, datetime.datetime):
+                        value = str(value)
+                        values.append(value)
+                    else:
+                        values.append(value.lower())
+                for k in range(len(keys)):
+                    load[keys[k]] = values[k]
+                loads["scans"].append(load)
+                loads["count"] += 1
+            except:
+                continue
+        return cls.paginate(loads, page)
 
 
 class StaticAnalyzerAndroid(models.Model):
@@ -93,6 +132,9 @@ class StaticAnalyzerAndroid(models.Model):
     USER_ID = models.IntegerField(verbose_name="user_id_android")
     ORGANIZATION_ID = models.IntegerField(
         verbose_name="organization_id_android", )
+    USER = models.ForeignKey(User, on_delete=models.CASCADE)
+    ORG_ID = models.TextField()
+
 
     @staticmethod
     def paginate(load, page, count=30):
@@ -100,6 +142,8 @@ class StaticAnalyzerAndroid(models.Model):
         try:
             if 'trackers' in load:
                 paginator = Paginator(load["trackers"], count)
+            elif 'scans' in load:
+                paginator = Paginator(load["scans"], count)
             else:
                 paginator = Paginator(load, count)
             activities = paginator.page(page)
@@ -107,7 +151,8 @@ class StaticAnalyzerAndroid(models.Model):
             activities = paginator.page(1)
         except EmptyPage:
             activities = paginator.page(paginator.num_pages)
-        except:
+        except Exception as e:
+            pdb.set_trace()
             return None
         
         resp = {
@@ -137,8 +182,7 @@ class StaticAnalyzerAndroid(models.Model):
         except: 
             logger.error("Possibly ObjectNotFound with md5 %s" % md5)
             return None
-        else:
-            return eval(cert)
+        return eval(cert)
 
 
     @classmethod
@@ -270,13 +314,6 @@ class StaticAnalyzerAndroid(models.Model):
             logger.error("Unexpected error geting recon trackers of %s" % md5)
             return None
         return {"trackers": cls.paginate(trackers, page)}
-
-    @classmethod
-    def get_single_or_none(cls, md5):
-        try:
-            return cls.objects.get(MD5=md5)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            return None
 
     @classmethod
     def get_app_info(cls, md5):
@@ -693,7 +730,9 @@ class StaticAnalyzerIOS(models.Model):
     APPSTORE_DETAILS = models.TextField(default={})
     USER_ID = models.IntegerField(verbose_name="user_id_ios")
     ORGANIZATION_ID = models.IntegerField(verbose_name="organization_id_ios")
-    
+    USER = models.ForeignKey(User, on_delete=models.CASCADE)
+    ORG_ID = models.TextField()
+
     @staticmethod
     def paginate(load, page, count=30):
         """Paginate a context"""
@@ -799,6 +838,7 @@ class StaticAnalyzerIOS(models.Model):
             logger.error("Unexpected error geting recon urls of %s" % md5)
             return None
         return {"urls": cls.paginate(urls, page)}
+
 
     @classmethod
     def get_recon_firebase_db(cls, md5, page):
