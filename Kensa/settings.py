@@ -170,7 +170,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'Kensa.views.api.rest_api_middleware.RestApiAuthMiddleware',
-    #'Kensa.LoginRequiredMiddleware',
 
 ]
 ROOT_URLCONF = 'Kensa.urls'
@@ -398,6 +397,14 @@ JAVA_BINARY = find_java_binary()
 # ============DJANGO REST========================
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
+
+    "DEFAULT_RENDERER_CLASSES": (
+        "rest_framework.renderers.JSONRenderer",
+    ),
+
+    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication',],
+
     'PAGE_SIZE': 30
 }
 # ===============================================

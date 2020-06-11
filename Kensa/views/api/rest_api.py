@@ -6,9 +6,10 @@ import re
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from rest_framework import permissions
 
 from Kensa.utils import api_key
-from Kensa.views.api import tools, serializers
+from Kensa.views.api import tools
 from Kensa.views.helpers import request_method
 from Kensa.views.home import RecentScans, Upload, delete_scan
 
@@ -25,6 +26,8 @@ from StaticAnalyzer.models import(
     StaticAnalyzerAndroid,
     StaticAnalyzerIOS
 )
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import permission_classes, action
 
 
 logger = logging.getLogger(__name__)
@@ -487,20 +490,22 @@ def api_get_recon_trackers(request):
 
 def api_user_permission(request):
     try:
-        if request.path.startswith('api/v1/upload') or request.path.startswith('api/v1/scan'):
-            return True
-        request_user = request.user
-        system = request.GET['system']
-        md5 = request.GET['md5']
-        org_id = user = None
-        if system == 'android':
-            org_id, user = StaticAnalyzerAndroid.get_org_user(md5)
-        elif system == 'ios':
-            org_id, user = StaticAnalyzerIOS.get_org_user(md5)
-        if org_id == '1':
-            return True
-        if request_user != user or user.organization != org_id:
+        if not request.user.is_authenticated:
             return False
+        # if request.path.startswith('api/v1/upload') or request.path.startswith('api/v1/scan'):
+        #     return True
+        # request_user = request.user
+        # system = request.GET['system']
+        # md5 = request.GET['md5']
+        # org_id = user = None
+        # if system == 'android':
+        #     org_id, user = StaticAnalyzerAndroid.get_org_user(md5)
+        # elif system == 'ios':
+        #     org_id, user = StaticAnalyzerIOS.get_org_user(md5)
+        # if org_id == '1':
+        #     return True
+        # if request_user != user or user.organization != org_id:
+        #     return False
         return True
     except:
         return False
@@ -526,11 +531,20 @@ def make_app_info_response(app_dic, man_data_dic):
     return resp_dic
 
 
+class IsMyAuthenticated(permissions.BasePermission):
+    """
+    Custom permission to only allow owners of an object to access it.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        return obj.owner == request.user
+
+
 @request_method(['GET'])
+@permission_classes([IsAuthenticated])
 def api_app_info(request):
     """Do static analysis on an request and save to db."""
     try:
-
         system = request.GET['system']
         md5 = request.GET['md5']
         # Input validation
@@ -583,8 +597,6 @@ def api_app_store(request):
         msg = str(excep)
         exp = excep.__doc__
         return make_api_response({'error': msg}, BAD_REQUEST)
-
-
 
 
 @request_method(['GET'])
@@ -959,3 +971,4 @@ def api_binary_analysis(request):
         msg = str(excep)
         exp = excep.__doc__
         return make_api_response({'error': msg}, BAD_REQUEST)
+

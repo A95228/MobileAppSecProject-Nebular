@@ -11,6 +11,7 @@ from DynamicAnalyzer.views.android import (
     tests_frida)
 
 from Kensa import utils
+from Kensa.views.api.views import AppInfoView
 from users.views import api_user_urls
 from Kensa.views import home
 from Kensa.views.api import rest_api
@@ -30,11 +31,16 @@ from StaticAnalyzer.views.android import static_analyzer as android_sa
 from StaticAnalyzer.views.ios import static_analyzer as ios_sa
 from StaticAnalyzer.views.ios import view_source as io_view_source
 
+from rest_framework_simplejwt import views as jwt_views
+
 urlpatterns = [
 
     # General
     url(r'^$', home.index, name='home'),
     path('admin/', admin.site.urls),
+    path('accounts/login', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('accounts/token/fresh', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
+
     path('accounts/', include('allauth.urls')),
     url(r'^upload/$', home.Upload.as_view),
     url(r'^download/', home.download),
@@ -120,7 +126,9 @@ urlpatterns = [
     url(r"^api/v1/recon_urls$", rest_api.api_get_recon_urls),
     url(r"^api/v1/recon_trackers$", rest_api.api_get_recon_trackers),
     url(r"^api/v1/recon_strings$", rest_api.api_get_recon_strings),
-    url(r'^api/v1/app_info$', rest_api.api_app_info),
+    # url(r'^api/v1/app_info$', rest_api.api_app_info),
+    url(r'^api/v1/app_info$', AppInfoView.as_view()),
+
     url(r'^api/v1/appstore_info$', rest_api.api_app_store),
     url(r'^api/v1/summary/security_overview$', rest_api.api_security_overview),
     url(r'^api/v1/summary/malware_overview$', rest_api.api_malware_overview),

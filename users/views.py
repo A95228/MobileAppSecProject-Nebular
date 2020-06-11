@@ -113,7 +113,6 @@ def api_log_in(request): # not tested !
             {"error" : "Please contact support to reopen your account"}, 403)
 
     login(request, user, backend=BACKENDS["django"])
-
     #Flash welcome message to user in frontend.
     messages.success(request, "Welcome back %s" % request.user.username)
     return HttpResponseRedirect(reverse("home"))
