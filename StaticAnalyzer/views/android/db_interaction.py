@@ -69,6 +69,59 @@ def get_context_from_db_entry(db_entry: QuerySet) -> dict:
     except Exception:
         logger.exception('Fetching from DB')
 
+def get_android_context(static_db)->dict:
+    """Return the context for APK/ZIP from DB."""
+    try:
+        logger.info('Analysis is already Done. Fetching data from the DB...')
+        context = {
+            'version': settings.KENSA_VER,
+            'title': 'Static Analysis',
+            'file_name': static_db.FILE_NAME,
+            'app_name': static_db.APP_NAME,
+            'app_type': static_db.APP_TYPE,
+            'size': static_db.SIZE,
+            'md5': static_db.MD5,
+            'sha1': static_db.SHA1,
+            'sha256': static_db.SHA256,
+            'package_name': static_db.PACKAGE_NAME,
+            'main_activity': static_db.MAIN_ACTIVITY,
+            'exported_activities': static_db.EXPORTED_ACTIVITIES,
+            'browsable_activities': python_dict(
+                static_db.BROWSABLE_ACTIVITIES),
+            'activities': python_list(static_db.ACTIVITIES),
+            'receivers': python_list(static_db.RECEIVERS),
+            'providers': python_list(static_db.PROVIDERS),
+            'services': python_list(static_db.SERVICES),
+            'libraries': python_list(static_db.LIBRARIES),
+            'target_sdk': static_db.TARGET_SDK,
+            'max_sdk': static_db.MAX_SDK,
+            'min_sdk': static_db.MIN_SDK,
+            'version_name': static_db.VERSION_NAME,
+            'version_code': static_db.VERSION_CODE,
+            'icon_hidden': static_db.ICON_HIDDEN,
+            'icon_found': static_db.ICON_FOUND,
+            'permissions': python_dict(static_db.PERMISSIONS),
+            'certificate_analysis': python_dict(
+                static_db.CERTIFICATE_ANALYSIS),
+            'manifest_analysis': python_list(static_db.MANIFEST_ANALYSIS),
+            'binary_analysis': python_list(static_db.BINARY_ANALYSIS),
+            'file_analysis': python_list(static_db.FILE_ANALYSIS),
+            'android_api': python_dict(static_db.ANDROID_API),
+            'code_analysis': python_dict(static_db.CODE_ANALYSIS),
+            'urls': python_list(static_db.URLS),
+            'domains': python_dict(static_db.DOMAINS),
+            'emails': python_list(static_db.EMAILS),
+            'strings': python_list(static_db.STRINGS),
+            'firebase_urls': python_list(static_db.FIREBASE_URLS),
+            'files': python_list(static_db.FILES),
+            'exported_count': python_dict(static_db.EXPORTED_COUNT),
+            'apkid': python_dict(static_db.APKID),
+            'trackers': python_dict(static_db.TRACKERS),
+            'playstore_details': python_dict(static_db.PLAYSTORE_DETAILS),
+        }
+        return context
+    except Exception:
+        logger.exception('Fetching from DB')
 
 def get_context_from_analysis(app_dic,
                               man_data_dic,

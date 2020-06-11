@@ -131,6 +131,7 @@ urlpatterns = [
     url(r'^api/v1/summary/components/libraries$', rest_api.api_components_libraries),
     url(r'^api/v1/summary/components/files$', rest_api.api_components_files),
     url(r'^api/v1/summary/domain_analaysis$', rest_api.api_domain_analysis),
+    url(r'^api/v1/malware_analysis/apk_id', rest_api.api_get_apkid_analysis),
     url(r'^api/v1/security_analysis/manifest_analysis$', rest_api.api_manifest_analysis),
     url(r'^api/v1/security_analysis/code_analysis$', rest_api.api_code_analysis),
     url(r'^api/v1/security_analysis/binary_analysis$', rest_api.api_binary_analysis),

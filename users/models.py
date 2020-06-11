@@ -48,23 +48,16 @@ class UserManager(BaseUserManager):
 	def create_user(self, email, password, **extra_fields):
 		return self._create_user(email, password, False, False, False, **extra_fields)
 
-
 	def create_superuser(self, email, password, **extra_fields):
 		user=self._create_user(email, password, True, True, True, **extra_fields)
 		user.save(using=self._db)
 		return user
 
-
 	def create_admin(self, email, password, **extra_fields):
 		user=self._create_user(email, password, False, True, True **extra_fields)
 		user.save(using=self._db)
 		return user
 
-
-	def create_admin(self, email, password, **extra_fields):
-		user=self._create_user(email, password, False, True, True **extra_fields)
-		user.save(using=self._db)
-		return user
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -82,7 +75,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 	is_active = models.BooleanField(default=True)
 	last_login = models.DateTimeField(null=True, blank=True)
 	date_joined = models.DateTimeField(auto_now_add=True)
-	organization = models.TextField(max_length=254) # this field is repeated ?
 
 	USERNAME_FIELD = 'email'
 	EMAIL_FIELD = 'email'

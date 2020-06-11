@@ -1,18 +1,11 @@
 # -*- coding: utf_8 -*-
 """Kensa REST API V 1."""
 import logging
-import pdb 
 import re
 
-
-from django.conf.urls import url
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-
-from rest_framework.response import Response
-from rest_framework import viewsets
-from rest_framework.views import APIView
 
 from Kensa.utils import api_key
 from Kensa.views.api import tools, serializers
@@ -137,40 +130,28 @@ def api_delete_scan(request):
     return response
 
 
-@request_method(['POST'])
-@csrf_exempt
+@request_method(['GET'])
 def api_pdf_report(request):
     """Generate and Download PDF."""
-    params = ['hash']
-    if set(request.POST) == set(params):
-        resp = pdf(request, api=True)
-        if 'error' in resp:
-            if resp.get('error') == 'Invalid scan hash':
-                response = make_api_response(resp, 400)
-            else:
-                response = make_api_response(resp, 500)
-        elif 'pdf_dat' in resp:
-            response = HttpResponse(
-                resp['pdf_dat'], content_type='application/pdf')
-            response['Access-Control-Allow-Origin'] = '*'
-        elif resp.get('report') == 'Report not Found':
-            response = make_api_response(resp, 404)
-        else:
-            response = make_api_response(
-                {'error': 'PDF Generation Error'}, 500)
-    else:
-        response = make_api_response(
-            {'error': 'Missing Parameters'}, 422)
+    md5 = request.GET.get('md5', None)
+    system = request.GET.get('system', 'android')
+    match = re.match('^[0-9a-f]{32}$', md5)
+    if not match:
+        return make_api_response({'error': 'Invalid scan hash'}, BAD_REQUEST)
+    jsonres = request.GET.get('jsonres', None)
+    if md5 is None:
+        return make_api_response({'error': 'Bad Request'}, BAD_REQUEST)
+    msg, err = pdf(md5, system, jsonres=jsonres)
+    response = make_api_response(msg, err)
     return response
 
 
 @request_method(['POST'])
-@csrf_exempt
 def api_json_report(request):
     """Generate JSON Report."""
     params = ['hash']
     if set(request.POST) == set(params):
-        resp = pdf(request, api=True, jsonres=True)
+        resp = pdf(request, jsonres=True)
         if 'error' in resp:
             if resp.get('error') == 'Invalid scan hash':
                 response = make_api_response(resp, 400)
@@ -502,7 +483,6 @@ def api_get_recon_trackers(request):
             status=NOT_FOUND)
     
     return make_api_response(trackers, status=OK)
-
 
 
 def api_user_permission(request):
@@ -849,17 +829,32 @@ def api_domain_analysis(request):
 
 
 @request_method(['GET'])
+def api_get_apkid_analysis(request):
+    try:
+        md5 = request.GET['md5']
+        match = re.match('^[0-9a-f]{32}$', md5)
+        if match:
+            apkid = StaticAnalyzerAndroid.get_apkid_analysis(md5)
+            return make_api_response(apkid, OK)
+    except Exception as excep:
+        logger.exception('Error calling api_domain_analysis')
+        msg = str(excep)
+        exp = excep.__doc__
+        return make_api_response({'error': msg}, BAD_REQUEST)
+
+
+@request_method(['GET'])
 def api_manifest_analysis(request):
     try:
         md5 = request.GET['md5']
         match = re.match('^[0-9a-f]{32}$', md5)
-        system = request.GET['system']
-        if system != 'android':
-            return make_api_response({'error': 'This API only supports for Android'}, OK)
+        page = request.GET['page']
+
         if match:
             manifest = StaticAnalyzerAndroid.get_manifest_analysis(md5)
+            resp = create_pagination_response(manifest['list'], page)
             if match is not None:
-                return make_api_response({'count': len(manifest), 'list': manifest}, OK)
+                return make_api_response({'total_count': manifest['count'], 'pageinfo': resp}, OK)
             return make_api_response({'msg': 'Not exist'}, OK)
         else:
             return make_api_response({'error': 'HASH error'}, BAD_REQUEST)
@@ -879,9 +874,9 @@ def api_code_analysis(request):
         if match:
             code_analysis = {}
             if system == 'android':
-                code_analysis = StaticAnalyzerAndroid.get_code_analysis(md5)
+                code_analysis = StaticAnalyzerAndroid.get_code_analysis_report(md5)
             elif system == 'ios':
-                code_analysis = StaticAnalyzerIOS.get_code_analysis(md5)
+                code_analysis = StaticAnalyzerIOS.get_code_analysis_report(md5)
             if code_analysis is not None:
                 return make_api_response({'count': len(code_analysis), 'list': code_analysis}, OK)
             return make_api_response({'msg': 'Not exist'}, OK)
@@ -950,10 +945,10 @@ def api_binary_analysis(request):
         system = request.GET['system']
         if match:
             binary_analysis = []
-            if system == 'android':
-                binary_analysis = StaticAnalyzerAndroid.get_binary_analysis(md5)
-            elif system == 'ios':
-                binary_analysis = StaticAnalyzerIOS.get_binary_analysis(md5)
+            # if system == 'android':
+            binary_analysis = StaticAnalyzerAndroid.get_binary_analysis(md5)
+            # elif system == 'ios':
+            #     binary_analysis = StaticAnalyzerIOS.get_binary_analysis(md5)
             if binary_analysis is not None:
                 return make_api_response({'count': len(binary_analysis), 'list': binary_analysis}, OK)
             return make_api_response({'msg': 'Not exist'}, OK)

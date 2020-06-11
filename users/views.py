@@ -102,8 +102,7 @@ def api_log_in(request): # not tested !
         return make_api_response(
             {"error" : "missing password"}, 400)
     try:
-        user = authenticate(request.POST["email"],
-                request.POST["password"])
+        user = authenticate(request.POST["email"], request.POST["password"])
     except PermissionDenied:
         return make_api_response(
             {"error" : "invalid credentials"}, 400)

@@ -60,7 +60,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'kensa',
         'USER': 'kensa',
-        'PASSWORD': 'kensa-password',
+        'PASSWORD': 'kensa',
         'HOST': 'localhost',
         'PORT': '5432',
     }

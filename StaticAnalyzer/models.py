@@ -49,30 +49,6 @@ class RecentScansDB(models.Model):
             return to_return
 
 
-    @classmethod
-    def get_recent_scans(cls):
-        scans = cls.objects.all().order_by("-TIMESTAMP")
-        if scans.count() == 0:
-            return None
-        scans_values = scans.values(
-            "APP_NAME",
-            "FILE_NAME",
-            "TIMESTAMP",
-            "MD5",
-            "PACKAGE_NAME",
-            "URL",
-            "VERSION_NAME"
-        )
-        try:
-            to_return = list(scans_values)
-        except Exception as e:
-            e = str(e) + " Sending back None"
-            logger.warning(msg=e)
-            return None
-        else:
-            return to_return
-
-
 class StaticAnalyzerAndroid(models.Model):
     FILE_NAME = models.CharField(max_length=260)
     APP_NAME = models.CharField(max_length=255)
@@ -118,7 +94,6 @@ class StaticAnalyzerAndroid(models.Model):
     ORGANIZATION_ID = models.IntegerField(
         verbose_name="organization_id_android", )
 
-
     @staticmethod
     def paginate(load, page, count=30):
         """Paginate a context"""
@@ -142,17 +117,6 @@ class StaticAnalyzerAndroid(models.Model):
             'list': activities.object_list
         }
         return resp
-
-
-    @classmethod
-    def get_single_or_none(cls, md5):
-        try:
-            return cls.objects.get(MD5=md5)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            return None
-        else:
-            return None
-
 
     @classmethod
     def get_md5s(cls, md5):
@@ -307,35 +271,6 @@ class StaticAnalyzerAndroid(models.Model):
             return None
         return {"trackers": cls.paginate(trackers, page)}
 
-    USER = models.ForeignKey(User, on_delete=models.CASCADE)
-    ORG_ID = models.TextField()
-
-
-    @staticmethod
-    def paginate(load, page, count=30):
-        """Paginate a context"""
-        try:
-            if 'trackers' in load:
-                paginator = Paginator(load["trackers"], count)
-            else:
-                paginator = Paginator(load, count)
-            activities = paginator.page(page)
-        except PageNotAnInteger:
-            activities = paginator.page(1)
-        except EmptyPage:
-            activities = paginator.page(paginator.num_pages)
-        except:
-            return None
-        
-        resp = {
-            'page': activities.number,
-            "total_pages" : paginator.num_pages,
-            'limit': 30,
-            'list': activities.object_list
-        }
-        return resp
-
-
     @classmethod
     def get_single_or_none(cls, md5):
         try:
@@ -343,160 +278,6 @@ class StaticAnalyzerAndroid(models.Model):
         except (cls.DoesNotExist, ObjectDoesNotExist):
             return None
 
-
-    @classmethod
-    def get_md5s(cls, md5):
-        md5s = cls.objects.filter(MD5__icontains=md5).values("MD5")
-        if md5s.count() == 0:
-            return []
-        return md5s
-
-
-    @classmethod
-    def get_certificate_analysis_data(cls, md5):
-        """Get a certificate return None otherwise.
-        Requires no pagination."""
-        logger.info("Getting certificate analysis of %s" % md5)
-        try:
-            cert = cls.objects.get(MD5=md5)
-            cert = cert.CERTIFICATE_ANALYSIS
-        except: 
-            logger.error("Possibly ObjectNotFound with md5 %s" % md5)
-            return None
-        else:
-            return eval(cert)
-
-
-    @classmethod
-    def get_manifest(cls, md5):
-        """Get a manifest return None otherwise.
-        Requires no pagination."""
-        logger.info("Getting manifest data of %s" % md5)
-        try:
-            cert = cls.objects.get(MD5=md5)
-            manifest = cert.MANIFEST_ANALYSIS
-        except:
-            logger.error("Possibly ObjectNotFound with md5 %s" % md5)
-            return None
-        manifest = dict(manifest_analysis=eval(manifest))
-        return manifest
-
-
-    @classmethod
-    def get_domains_data(cls, md5):
-        """Get domains. Requires pagination"""
-        countries = []
-        logger.info("Getting domains data of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-        except:
-            return None
-        try:
-            domains = eval(query.DOMAINS)
-            for key, value in domains.items():
-                holder = {}
-                geolocation = value.get("geolocation", None)
-                if geolocation is None:
-                    holder[key] = {}
-                    for k in value.keys():
-                        if k in ('good', 'bad'):
-                            holder[key][k] = value.get(k, None)
-                    holder[key]["domain"] = key 
-                    countries.append(holder)
-                    continue
-                country = geolocation.pop("country_long")
-                holder[country] = {}
-                holder[country]["domain"] = key
-                for k in value.keys():
-                    if k in ('good', 'bad'):
-                        holder[country][k] = value.get(k, None)
-                holder[country].update(geolocation)
-                countries.append(holder)
-        except:
-            logger.info("Issue getting domains for object : %s" % md5)
-            return None
-        return {"countries" : countries}
-
-
-    @classmethod
-    def get_recon_emails(cls, md5, page):
-        """Get Recon emails or None. Requires pagination"""
-        logger.info("Getting reconnassaince emails of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            emails = eval(query.EMAILS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting recon emails of %s" % md5)
-            return None
-        return {"emails": cls.paginate(emails, page)}
-
-
-    @classmethod
-    def get_recon_urls(cls, md5, page):
-        """Get recon urls or None. Requires pagination."""
-        logger.info("Getting urls of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            urls = eval(query.URLS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting recon urls of %s" % md5)
-            return None
-        return {"urls": cls.paginate(urls, page)}
-
-
-    @classmethod
-    def get_recon_firebase_db(cls, md5, page):
-        """Get recon firebase url. Requires pagination."""
-        logger.info("Getting firebase urls of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            firebase_urls = eval(query.FIREBASE_URLS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting fb_db_urls of %s" % md5)
-            return None
-        return {"firebase_urls": cls.paginate(firebase_urls, page)}
-
-
-    @classmethod
-    def get_recon_strings(cls, md5, page):
-        """Get recon strings. Requires pagination."""
-        logger.info("Getting strings of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            strings = eval(query.STRINGS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting strings of %s" % md5)
-            return None
-        return {"strings": cls.paginate(strings, page)}
-
-
-    @classmethod
-    def get_recon_trackers(cls, md5, page):
-        """Get recon trackers. Requires pagination."""
-        logger.info("Getting reconnassaince trackers of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            trackers = eval(query.TRACKERS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting recon trackers of %s" % md5)
-            return None
-        return {"trackers": cls.paginate(trackers, page)}
-	
     @classmethod
     def get_app_info(cls, md5):
         logger.info("get_app_info of %s" % md5)
@@ -605,12 +386,60 @@ class StaticAnalyzerAndroid(models.Model):
             return None
 
     @classmethod
+    def get_code_analysis_report(cls, md5):
+        logger.info("get_code_analysis of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            code_analysis = eval(data_entry.CODE_ANALYSIS)
+            code_high = code_good = code_warning = code_info = 0
+            resp_code = []
+            for issue, details in code_analysis['items']:
+                if details['level'] == 'high':
+                    code_high = code_high + 1
+                elif details['level'] == 'good':
+                    code_good = code_good + 1
+                elif details['level'] == 'warning':
+                    code_warning = code_warning + 1
+                elif details['level'] == 'info':
+                    code_info = code_info + 1
+                resp_code.append({'severity': details['level'],
+                                  'issue': issue,
+                                  'description': {
+                                     'cvss': details['cvss'],
+                                     'cwe': details['cwe'],
+                                     'owasp': details['owasp'],
+                                     'owasp-mstg': details['owasp-mstg'],
+                                     'path': details['path']
+                                  }
+                })
+            return {'count': {'high': code_high, 'good': code_good, 'warning': code_warning, 'info': code_info},
+                    'list': resp_code}
+        except:
+            logger.info("get_code_analysis error %s" % md5)
+            return None
+
+    @classmethod
     def get_binary_analysis(cls, md5):
         logger.info("get_binary_analysis of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
             binary_analysis = eval(data_entry.BINARY_ANALYSIS)
-            return binary_analysis
+            binary_high = binary_info = binary_medium = 0
+            resp_binary = []
+            for i in range(0, len(binary_analysis)):
+                if binary_analysis[i]['stat'] == 'high':
+                    binary_high = binary_high + 1
+                elif binary_analysis[i]['stat'] == 'info':
+                    binary_info = binary_info + 1
+                elif binary_analysis[i]['stat'] == 'medium':
+                    binary_medium = binary_medium + 1
+                resp_binary.append({'severity': binary_analysis[i]['stat'],
+                                    'issue': binary_analysis[i]['title'],
+                                    'description': binary_analysis[i]['desc'],
+                                    'files': binary_analysis[i]['file'],
+                                    })
+            return {'count': {'high': binary_high, 'medium': binary_medium, 'info': binary_info},
+                    'list': resp_binary}
         except:
             logger.info("get_binary_analysis error %s" % md5)
             return None
@@ -625,6 +454,18 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("get_components_activities error %s" % md5)
             return None
         return activities
+
+    @classmethod
+    def get_apkid_analysis(cls, md5):
+        logger.info("get_apkid_analysis of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            apkid = eval(data_entry.APKID)
+        except:
+            logger.info("get_apkid_analysis error %s" % md5)
+            return None
+        return apkid
+
 
     @classmethod
     def get_components_services(cls, md5):
@@ -687,7 +528,6 @@ class StaticAnalyzerAndroid(models.Model):
         try:
             data_entry = cls.objects.get(MD5=md5)
             domains = eval(data_entry.DOMAINS)
-            domain_analysis = []
             bad_country = {}
             for key, value in domains.items():
                 bad = value.get('bad', None)
@@ -761,7 +601,20 @@ class StaticAnalyzerAndroid(models.Model):
         try:
             data_entry = cls.objects.get(MD5=md5)
             manifest = eval(data_entry.MANIFEST_ANALYSIS)
-            return manifest
+            count_high = count_info = count_medium = 0
+            manifest_response = []
+            for i in range(len(manifest)):
+                if manifest[i]["stat"] == 'high':
+                    count_high = count_high + 1
+                elif manifest[i]["stat"] == 'medium':
+                    count_medium = count_medium + 1
+                elif manifest[i]["stat"] == 'info':
+                    count_info = count_info + 1
+                manifest_response.append({'severity': manifest[i]["stat"],
+                                          'issue': manifest[i]["title"],
+                                          'description': manifest[i]["desc"]})
+            return {'count': {'high': count_high, 'medium': count_medium, 'info': count_info},
+                    'list': manifest_response}
         except:
             logger.info("get_components_files error %s" % md5)
             return None
@@ -791,7 +644,6 @@ class StaticAnalyzerAndroid(models.Model):
         except:
             logger.info("get_app_permissions error %s" % md5)
             return None
-
 
     @classmethod
     def get_org_user(cls, md5):
@@ -842,7 +694,6 @@ class StaticAnalyzerIOS(models.Model):
     USER_ID = models.IntegerField(verbose_name="user_id_ios")
     ORGANIZATION_ID = models.IntegerField(verbose_name="organization_id_ios")
     
-
     @staticmethod
     def paginate(load, page, count=30):
         """Paginate a context"""
@@ -867,7 +718,6 @@ class StaticAnalyzerIOS(models.Model):
         }
         return resp
 
-
     @classmethod
     def get_single_or_none(cls, md5):
         """Get a single model or None"""
@@ -875,9 +725,6 @@ class StaticAnalyzerIOS(models.Model):
             return cls.objects.get(MD5=md5)
         except (cls.DoesNotExist, ObjectDoesNotExist):
             return None
-        else:
-            return None
-
 
     @classmethod
     def get_md5s(cls, md5):
@@ -922,151 +769,6 @@ class StaticAnalyzerIOS(models.Model):
             logger.info("Issue getting domains for object : %s" % md5)
             return None
         return {"countries" : countries}
-
-
-    @classmethod
-    def get_recon_emails(cls, md5, page):
-        """Get Recon emails or None"""
-        logger.info("Getting reconnassaince emails of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            emails = eval(query.EMAILS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting recon emails of %s" % md5)
-            return None
-        return {"emails": cls.paginate(emails, page)}
-
-
-    @classmethod
-    def get_recon_urls(cls, md5, page):
-        """Get recon urls or None"""
-        logger.info("Getting urls of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            urls = eval(query.URLS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting recon urls of %s" % md5)
-            return None
-        return {"urls": cls.paginate(emails, page)}
-
-
-    @classmethod
-    def get_recon_firebase_db(cls, md5, page):
-        """Get recon firebase url"""
-        logger.info("Getting firebase urls of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            firebase_urls = eval(query.FIREBASE_URLS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting fb_db_urls of %s" % md5)
-            return None
-        return {"firebase_urls": cls.paginate(firebase_urls, page)}
-
-
-    @classmethod
-    def get_recon_strings(cls, md5, page):
-        """Get recon strings. Requires pagination."""
-        logger.info("Getting strings of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            strings = eval(query.STRINGS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting strings of %s" % md5)
-            return None
-        return {"strings": cls.paginate(strings, page)}
-
-    USER = models.ForeignKey(User, on_delete=models.CASCADE)
-    ORG_ID = models.TextField()
-	
-    @staticmethod
-    def paginate(load, page, count=30):
-        """Paginate a context"""
-        try:
-            if 'trackers' in load:
-                paginator = Paginator(load["trackers"], count)
-            else:
-                paginator = Paginator(load, count)
-            activities = paginator.page(page)
-        except PageNotAnInteger:
-            activities = paginator.page(1)
-        except EmptyPage:
-            activities = paginator.page(paginator.num_pages)
-        except:
-            return None
-        
-        resp = {
-            'page': activities.number,
-            "total_pages" : paginator.num_pages,
-            'limit': 30,
-            'list': activities.object_list
-        }
-        return resp
-
-
-    @classmethod
-    def get_single_or_none(cls, md5):
-        """Get a single model or None"""
-        try:
-            return cls.objects.get(MD5=md5)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            return None
-
-
-    @classmethod
-    def get_md5s(cls, md5):
-        """Get md5s that match the pattern"""
-        md5s = cls.objects.filter(MD5__icontains=md5).values("MD5")
-        if md5s.count() == 0:
-            return []
-        return md5s
-
-
-    @classmethod
-    def get_domains_data(cls, md5):
-        """Get domains"""
-        countries = []
-        logger.info("Getting domains data of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-        except:
-            return None
-        try:
-            domains = eval(query.DOMAINS)
-            for key, value in domains.items():
-                holder = {}
-                geolocation = value.get("geolocation", None)
-                if geolocation is None:
-                    holder[key] = {}
-                    for k in value.keys():
-                        if k in ('good', 'bad'):
-                            holder[key][k] = value.get(k, None)
-                    holder[key]["domain"] = key 
-                    countries.append(holder)
-                    continue
-                country = geolocation.pop("country_long")
-                holder[country] = {}
-                holder[country]["domain"] = key
-                for k in value.keys():
-                    if k in ('good', 'bad'):
-                        holder[country][k] = value.get(k, None)
-                holder[country].update(geolocation)
-                countries.append(holder)
-        except:
-            logger.info("Issue getting domains for object : %s" % md5)
-            return None
-        return {"countries": countries}
 
     @classmethod
     def get_recon_emails(cls, md5, page):
@@ -1226,16 +928,60 @@ class StaticAnalyzerIOS(models.Model):
             return None
 
     @classmethod
+    def get_code_analysis_report(cls, md5):
+        logger.info("get_code_analysis of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            code_analysis = eval(data_entry.CODE_ANALYSIS)
+            code_high = code_good = code_warning = code_info = 0
+            resp_code = []
+            for issue, details in code_analysis['items']:
+                if details['level'] == 'high':
+                    code_high = code_high + 1
+                elif details['level'] == 'good':
+                    code_good = code_good + 1
+                elif details['level'] == 'warning':
+                    code_warning = code_warning + 1
+                elif details['level'] == 'info':
+                    code_info = code_info + 1
+                resp_code.append({'severity': details['level'],
+                                  'issue': issue,
+                                  'description': {
+                                      'cvss': details['cvss'],
+                                      'cwe': details['cwe'],
+                                      'owasp': details['owasp'],
+                                      'owasp-mstg': details['owasp-mstg'],
+                                      'path': details['path']
+                                  }
+                                  })
+            return {'count': {'high': code_high, 'good': code_good, 'warning': code_warning, 'info': code_info},
+                    'list': resp_code}
+        except:
+            logger.info("get_code_analysis error %s" % md5)
+            return None
+
+    @classmethod
     def get_binary_analysis(cls, md5):
         logger.info("get_binary_analysis of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
             binary_analysis = eval(data_entry.BINARY_ANALYSIS)
-            binary_list = []
-            for key, value in binary_analysis.items():
-                temp = {key: value}
-                binary_list.append(temp)
-            return binary_list
+            binary_high = binary_info = binary_medium = 0
+            resp_binary = []
+            for i in range(0, len(binary_analysis)):
+                if binary_analysis[i]['stat'] == 'high':
+                    binary_high = binary_high + 1
+                elif binary_analysis[i]['stat'] == 'info':
+                    binary_info = binary_info + 1
+                elif binary_analysis[i]['stat'] == 'medium':
+                    binary_medium = binary_medium + 1
+                resp_binary.append({'severity': binary_analysis[i]['stat'],
+                                    'issue': binary_analysis[i]['title'],
+                                    'description': binary_analysis[i]['desc'],
+                                    'files': binary_analysis[i]['file'],
+                                    })
+            return {'count': {'high': binary_high, 'medium': binary_medium, 'info': binary_info},
+                    'list': resp_binary}
         except:
             logger.info("get_binary_analysis error %s" % md5)
             return None
@@ -1379,6 +1125,7 @@ class StaticAnalyzerIOS(models.Model):
         except:
             logger.info("get_components_files error %s" % md5)
             return None
+
 
 class StaticAnalyzerWindows(models.Model):
     FILE_NAME = models.CharField(max_length=260)
