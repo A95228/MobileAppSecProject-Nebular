@@ -62,7 +62,7 @@ def key(data, key_name):
 
 def static_analyzer(request, api=False):
     """Do static analysis on an request and save to db."""
-        
+    
     try:
         if api:
             typ = request.POST['scan_type']
@@ -76,6 +76,7 @@ def static_analyzer(request, api=False):
             rescan = str(request.GET.get('rescan', 0))
         # Input validation
         app_dic = {}
+        app_dic.update({""})
         match = re.match('^[0-9a-f]{32}$', checksum)
         if (
                 (

@@ -6,14 +6,12 @@ import re
 
 
 from django.conf.urls import url
-from django.contrib import messages
 from django.core.paginator import (
     Paginator,
     PageNotAnInteger,
     EmptyPage
 )
 from django.http import HttpResponse, JsonResponse
-from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 
 from Kensa.utils import api_key
@@ -230,7 +228,7 @@ def api_get_recent_scans(request):
         if isinstance(data, dict):
             return make_api_response(data=data, status=OK)
         return JsonResponse(data=data, safe=False, status=OK) # strange case
-    return make_api_response(data={"error" : "no data"}, status=BAD_REQUEST)
+    return make_api_response(data={"error" : "No scans to show."}, status=BAD_REQUEST)
 
 
 @request_method(["GET"])
@@ -261,7 +259,7 @@ def api_get_manifest(request):
     request_ok = tools.request_check(request)
 
     if not request_ok[0]:
-        return make_api_response(*request[1:])
+        return make_api_response(*request_ok[1:])
     
     try:
         data = StaticAnalyzerAndroid.get_manifest(request.GET["md5"])

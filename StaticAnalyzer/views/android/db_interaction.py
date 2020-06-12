@@ -190,7 +190,9 @@ def save_or_update(update_type,
                    cert_dic,
                    bin_anal,
                    apk_id,
-                   trackers) -> None:
+                   trackers
+                   user,
+                   orgi) -> None:
     """Save/Update an APK/ZIP DB entry."""
     try:
         values = {
@@ -234,6 +236,8 @@ def save_or_update(update_type,
             'APKID': apk_id,
             'TRACKERS': trackers,
             'PLAYSTORE_DETAILS': app_dic['playstore'],
+            'USER_ID': user,
+            'ORG_ID' : orgi
         }
         if update_type == 'save':
             StaticAnalyzerAndroid.objects.create(**values)

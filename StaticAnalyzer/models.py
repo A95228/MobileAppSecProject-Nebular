@@ -163,8 +163,11 @@ class StaticAnalyzerAndroid(models.Model):
         }
         return resp
 
+
     @classmethod
     def get_md5s(cls, md5):
+        """Get md5 that match the given term for a search result,
+        return an empty list otherwise."""
         md5s = cls.objects.filter(MD5__icontains=md5).values("MD5")
         if md5s.count() == 0:
             return []
@@ -315,6 +318,7 @@ class StaticAnalyzerAndroid(models.Model):
             return None
         return {"trackers": cls.paginate(trackers, page)}
 
+
     @classmethod
     def get_app_info(cls, md5):
         logger.info("get_app_info of %s" % md5)
@@ -340,6 +344,7 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("error get_app_info of %s" % md5)
             return None
 
+
     @classmethod
     def get_app_store(cls, md5):
         try:
@@ -350,6 +355,7 @@ class StaticAnalyzerAndroid(models.Model):
         except:
             logger.info("error get_app_store of %s" % md5)
             return None
+
 
     @classmethod
     def get_security_overview(cls, md5):
@@ -411,6 +417,7 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("error get_security_overview of %s" % md5)
             return None
 
+
     @classmethod
     def get_code_analysis(cls, md5):
         logger.info("get_code_analysis of %s" % md5)
@@ -421,6 +428,7 @@ class StaticAnalyzerAndroid(models.Model):
         except:
             logger.info("get_code_analysis error %s" % md5)
             return None
+
 
     @classmethod
     def get_code_analysis_report(cls, md5):
@@ -455,6 +463,7 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("get_code_analysis error %s" % md5)
             return None
 
+
     @classmethod
     def get_binary_analysis(cls, md5):
         logger.info("get_binary_analysis of %s" % md5)
@@ -481,6 +490,7 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("get_binary_analysis error %s" % md5)
             return None
 
+
     @classmethod
     def get_components_activities(cls, md5):
         logger.info("get_components_activities of %s" % md5)
@@ -491,6 +501,7 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("get_components_activities error %s" % md5)
             return None
         return activities
+
 
     @classmethod
     def get_apkid_analysis(cls, md5):
@@ -515,6 +526,7 @@ class StaticAnalyzerAndroid(models.Model):
             return None
         return services
 
+
     @classmethod
     def get_components_receivers(cls, md5):
         logger.info("get_components_receivers of %s" % md5)
@@ -525,6 +537,7 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("get_components_receivers error %s" % md5)
             return None
         return receivers
+
 
     @classmethod
     def get_components_providers(cls, md5):
@@ -537,6 +550,7 @@ class StaticAnalyzerAndroid(models.Model):
             return None
         return providers
 
+
     @classmethod
     def get_components_libraries(cls, md5):
         logger.info("get_components_libraries of %s" % md5)
@@ -548,6 +562,7 @@ class StaticAnalyzerAndroid(models.Model):
             return None
         return libraries
 
+
     @classmethod
     def get_components_files(cls, md5):
         logger.info("get_components_files of %s" % md5)
@@ -558,6 +573,7 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("get_components_files error %s" % md5)
             return None
         return files
+
 
     @classmethod
     def get_domain_analysis(cls, md5):
@@ -632,6 +648,7 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("get_components_files error %s" % md5)
             return None
 
+
     @classmethod
     def get_manifest_analysis(cls, md5):
         logger.info("get_components_files of %s" % md5)
@@ -656,6 +673,7 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("get_components_files error %s" % md5)
             return None
 
+
     @classmethod
     def get_file_analysis(cls, md5):
         logger.info("get_file_analysis of %s" % md5)
@@ -666,6 +684,7 @@ class StaticAnalyzerAndroid(models.Model):
         except:
             logger.info("get_file_analysis error %s" % md5)
             return None
+
 
     @classmethod
     def get_app_permissions(cls, md5):
@@ -681,6 +700,7 @@ class StaticAnalyzerAndroid(models.Model):
         except:
             logger.info("get_app_permissions error %s" % md5)
             return None
+
 
     @classmethod
     def get_org_user(cls, md5):
@@ -733,6 +753,7 @@ class StaticAnalyzerIOS(models.Model):
     USER = models.ForeignKey(User, on_delete=models.CASCADE)
     ORG_ID = models.TextField()
 
+
     @staticmethod
     def paginate(load, page, count=30):
         """Paginate a context"""
@@ -757,6 +778,7 @@ class StaticAnalyzerIOS(models.Model):
         }
         return resp
 
+
     @classmethod
     def get_single_or_none(cls, md5):
         """Get a single model or None"""
@@ -764,6 +786,7 @@ class StaticAnalyzerIOS(models.Model):
             return cls.objects.get(MD5=md5)
         except (cls.DoesNotExist, ObjectDoesNotExist):
             return None
+
 
     @classmethod
     def get_md5s(cls, md5):
@@ -809,6 +832,7 @@ class StaticAnalyzerIOS(models.Model):
             return None
         return {"countries" : countries}
 
+
     @classmethod
     def get_recon_emails(cls, md5, page):
         """Get Recon emails or None"""
@@ -823,6 +847,7 @@ class StaticAnalyzerIOS(models.Model):
             logger.error("Unexpected error geting recon emails of %s" % md5)
             return None
         return {"emails": cls.paginate(emails, page)}
+
 
     @classmethod
     def get_recon_urls(cls, md5, page):
@@ -855,6 +880,7 @@ class StaticAnalyzerIOS(models.Model):
             return None
         return {"firebase_urls": cls.paginate(firebase_urls, page)}
 
+
     @classmethod
     def get_recon_strings(cls, md5, page):
         """Get recon strings. Requires pagination."""
@@ -869,6 +895,7 @@ class StaticAnalyzerIOS(models.Model):
             logger.error("Unexpected error geting strings of %s" % md5)
             return None
         return {"strings": cls.paginate(strings, page)}
+
 
     @classmethod
     def get_app_info(cls, md5):
@@ -896,6 +923,7 @@ class StaticAnalyzerIOS(models.Model):
             logger.info("error get_app_info of %s" % md5)
             return None
 
+
     @classmethod
     def get_app_store(cls, md5):
         try:
@@ -906,6 +934,7 @@ class StaticAnalyzerIOS(models.Model):
         except:
             logger.info("error get_app_store of %s" % md5)
             return None
+
 
     @classmethod
     def get_security_overview(cls, md5):
@@ -956,6 +985,7 @@ class StaticAnalyzerIOS(models.Model):
             logger.info("error get_security_overview of %s" % md5)
             return None
 
+
     @classmethod
     def get_code_analysis(cls, md5):
         logger.info("get_code_analysis of %s" % md5)
@@ -966,6 +996,7 @@ class StaticAnalyzerIOS(models.Model):
         except:
             logger.info("get_code_analysis error %s" % md5)
             return None
+
 
     @classmethod
     def get_code_analysis_report(cls, md5):
@@ -1000,6 +1031,7 @@ class StaticAnalyzerIOS(models.Model):
             logger.info("get_code_analysis error %s" % md5)
             return None
 
+
     @classmethod
     def get_binary_analysis(cls, md5):
         logger.info("get_binary_analysis of %s" % md5)
@@ -1026,6 +1058,7 @@ class StaticAnalyzerIOS(models.Model):
             logger.info("get_binary_analysis error %s" % md5)
             return None
 
+
     @classmethod
     def get_file_analysis(cls, md5):
         logger.info("get_file_analysis of %s" % md5)
@@ -1036,6 +1069,7 @@ class StaticAnalyzerIOS(models.Model):
         except:
             logger.info("get_file_analysis error %s" % md5)
             return None
+
 
     @classmethod
     def get_app_permissions(cls, md5):
@@ -1048,6 +1082,7 @@ class StaticAnalyzerIOS(models.Model):
             logger.info("get_app_permissions error %s" % md5)
             return None
 
+
     @classmethod
     def get_libraries(cls, md5):
         logger.info("get_app_permissions of %s" % md5)
@@ -1058,6 +1093,7 @@ class StaticAnalyzerIOS(models.Model):
         except:
             logger.info("get_app_permissions error %s" % md5)
             return None
+
 
     @classmethod
     def get_components_libraries(cls, md5):
@@ -1070,6 +1106,7 @@ class StaticAnalyzerIOS(models.Model):
             return None
         return libraries
 
+
     @classmethod
     def get_components_files(cls, md5):
         logger.info("get_components_files of %s" % md5)
@@ -1080,6 +1117,7 @@ class StaticAnalyzerIOS(models.Model):
             logger.info("get_components_files error %s" % md5)
             return None
         return files
+
 
     @classmethod
     def get_org_user(cls, md5):
@@ -1092,6 +1130,7 @@ class StaticAnalyzerIOS(models.Model):
         except:
             logger.info("get_org_user error %s" % md5)
             return None, None
+
 
     @classmethod
     def get_domain_analysis(cls, md5):
@@ -1189,5 +1228,4 @@ class StaticAnalyzerWindows(models.Model):
     STRINGS = models.TextField()
     BINARY_ANALYSIS = models.TextField()
     BINARY_WARNINGS = models.TextField()
-
 
