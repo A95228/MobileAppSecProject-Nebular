@@ -8,12 +8,49 @@ from DynamicAnalyzer.views.android import (
     operations,
     report,
     tests_common,
-    tests_frida)
+    tests_frida
+)
 
 from Kensa import utils
-from users.views import api_user_urls
+from Kensa.views.api.views import (
+    AppInfoView, 
+    AppStoreView, 
+    SecurityOverView, 
+    MalwareOverView, 
+    ComponentsActivities, 
+    ComponentsServices, 
+    ComponentsReceivers, 
+    ComponentsProviders, 
+    ComponentsLibraries, 
+    ComponentsFiles, 
+    DomainAnalysis, 
+    APKIDAnalysis, 
+    ManifestAnalysis, 
+    CodeAnalysis, 
+    BinaryAnalysis, 
+    FileAnalysis, 
+    AppPermissions, 
+    JavaCodeView, 
+    SmaliCodeView, 
+    ReconEmailsView, 
+    ReconFirebasedbURLsView, 
+    ReconURLsView, 
+    ReconTrackersView, 
+    ReconStringsView,
+    UploadAppView, 
+    ScanAppView,
+    DeleteScanView,
+    RecentScansView,
+    GetRecentScansView,
+    GetSignerCertificateView,
+    GetManifestView,
+    GetDomainsDataView,
+    GetSearchView,
+    PDFReportView, 
+    JSONReportView, 
+    SourceView
+)
 from Kensa.views import home
-from Kensa.views.api import rest_api
 
 from StaticAnalyzer import tests
 from StaticAnalyzer.views import shared_func
@@ -30,11 +67,16 @@ from StaticAnalyzer.views.android import static_analyzer as android_sa
 from StaticAnalyzer.views.ios import static_analyzer as ios_sa
 from StaticAnalyzer.views.ios import view_source as io_view_source
 
+from rest_framework_simplejwt import views as jwt_views
+
 urlpatterns = [
 
     # General
     url(r'^$', home.index, name='home'),
     path('admin/', admin.site.urls),
+    path('accounts/login', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('accounts/token/fresh', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
+
     path('accounts/', include('allauth.urls')),
     url(r'^upload/$', home.Upload.as_view),
     url(r'^download/', home.download),
@@ -101,46 +143,49 @@ urlpatterns = [
     url(r'^dynamic_view_file/$', report.view_file),
 
     # REST API
-    url(r'^api/v1/upload$', rest_api.api_upload),
-    url(r'^api/v1/scan$', rest_api.api_scan),
-    url(r'^api/v1/delete_scan$', rest_api.api_delete_scan),
-    url(r'^api/v1/download_pdf$', rest_api.api_pdf_report),
-    url(r'^api/v1/report_json$', rest_api.api_json_report),
-    url(r'^api/v1/view_source$', rest_api.api_view_source),
-    url(r'^api/v1/scans$', rest_api.api_recent_scans),
+    url(r'^api/v1/upload$', UploadAppView.as_view()),
+    url(r'^api/v1/scan$', ScanAppView.as_view()),
+    url(r'^api/v1/delete_scan$', DeleteScanView.as_view()),
+    url(r'^api/v1/download_pdf$', PDFReportView.as_view()),
+    url(r'^api/v1/report_json$', JSONReportView.as_view()),
+    url(r'^api/v1/view_source$', SourceView.as_view()),
+    url(r'^api/v1/scans$', RecentScansView.as_view()),
+    url(r"^api/v1/recent_scans$", GetRecentScansView.as_view()),
+    url(r"^api/v1/signer_certificate$", GetSignerCertificateView.as_view()),
+    url(r"^api/v1/code/manifest$", GetManifestView.as_view()),
+    url(r"^api/v1/summary/domain_analysis_country$", GetDomainsDataView.as_view()),
+    url(r"^api/v1/code/java$", JavaCodeView.as_view()),
+    url(r"^api/v1/code/smali$", SmaliCodeView.as_view()),
+    url(r"^api/v1/api_md5_search$", GetSearchView.as_view()),
+    url(r"^api/v1/recon_emails$", ReconEmailsView.as_view()),
+    url(r"^api/v1/recon_firebase$", ReconFirebasedbURLsView.as_view()),
+    url(r"^api/v1/recon_urls$", ReconURLsView.as_view()),
+    url(r"^api/v1/recon_trackers$", ReconTrackersView.as_view()),
+    url(r"^api/v1/recon_strings$", ReconStringsView.as_view()),
 
-    url(r"^api/v1/recent_scans$", rest_api.api_get_recent_scans), # works
-    url(r"^api/v1/signer_certificate$",rest_api.api_get_signer_certificate), # works
-    url(r"^api/v1/code/manifest$", rest_api.api_get_manifest),
-    url(r"^api/v1/summary/domain_analysis_country$", rest_api.api_get_domains_data),
-    url(r"^api/v1/code/java$", rest_api.api_get_java_code),
-    url(r"^api/v1/code/smali$", rest_api.api_get_smali_code),
-    url(r"^api/v1/api_md5_search$", rest_api.api_get_search),
-    url(r"^api/v1/recon_emails$", rest_api.api_get_recon_emails),
-    url(r"^api/v1/recon_firebase$", rest_api.api_get_recon_firebase_db_urls),
-    url(r"^api/v1/recon_urls$", rest_api.api_get_recon_urls),
-    url(r"^api/v1/recon_trackers$", rest_api.api_get_recon_trackers),
-    url(r"^api/v1/recon_strings$", rest_api.api_get_recon_strings),
-    url(r'^api/v1/app_info$', rest_api.api_app_info),
-    url(r'^api/v1/appstore_info$', rest_api.api_app_store),
-    url(r'^api/v1/summary/security_overview$', rest_api.api_security_overview),
-    url(r'^api/v1/summary/malware_overview$', rest_api.api_malware_overview),
-    url(r'^api/v1/summary/components/activities$', rest_api.api_components_activities),
-    url(r'^api/v1/summary/components/services$', rest_api.api_components_services),
-    url(r'^api/v1/summary/components/receivers$', rest_api.api_components_receivers),
-    url(r'^api/v1/summary/components/providers$', rest_api.api_components_providers),
-    url(r'^api/v1/summary/components/libraries$', rest_api.api_components_libraries),
-    url(r'^api/v1/summary/components/files$', rest_api.api_components_files),
-    url(r'^api/v1/summary/domain_analaysis$', rest_api.api_domain_analysis),
-    url(r'^api/v1/security_analysis/manifest_analysis$', rest_api.api_manifest_analysis),
-    url(r'^api/v1/security_analysis/code_analysis$', rest_api.api_code_analysis),
-    url(r'^api/v1/security_analysis/binary_analysis$', rest_api.api_binary_analysis),
-    url(r'^api/v1/security_analysis/file_analysis$', rest_api.api_file_analysis),
-    url(r'^api/v1/security_analysis/app_permissions$', rest_api.api_app_permissions),
+    # Class Based View
+    url(r'^api/v1/app_info$', AppInfoView.as_view()),
+    url(r'^api/v1/appstore_info$', AppStoreView.as_view()),
+    url(r'^api/v1/summary/security_overview$', SecurityOverView.as_view()),
+    url(r'^api/v1/summary/malware_overview$', MalwareOverView.as_view()),
+    url(r'^api/v1/summary/components/activities$', ComponentsActivities),
+    url(r'^api/v1/summary/components/services$', ComponentsServices),
+    url(r'^api/v1/summary/components/receivers$', ComponentsReceivers),
+    url(r'^api/v1/summary/components/providers$', ComponentsProviders),
+    url(r'^api/v1/summary/components/libraries$', ComponentsLibraries),
+    url(r'^api/v1/summary/components/files$', ComponentsFiles),
+
+    url(r'^api/v1/summary/domain_analaysis$', DomainAnalysis),
+    url(r'^api/v1/malware_analysis/apk_id', APKIDAnalysis),
+    url(r'^api/v1/security_analysis/manifest_analysis$', ManifestAnalysis),
+    url(r'^api/v1/security_analysis/code_analysis$', CodeAnalysis),
+    url(r'^api/v1/security_analysis/binary_analysis$', BinaryAnalysis),
+    url(r'^api/v1/security_analysis/file_analysis$', FileAnalysis),
+    url(r'^api/v1/security_analysis/app_permissions$', AppPermissions),
 
     # Test
     url(r'^tests/$', tests.start_test),
     
-] + api_user_urls
+]
 
 utils.print_version()
