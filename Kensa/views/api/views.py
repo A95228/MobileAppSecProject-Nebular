@@ -1,4 +1,4 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 from Kensa.utils import api_key
@@ -51,6 +51,7 @@ def create_pagination_response(context, page):
     }
     return resp
 
+
 def make_api_response(data, status=OK):
     """Make API Response."""
     resp = JsonResponse(data=data, status=status)
@@ -59,7 +60,6 @@ def make_api_response(data, status=OK):
     resp['Access-Control-Allow-Headers'] = 'Authorization'
     resp['Content-Type'] = 'application/json; charset=utf-8'
     return resp
-
 
 
 def api_auth(meta):
@@ -930,7 +930,6 @@ class DeleteScanView(RetrieveAPIView):
 
 class PDFReportView(RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
-
     def get(self, request, *args, **kwargs):
         """Generate and Download PDF."""
         md5 = request.GET.get('md5', None)
@@ -942,7 +941,9 @@ class PDFReportView(RetrieveAPIView):
         if md5 is None:
             return make_api_response({'error': 'Bad Request'}, BAD_REQUEST)
         msg, err = pdf(md5, system, jsonres=jsonres)
-        response = make_api_response(msg, err)
+        response = HttpResponse(
+            msg['pdf_dat'], content_type='application/pdf')
+        response['Access-Control-Allow-Origin'] = '*'
         return response
 
 
