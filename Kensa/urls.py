@@ -13,10 +13,12 @@ from DynamicAnalyzer.views.android import (
 from Kensa import utils
 from Kensa.views.api.views import AppInfoView, AppStoreView, SecurityOverView, MalwareOverView, ComponentsActivities, \
     ComponentsServices, ComponentsReceivers, ComponentsProviders, ComponentsLibraries, ComponentsFiles, DomainAnalysis, \
-    APKIDAnalysis, ManifestAnalysis, CodeAnalysis, BinaryAnalysis, FileAnalysis, AppPermissions
+    APKIDAnalysis, ManifestAnalysis, CodeAnalysis, BinaryAnalysis, FileAnalysis, AppPermissions, JavaCodeView, \
+    SmaliCodeView, ReconEmailsView, ReconFirebasedbURLsView, ReconURLsView, ReconTrackersView, ReconStringsView, \
+    UploadAppView, ScanAppView, DeleteScanView, RecentScansView, GetRecentScansView, GetSignerCertificateView, \
+    GetManifestView, GetDomainsDataView, GetSearchView, PDFReportView, JSONReportView, SourceView
 from users.views import api_user_urls
 from Kensa.views import home
-from Kensa.views.api import rest_api
 
 from StaticAnalyzer import tests
 from StaticAnalyzer.views import shared_func
@@ -109,25 +111,25 @@ urlpatterns = [
     url(r'^dynamic_view_file/$', report.view_file),
 
     # REST API
-    url(r'^api/v1/upload$', rest_api.api_upload),
-    url(r'^api/v1/scan$', rest_api.api_scan),
-    url(r'^api/v1/delete_scan$', rest_api.api_delete_scan),
-    url(r'^api/v1/download_pdf$', rest_api.api_pdf_report),
-    url(r'^api/v1/report_json$', rest_api.api_json_report),
-    url(r'^api/v1/view_source$', rest_api.api_view_source),
-    url(r'^api/v1/scans$', rest_api.api_recent_scans),
-    url(r"^api/v1/recent_scans$", rest_api.api_get_recent_scans),
-    url(r"^api/v1/signer_certificate$",rest_api.api_get_signer_certificate),
-    url(r"^api/v1/code/manifest$", rest_api.api_get_manifest),
-    url(r"^api/v1/summary/domain_analysis_country$", rest_api.api_get_domains_data),
-    url(r"^api/v1/code/java$", rest_api.api_get_java_code),
-    url(r"^api/v1/code/smali$", rest_api.api_get_smali_code),
-    url(r"^api/v1/api_md5_search$", rest_api.api_get_search),
-    url(r"^api/v1/recon_emails$", rest_api.api_get_recon_emails),
-    url(r"^api/v1/recon_firebase$", rest_api.api_get_recon_firebase_db_urls),
-    url(r"^api/v1/recon_urls$", rest_api.api_get_recon_urls),
-    url(r"^api/v1/recon_trackers$", rest_api.api_get_recon_trackers),
-    url(r"^api/v1/recon_strings$", rest_api.api_get_recon_strings),
+    url(r'^api/v1/upload$', UploadAppView.as_view()),
+    url(r'^api/v1/scan$', ScanAppView.as_view()),
+    url(r'^api/v1/delete_scan$', DeleteScanView.as_view()),
+    url(r'^api/v1/download_pdf$', PDFReportView.as_view()),
+    url(r'^api/v1/report_json$', JSONReportView.as_view()),
+    url(r'^api/v1/view_source$', SourceView.as_view()),
+    url(r'^api/v1/scans$', RecentScansView.as_view()),
+    url(r"^api/v1/recent_scans$", GetRecentScansView.as_view()),
+    url(r"^api/v1/signer_certificate$", GetSignerCertificateView.as_view()),
+    url(r"^api/v1/code/manifest$", GetManifestView.as_view()),
+    url(r"^api/v1/summary/domain_analysis_country$", GetDomainsDataView.as_view()),
+    url(r"^api/v1/code/java$", JavaCodeView.as_view()),
+    url(r"^api/v1/code/smali$", SmaliCodeView.as_view()),
+    url(r"^api/v1/api_md5_search$", GetSearchView.as_view()),
+    url(r"^api/v1/recon_emails$", ReconEmailsView.as_view()),
+    url(r"^api/v1/recon_firebase$", ReconFirebasedbURLsView.as_view()),
+    url(r"^api/v1/recon_urls$", ReconURLsView.as_view()),
+    url(r"^api/v1/recon_trackers$", ReconTrackersView.as_view()),
+    url(r"^api/v1/recon_strings$", ReconStringsView.as_view()),
 
     # Class Based View
     url(r'^api/v1/app_info$', AppInfoView.as_view()),
