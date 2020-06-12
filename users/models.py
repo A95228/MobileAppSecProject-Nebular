@@ -59,7 +59,6 @@ class UserManager(BaseUserManager):
 		return user
 
 
-
 class User(AbstractBaseUser, PermissionsMixin):
 
 	email = models.EmailField(max_length=254, unique=True)
@@ -82,18 +81,14 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 	objects = UserManager()
 
-
 	def get_short_name(self):
 		return self.short_name
-
 
 	def get_full_name(self):
 		return self.name
 
-
 	def get_absolute_url(self):
 		return "/users/%i/" % (self.pk)
-
 
 	@classmethod
 	def update_password(cls, password, pk): # tested
