@@ -3,8 +3,9 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 from Kensa.utils import api_key
 from Kensa.views.api import tools
+from Kensa.views.api.serializers import ScanAppSerializer
 from Kensa.views.home import Upload, RecentScans, delete_scan
-from StaticAnalyzer.models import(
+from StaticAnalyzer.models import (
     RecentScansDB,
     StaticAnalyzerAndroid,
     StaticAnalyzerIOS
@@ -17,23 +18,22 @@ from StaticAnalyzer.views.ios import view_source as ios_view_source
 import logging
 import re
 
-
 from StaticAnalyzer.views.android import view_source
 from StaticAnalyzer.views.android.java import api_run_java_code
 from StaticAnalyzer.views.android.smali import api_run_smali
-from StaticAnalyzer.views.android.static_analyzer import static_analyzer
-from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios
+from StaticAnalyzer.views.android.static_analyzer import static_analyzer_android
+from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios_api
 from StaticAnalyzer.views.shared_func import score, pdf
 from StaticAnalyzer.views.windows import windows
 
 logger = logging.getLogger(__name__)
-
 
 BAD_REQUEST = 400
 OK = 200
 NOT_FOUND = 404
 FORBIDDEN = 403
 INTERNAL_SERVER_ERR = 500
+
 
 def create_pagination_response(context, page):
     paginator = Paginator(context, 30)
@@ -378,8 +378,8 @@ class DomainAnalysis(RetrieveAPIView):
                 domains = {}
                 if system == 'android':
                     domains = StaticAnalyzerAndroid.get_domain_analysis(md5)
-                # elif system == 'ios':
-                #     domains = StaticAnalyzerIOS.get_malware_overview(md5)
+                    # elif system == 'ios':
+                    #     domains = StaticAnalyzerIOS.get_malware_overview(md5)
                     return make_api_response(domains, OK)
                 return make_api_response({'msg': 'Not exist'}, OK)
             else:
@@ -759,7 +759,7 @@ class GetDomainsDataView(RetrieveAPIView):
         request_ok = tools.request_check(request)
 
         if not request_ok[0]:
-            return make_api_response(*request[1:])
+            return make_api_response(request[:1])
 
         try:
             data = StaticAnalyzerAndroid.get_domains_data(
@@ -807,6 +807,19 @@ class GetRecentScansView(RetrieveAPIView):
                 return make_api_response(data=data, status=OK)
             return JsonResponse(data=data, safe=False, status=OK)  # strange case
         return make_api_response(data={"error": "no data"}, status=BAD_REQUEST)
+
+
+class RecentScansView(RetrieveAPIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        """GET - get recent scans."""
+        scans = RecentScans(request)
+        resp = scans.recent_scans()
+        if 'error' in resp:
+            return make_api_response(resp, 500)
+        else:
+            return make_api_response(resp, 200)
 
 
 class GetSignerCertificateView(RetrieveAPIView):
@@ -873,42 +886,58 @@ class RecentScansView(RetrieveAPIView):
 
 class ScanAppView(RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
+    serializer_class = ScanAppSerializer
 
-    def post(self, request, *args, **kwargs):
-        """POST - Scan API."""
-        params = ['scan_type', 'hash', 'file_name']
-        if set(request.POST) >= set(params):
-            scan_type = request.POST['scan_type']
-            # APK, Android ZIP and iOS ZIP
-            if scan_type in ['apk', 'zip']:
-                resp = static_analyzer(request, True)
-                if 'type' in resp:
-                    # For now it's only ios_zip
-                    request.POST._mutable = True
-                    request.POST['scan_type'] = 'ios'
-                    resp = static_analyzer_ios(request, True)
-                if 'error' in resp:
-                    response = make_api_response(resp, 500)
+    def get(self, request, *args, **kwargs):
+        """GET - Scan API."""
+        serializer = self.serializer_class(data=request.GET)
+        if not serializer.is_valid():
+            return make_api_response({'message': 'Some fields are missing'}, BAD_REQUEST)
+        scan_type = serializer.validated_data['scan_type']
+        md5 = serializer.validated_data['md5']
+        organization_id = serializer.validated_data['organization_id']
+        file_name = serializer.validated_data['file_name']
+
+        # APK, Android ZIP and iOS ZIP
+        if scan_type in ['apk', 'zip']:
+            resp, success = static_analyzer_android(md5=md5,
+                                                    scan_type=scan_type,
+                                                    filename=file_name,
+                                                    user_id=request.user.id,
+                                                    organization_id=organization_id)
+            if success == 'success':
+                return make_api_response(resp, OK)
+            elif success == 'err':
+                return make_api_response(resp, INTERNAL_SERVER_ERR)
+            elif success == 'ios':
+                # For now it's only ios_zip
+                resp, success = static_analyzer_ios_api(md5=md5,
+                                                        scan_type=scan_type,
+                                                        filename=file_name,
+                                                        user_id=request.user.id,
+                                                        organization_id=organization_id)
+                if success == 'success':
+                    return make_api_response(resp, OK)
                 else:
-                    response = make_api_response(resp, 200)
-            # IPA
-            elif scan_type == 'ipa':
-                resp = static_analyzer_ios(request, True)
-                if 'error' in resp:
-                    response = make_api_response(resp, 500)
-                else:
-                    response = make_api_response(resp, 200)
-            # APPX
-            elif scan_type == 'appx':
-                resp = windows.staticanalyzer_windows(request, True)
-                if 'error' in resp:
-                    response = make_api_response(resp, 500)
-                else:
-                    response = make_api_response(resp, 200)
-        else:
-            response = make_api_response(
-                {'error': 'Missing Parameters'}, 422)
-        return response
+                    return make_api_response(resp, INTERNAL_SERVER_ERR)
+        # IPA
+        elif scan_type == 'ipa':
+            resp, success = static_analyzer_ios_api(md5=md5,
+                                                    scan_type=scan_type,
+                                                    filename=file_name,
+                                                    user_id=request.user.id,
+                                                    organization_id=organization_id)
+            if success == 'success':
+                return make_api_response(resp, OK)
+            else:
+                return make_api_response(resp, INTERNAL_SERVER_ERR)
+        # # APPX
+        # elif scan_type == 'appx':
+        #     resp = windows.staticanalyzer_windows(request, True)
+        #     if 'error' in resp:
+        #         response = make_api_response(resp, 500)
+        #     else:
+        #         response = make_api_response(resp, 200)
 
 
 class DeleteScanView(RetrieveAPIView):
@@ -930,6 +959,7 @@ class DeleteScanView(RetrieveAPIView):
 
 class PDFReportView(RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
+
     def get(self, request, *args, **kwargs):
         """Generate and Download PDF."""
         md5 = request.GET.get('md5', None)
