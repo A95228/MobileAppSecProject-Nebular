@@ -24,10 +24,11 @@ class RecentScansDB(models.Model):
     APP_NAME = models.CharField(max_length=260)
     PACKAGE_NAME = models.CharField(max_length=260)
     VERSION_NAME = models.CharField(max_length=50)
+    ORGANIZATION_ID = models.IntegerField(verbose_name="organization_id_android")
 
     @classmethod
-    def get_recent_scans(cls):
-        scans = cls.objects.all().order_by("-TIMESTAMP")
+    def get_recent_scans(cls, organization_id):
+        scans = cls.objects.filter(ORGANIZATION_ID=organization_id).order_by("-TIMESTAMP")
         if scans.count() == 0:
             return None
         scans_values = scans.values(

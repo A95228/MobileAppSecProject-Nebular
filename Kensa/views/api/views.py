@@ -3,7 +3,7 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 
 from Kensa.utils import api_key
 from Kensa.views.api import tools
-from Kensa.views.api.serializers import ScanAppSerializer
+from Kensa.views.api import serializers
 from Kensa.views.home import Upload, RecentScans, delete_scan
 from StaticAnalyzer.models import (
     RecentScansDB,
@@ -798,28 +798,33 @@ class GetSearchView(RetrieveAPIView):
 
 class GetRecentScansView(RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
+    serializer_class = serializers.GetRecentScansView
 
     def get(self, request, *args, **kwargs):
         """Get Recent Scans """
-        data = RecentScansDB.get_recent_scans()
+        serializer = self.serializer_class(data=request.GET)
+        if not serializer.is_valid():
+            return make_api_response(data={"error": "Invalid Parameters"}, status=BAD_REQUEST)
+        organization_id = serializer.validated_data['organization_id']
+        data = RecentScansDB.get_recent_scans(organization_id=organization_id)
         if data is not None:
             if isinstance(data, dict):
                 return make_api_response(data=data, status=OK)
             return JsonResponse(data=data, safe=False, status=OK)  # strange case
         return make_api_response(data={"error": "no data"}, status=BAD_REQUEST)
 
-
-class RecentScansView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
-
-    def get(self, request, *args, **kwargs):
-        """GET - get recent scans."""
-        scans = RecentScans(request)
-        resp = scans.recent_scans()
-        if 'error' in resp:
-            return make_api_response(resp, 500)
-        else:
-            return make_api_response(resp, 200)
+#
+# class RecentScansView(RetrieveAPIView):
+#     permission_classes = (IsAuthenticated,)
+#
+#     def get(self, request, *args, **kwargs):
+#         """GET - get recent scans."""
+#         scans = RecentScans(request)
+#         resp = scans.recent_scans()
+#         if 'error' in resp:
+#             return make_api_response(resp, 500)
+#         else:
+#             return make_api_response(resp, 200)
 
 
 class GetSignerCertificateView(RetrieveAPIView):
@@ -871,22 +876,22 @@ class UploadAppView(RetrieveAPIView):
         return make_api_response(resp, code)
 
 
-class RecentScansView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
-
-    def get(self, request, *args, **kwargs):
-        """GET - get recent scans."""
-        scans = RecentScans(request)
-        resp = scans.recent_scans()
-        if 'error' in resp:
-            return make_api_response(resp, 500)
-        else:
-            return make_api_response(resp, 200)
+# class RecentScansView(RetrieveAPIView):
+#     permission_classes = (IsAuthenticated,)
+#
+#     def get(self, request, *args, **kwargs):
+#         """GET - get recent scans."""
+#         scans = RecentScans(request)
+#         resp = scans.recent_scans()
+#         if 'error' in resp:
+#             return make_api_response(resp, 500)
+#         else:
+#             return make_api_response(resp, 200)
 
 
 class ScanAppView(RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
-    serializer_class = ScanAppSerializer
+    serializer_class = serializers.ScanAppSerializer
 
     def get(self, request, *args, **kwargs):
         """GET - Scan API."""
