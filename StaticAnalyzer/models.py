@@ -133,6 +133,18 @@ class StaticAnalyzerAndroid(models.Model):
     ORG_ID = models.TextField()
 
 
+    @classmethod
+    def cook_scan(cls, **kwargs):
+        """Create a scan and store it to 
+        database do sanity checks here."""
+        if 'USER' not in kwargs:
+            return False
+        if 'ORG_ID' not in kwargs:
+            return False
+        cls.objects.create(**kwargs)
+        return True 
+
+
     @staticmethod
     def paginate(load, page, count=30):
         """Paginate a context"""
@@ -710,15 +722,7 @@ class StaticAnalyzerAndroid(models.Model):
         except:
             logger.info("get_app_permissions error %s" % md5)
             return None, None
-    
-    @classmethod
-    def cook_scan(cls, **kwargs):
-        if 'USER' not in kwargs:
-            return False
-        if 'ORG_ID' not in kwargs:
-            return False
-        cls.objects.create(**kwargs)
-        return True 
+
 
 
 class StaticAnalyzerIOS(models.Model):
@@ -756,6 +760,18 @@ class StaticAnalyzerIOS(models.Model):
     APPSTORE_DETAILS = models.TextField(default={})
     USER = models.ForeignKey(User, on_delete=models.CASCADE)
     ORG_ID = models.TextField()
+
+
+    @classmethod
+    def cook_scan(cls, **kwargs):
+         """Create a scan and store it to 
+        database do sanity checks here."""
+        if 'USER' not in kwargs:
+            return False
+        if 'ORG_ID' not in kwargs:
+            return False
+        cls.objects.create(**kwargs)
+        return True 
 
 
     @staticmethod
@@ -1209,16 +1225,6 @@ class StaticAnalyzerIOS(models.Model):
             logger.info("get_components_files error %s" % md5)
             return None
 
-
-    @classmethod
-    def cook_scan(cls, **kwargs):
-        """Stores and entry to the database, calls create from here."""
-        if 'USER' not in kwargs:
-            return False
-        if 'ORG_ID' not in kwargs:
-            return False
-        cls.objects.create(**kwargs)
-        return True 
 
 
 class StaticAnalyzerWindows(models.Model):

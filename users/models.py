@@ -132,7 +132,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 	def save(self, *args, **kwargs): # tested
 		"""Override save to inject api_key into model."""
-		# no reason why email and date joined are not here.
 		key = "{0}{1}".format(self.email, str(self.date_joined))
 		self.api_key = KENSA_HASHER.encode(key)
 		super().save(*args, **kwargs)
@@ -145,8 +144,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 			user = cls.objects.get(pk=pk)
 		except:
 			return False
+
 		if key != user.api_key:
 			return False
+
 		return True
 
 

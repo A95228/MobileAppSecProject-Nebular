@@ -44,6 +44,7 @@ logger = logging.getLogger(__name__)
 
 def static_analyzer_ios(request, api=False):
     """Module that performs iOS IPA/ZIP Static Analysis."""
+    
     try:
         logger.info('iOS Static Analysis Started')
         if api:
@@ -129,7 +130,9 @@ def static_analyzer_ios(request, api=False):
                             infoplist_dict,
                             code_dict,
                             bin_analysis_dict,
-                            all_files)
+                            all_files,
+                            request.user,
+                            request.user.organization)
                         update_scan_timestamp(app_dict['md5_hash'])
                     elif rescan == '0':
                         logger.info('Saving to Database')
@@ -139,7 +142,9 @@ def static_analyzer_ios(request, api=False):
                             infoplist_dict,
                             code_dict,
                             bin_analysis_dict,
-                            all_files)
+                            all_files,
+                            request.user,
+                            request.user.organization)
                     context = get_context_from_analysis(
                         app_dict,
                         infoplist_dict,
@@ -210,7 +215,9 @@ def static_analyzer_ios(request, api=False):
                             infoplist_dict,
                             code_analysis_dic,
                             fake_bin_dict,
-                            all_files)
+                            all_files,
+                            request.user,
+                            request.user.organization)
                         update_scan_timestamp(app_dict['md5_hash'])
                     elif rescan == '0':
                         logger.info('Saving to Database')
@@ -220,7 +227,9 @@ def static_analyzer_ios(request, api=False):
                             infoplist_dict,
                             code_analysis_dic,
                             fake_bin_dict,
-                            all_files)
+                            all_files,
+                            request.user,
+                            request.user.organization)
                     context = get_context_from_analysis(
                         app_dict,
                         infoplist_dict,

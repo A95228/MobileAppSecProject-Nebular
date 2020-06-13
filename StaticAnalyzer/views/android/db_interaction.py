@@ -241,18 +241,12 @@ def save_or_update(update_type,
             'APKID': apk_id,
             'TRACKERS': trackers,
             'PLAYSTORE_DETAILS': app_dic['playstore'],
+            "USER" : user,
+            "ORG_ID" : organization
         }
 
         if update_type == 'save':
         
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # If it is a new save then create a new entry.
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            
-            values.update({
-                "USER" : user,
-                "ORG_ID" : organization,
-            })
             
             status = StaticAnalyzerAndroid.cook_scan(**values)
         

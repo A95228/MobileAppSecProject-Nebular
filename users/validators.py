@@ -77,7 +77,7 @@ def validate_username(username):
 def validate_api_key(api_key):
     """Check if user with api key does not exists"""
     try:
-        models.User.objects.get(api_key=api_key).exists():
+        models.User.objects.get(api_key=api_key)
     except:
         return True
     raise ValidationError(
