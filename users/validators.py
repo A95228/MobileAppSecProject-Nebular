@@ -56,23 +56,29 @@ def validate_password(value, length=8): # tested
 
 def validate_email(email):
     """Check if email is taken."""
-    if models.User.objects.get(email=email).exists():
-        raise ValidationError(
+    try:
+        models.User.objects.get(email=email)
+    except:
+        return True
+    raise ValidationError(
                 'A user with that email already exists.') from None
-    return True
 
 
 def validate_username(username):
     """Check if username is taken"""
-    if models.User.objects.get(username=username).exists():
-        raise ValidationError(
+    try:
+        models.User.objects.get(username=username)
+    except:
+        return True
+    raise ValidationError(
             "A user with that username already exists") from None
-    return True
 
 
 def validate_api_key(api_key):
     """Check if user with api key does not exists"""
-    if models.User.objects.get(api_key=api_key).exists():
-        raise ValidationError(
+    try:
+        models.User.objects.get(api_key=api_key).exists():
+    except:
+        return True
+    raise ValidationError(
             "api_key is already taken, try again.") from None
-    return True
