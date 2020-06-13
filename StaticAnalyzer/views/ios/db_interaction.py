@@ -107,20 +107,15 @@ def get_context_from_analysis(app_dict,
         logger.exception('Rendering to Template')
 
 
-def save_or_update(
-        update_type,
-        app_dict,
-        info_dict,
-        code_dict,
-        bin_dict,
-        all_files,
-        user,
-        organization
-    ):
-    """
-    Save/Update an IPA/ZIP DB entry.
-    """
-
+def save_or_update(update_type,
+                   app_dict,
+                   info_dict,
+                   code_dict,
+                   bin_dict,
+                   all_files,
+                   user,
+                   organization):
+    """Save/Update an IPA/ZIP DB entry."""
     try:
         values = {
             'FILE_NAME': app_dict['file_name'],
@@ -156,19 +151,20 @@ def save_or_update(
             'STRINGS': bin_dict['strings'],
             'FIREBASE_URLS': code_dict['firebase'],
             'APPSTORE_DETAILS': app_dict['appstore'],
-            "USER" : user,
-            "ORGANIZATION" : organization
+            "USER_ID" : user,
+            "ORG_ID" : organization
         }
         if update_type == 'save':
+
             status = StaticAnalyzerIOS.cook_scan(**values)
 
             if status == True:
-                logger.info("Entry stored in the database")
+                logger.info("Entry %s stored in the database" % app_dict["md5_hash"])
             else:
-                logger.info("Error storing scan to database.")
+                logger.info("Error creating entry %s" % app_dict["md5_hash"])
         
         else:
-            scan_obj = StaticAnalyzerIOS.objects.filter(
+            StaticAnalyzerIOS.objects.filter(
                 MD5=app_dict['md5_hash']).update(**values)
             
     except Exception:
@@ -181,8 +177,6 @@ def save_or_update(
         }
         RecentScansDB.objects.filter(
             MD5=app_dict['md5_hash']).update(**values)
-        context = StaticAnalyzerIOS.get_scan_info_from_obj(scan_obj)
-        return context
     except Exception:
-        logger.exception('Updating DB')
+        logger.exception('Updating RecentScansDB')
 

@@ -137,7 +137,6 @@ class Upload(object):
                 data["file_name"], 
                 data["hash"], 
                 data["url"], 
-                self.request.user.organization
             )
             logger.info("RecentScanDB was updated")
             return api_response, 200

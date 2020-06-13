@@ -31,9 +31,9 @@ from StaticAnalyzer.models import(
 from StaticAnalyzer.views.android import view_source
 from StaticAnalyzer.views.android.java import api_run_java_code
 from StaticAnalyzer.views.android.smali import api_run_smali
-from StaticAnalyzer.views.android.static_analyzer import static_analyzer_android
+from StaticAnalyzer.views.android.static_analyzer import static_analyzer
 from StaticAnalyzer.views.ios import view_source as ios_view_source
-from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios_api
+from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios
 from StaticAnalyzer.views.shared_func import score, pdf
 from StaticAnalyzer.views.windows import windows
 
@@ -815,61 +815,41 @@ class UploadAppView(RetrieveAPIView):
         return make_api_response(resp, code)
 
 
+
 class ScanAppView(RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request, *args, **kwargs):
-        return make_api_response({"error": "Method GET not implemented"}, 405)
-
     def post(self, request, *args, **kwargs):
         """POST - Scan API."""
-        
-        scan_type = request.POST.get('type')
-        md5 = request.POST.get("hash")
-
-        if md5 is None:
-            return make_api_response({"error" : "Missing hash"}, 400)
-
-        if not re.match('^[0-9a-f]{32}$', md5):
-            return make_api_response({"error" : "Missing hash"}, 400)
-
-        if scan_type is None:
-            return make_api_response({"error" : "No scan type"}, 400)
-        
-        if not scan_type in ['apk', 'ios']:
-            return make_api_response({"error" : "Invalid type"}, 400)
-        
-        if scan_type in ['apk', 'zip']:
-            resp = static_analyzer_android(
-                md5,
-                filename,
-                request.user.pk,
-                reques.user.organization
-            )
-            if 'type' in resp:
-                # For now it's only ios_zip
-                request.POST._mutable = True
-                request.POST['scan_type'] = 'ios' # ?
-                
-            if 'error' in resp:
-                response = make_api_response(resp, 500)
-            else:
-                response = make_api_response(resp, 200)
-        # IPA
-        elif scan_type == 'ipa':
-            resp = static_analyzer_ios(request, True)
-            if 'error' in resp:
-                response = make_api_response(resp, 500)
-            else:
-                response = make_api_response(resp, 200)
-        # APPX
-        elif scan_type == 'appx':
-            resp = windows.staticanalyzer_windows(request, True)
-            if 'error' in resp:
-                response = make_api_response(resp, 500)
-            else:
-                response = make_api_response(resp, 200)
-
+        params = ['scan_type', 'hash', 'file_name']
+        if set(request.POST) >= set(params):
+            scan_type = request.POST['scan_type']
+            # APK, Android ZIP and iOS ZIP
+            if scan_type in ['apk', 'zip']:
+                resp = static_analyzer(request, True)
+                if 'type' in resp:
+                    # For now it's only ios_zip
+                    request.POST._mutable = True
+                    request.POST['scan_type'] = 'ios'
+                    resp = static_analyzer_ios(request, True)
+                if 'error' in resp:
+                    response = make_api_response(resp, 500)
+                else:
+                    response = make_api_response(resp, 200)
+            # IPA
+            elif scan_type == 'ipa':
+                resp = static_analyzer_ios(request, True)
+                if 'error' in resp:
+                    response = make_api_response(resp, 500)
+                else:
+                    response = make_api_response(resp, 200)
+            # APPX
+            elif scan_type == 'appx':
+                resp = windows.staticanalyzer_windows(request, True)
+                if 'error' in resp:
+                    response = make_api_response(resp, 500)
+                else:
+                    response = make_api_response(resp, 200)
         else:
             response = make_api_response(
                 {'error': 'Missing Parameters'}, 422)
