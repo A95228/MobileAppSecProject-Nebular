@@ -49,7 +49,6 @@ from Kensa.views.api.views import (
     GetSearchView,
     PDFReportView, 
     JSONReportView,
-    KensaObtainPairView,
     SourceView
 )
 from Kensa.views import home
