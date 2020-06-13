@@ -155,21 +155,10 @@ def save_or_update(update_type,
             "ORG_ID" : organization
         }
         if update_type == 'save':
-
-            status = StaticAnalyzerIOS.cook_scan(**values)
-
-            if status == True:
-                logger.info("Entry %s stored in the database" % app_dict["md5_hash"])
-            else:
-                logger.info("Error creating entry %s" % app_dict["md5_hash"])
-        
+            scan_obj = StaticAnalyzerIOS.objects.create(**values)
         else:
-            StaticAnalyzerIOS.objects.filter(
+            scan_obj = StaticAnalyzerIOS.objects.filter(
                 MD5=app_dict['md5_hash']).update(**values)
-            
-    except Exception:
-        logger.exception('Updating DB')
-    try:
         values = {
             'APP_NAME': info_dict['bin_name'],
             'PACKAGE_NAME': info_dict['id'],
@@ -177,6 +166,8 @@ def save_or_update(update_type,
         }
         RecentScansDB.objects.filter(
             MD5=app_dict['md5_hash']).update(**values)
+        context = StaticAnalyzerIOS.get_scan_info_from_obj(scan_obj)
+        return context
     except Exception:
-        logger.exception('Updating RecentScansDB')
+        logger.exception('Updating DB')
 

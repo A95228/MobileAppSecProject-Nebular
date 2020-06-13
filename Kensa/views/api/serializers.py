@@ -13,7 +13,7 @@ class ReconDataSerializer(serializers.ModelSerializer):
 class ScanAppSerializer(serializers.Serializer):
     scan_type = serializers.CharField()
     md5 = serializers.CharField()
-    organization_id = serializers.IntegerField()
+    organization_id = serializers.CharField()
     file_name = serializers.CharField()
 
 

@@ -264,3 +264,155 @@ def static_analyzer_ios(request, api=False):
             return print_n_send_error_response(request, msg, True, exp_doc)
         else:
             return print_n_send_error_response(request, msg, False, exp_doc)
+
+
+
+def static_analyzer_ios_api(scan_type, md5, filename, user_id, organization_id):
+    """Module that performs iOS IPA/ZIP Static Analysis."""
+    try:
+        logger.info('iOS Static Analysis Started')
+
+        md5_match = re.match('^[0-9a-f]{32}$', md5)
+        if (md5_match and (filename.lower().endswith('.ipa') or filename.lower().endswith('.zip'))
+                and (scan_type in ['ipa', 'ios'])):
+            app_dict = {}
+            app_dict['directory'] = settings.BASE_DIR  # BASE DIR
+            app_dict['file_name'] = filename  # APP ORGINAL NAME
+            app_dict['md5_hash'] = md5  # MD5
+            app_dict['app_dir'] = os.path.join(
+                settings.UPLD_DIR, app_dict['md5_hash'] + '/')  # APP DIRECTORY
+            tools_dir = os.path.join(
+                app_dict['directory'], 'StaticAnalyzer/tools/ios/')
+            if scan_type == 'ipa':
+                # DB
+                context = StaticAnalyzerIOS.get_scan_info(md5=md5)
+                if context is not None:
+                    return context, 'success'
+
+                logger.info('iOS Binary (IPA) Analysis Started')
+                app_dict['app_file'] = app_dict[
+                    'md5_hash'] + '.ipa'  # NEW FILENAME
+                app_dict['app_path'] = (app_dict['app_dir'] +
+                                        app_dict['app_file'])
+                app_dict['bin_dir'] = os.path.join(
+                    app_dict['app_dir'], 'Payload/')
+                app_dict['size'] = str(
+                    file_size(app_dict['app_path'])) + 'MB'  # FILE SIZE
+                app_dict['sha1'], app_dict['sha256'] = hash_gen(
+                    app_dict['app_path'])  # SHA1 & SHA256 HASHES
+                logger.info('Extracting IPA')
+                # EXTRACT IPA
+                unzip(app_dict['app_path'], app_dict['app_dir'])
+                # Get Files, normalize + to x,
+                # and convert binary plist -> xml
+                all_files = ios_list_files(
+                    app_dict['bin_dir'], app_dict['md5_hash'], True, 'ipa')
+                infoplist_dict = plist_analysis(app_dict['bin_dir'], False)
+                app_dict['appstore'] = app_search(infoplist_dict.get('id'))
+                bin_analysis_dict = binary_analysis(
+                    app_dict['bin_dir'],
+                    tools_dir,
+                    app_dict['app_dir'],
+                    infoplist_dict.get('bin'))
+                # Get Icon
+                app_dict['icon_found'] = get_icon(
+                    app_dict['md5_hash'],
+                    app_dict['bin_dir'],
+                    infoplist_dict.get('bin'))
+                # IPA URL and Email Extract
+                recon = extract_urls_n_email(app_dict['bin_dir'],
+                                             all_files['files_long'],
+                                             bin_analysis_dict['strings'])
+                code_dict = {
+                    'api': {},
+                    'code_anal': {},
+                    'urlnfile': recon['urlnfile'],
+                    'domains': recon['domains'],
+                    'emailnfile': recon['emailnfile'],
+                    'firebase': firebase_analysis(recon['urls_list']),
+                }
+                # Saving to DB
+                logger.info('Updating Database...')
+                context = save_or_update(
+                    'save',
+                    app_dict,
+                    infoplist_dict,
+                    code_dict,
+                    bin_analysis_dict,
+                    all_files,
+                    user_id,
+                    organization_id
+                )
+                update_scan_timestamp(app_dict['md5_hash'])
+
+                if context is not None:
+                    return context, 'success'
+                return {'err': 'Updating Database err'}, 'err'
+
+            elif scan_type == 'ios':
+                context = StaticAnalyzerIOS.get_scan_info(md5=md5)
+                if context is not None:
+                    return context, 'success'
+
+                logger.info('iOS Source Code Analysis Started')
+                app_dict['app_file'] = app_dict[
+                    'md5_hash'] + '.zip'  # NEW FILENAME
+                app_dict['app_path'] = (app_dict['app_dir'] +
+                                        app_dict['app_file'])
+                # ANALYSIS BEGINS - Already Unzipped
+                logger.info('ZIP Already Extracted')
+                app_dict['size'] = str(
+                    file_size(app_dict['app_path'])) + 'MB'  # FILE SIZE
+                app_dict['sha1'], app_dict['sha256'] = hash_gen(
+                    app_dict['app_path'])  # SHA1 & SHA256 HASHES
+                all_files = ios_list_files(
+                    app_dict['app_dir'],
+                    app_dict['md5_hash'],
+                    False,
+                    'ios')
+                infoplist_dict = plist_analysis(app_dict['app_dir'], True)
+                app_dict['appstore'] = app_search(infoplist_dict.get('id'))
+                code_analysis_dic = ios_source_analysis(
+                    app_dict['app_dir'])
+                # Get App Icon
+                app_dict['icon_found'] = get_icon_source(
+                    app_dict['md5_hash'],
+                    app_dict['app_dir'])
+                # Firebase DB Check
+                code_analysis_dic['firebase'] = firebase_analysis(
+                    list(set(code_analysis_dic['urls_list'])))
+                fake_bin_dict = {
+                    'bin_type': code_analysis_dic['source_type'],
+                    'macho': {},
+                    'bin_res': [],
+                    'libs': [],
+                    'strings': [],
+                }
+                # Saving to DB
+                logger.info('Updating Database...')
+                context = save_or_update(
+                    'save',
+                    app_dict,
+                    infoplist_dict,
+                    code_analysis_dic,
+                    fake_bin_dict,
+                    all_files,
+                    user_id,
+                    organization_id
+                )
+                update_scan_timestamp(app_dict['md5_hash'])
+                if context is not None:
+                    return context, 'success'
+                return {'err': 'Updating Database err'}, 'err'
+
+            else:
+                msg = 'File Type not supported!'
+                return {'err': msg}, 'err'
+        else:
+            msg = 'Hash match failed or Invalid file extension or file type'
+            return {'err': msg}, 'err'
+    except Exception as exp:
+        logger.exception('Error Performing Static Analysis')
+        msg = str(exp)
+        exp_doc = exp.__doc__
+        return {'err': 'Error Performing Static Analysis'}, 'err'

@@ -1138,6 +1138,43 @@ class StaticAnalyzerIOS(models.Model):
             logger.info("get_code_analysis error %s" % md5)
             return None
 
+
+    @classmethod
+    def get_scan_info_from_obj(cls, scan_obj):
+        try:
+            if scan_obj.ICON_FOUND:
+                icon_url = "/download/{0}-icon.png".format(scan_obj.MD5)
+            else:
+                icon_url = 'img/no_icon.png'
+            certificate_analysis = scan_obj.CERTIFICATE_ANALYSIS
+            scan_info = {
+                'file_name': scan_obj.FILE_NAME,
+                'icon_url': icon_url,
+                'system': 'android',
+                'date': scan_obj.DATE,
+                'certificate_status':
+                    certificate_analysis['certificate_status'] if certificate_analysis is not None else '',
+                'app_info': {
+                    'file_name': scan_obj.FILE_NAME,
+                    'size': scan_obj.SIZE,
+                    'md5': scan_obj.MD5,
+                    'sha1': scan_obj.SHA1,
+                    'sha256': scan_obj.SHA256,
+                    'app_name': scan_obj.APP_NAME,
+                    'package_name': scan_obj.PACKAGE_NAME,
+                    'main_activity': scan_obj.MAIN_ACTIVITY,
+                    'target_sdk': scan_obj.TARGET_SDK,
+                    'max_sdk': scan_obj.MAX_SDK,
+                    'min_sdk': scan_obj.MIN_SDK,
+                    'version_name': scan_obj.VERSION_NAME,
+                    'version_code': scan_obj.VERSION_CODE
+                }
+            }
+            return scan_info
+        except:
+            return None
+
+
     @classmethod
     def get_binary_analysis(cls, md5):
         """Generates binary analysis or returns None."""

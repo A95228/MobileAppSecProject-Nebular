@@ -4,7 +4,7 @@ from django.contrib import admin
 from django.urls import path
 from django.conf.urls import include, url
 from rest_framework_simplejwt.views import TokenRefreshView
-
+from rest_framework_simplejwt.views import TokenObtainPairView
 from DynamicAnalyzer.views.android import dynamic_analyzer as dz
 from DynamicAnalyzer.views.android import (
     operations,
@@ -75,7 +75,7 @@ urlpatterns = [
     # General
     url(r'^$', home.index, name='home'),
     path('admin/', admin.site.urls),
-    path('accounts/login', KensaObtainPairView.as_view(), name='kensa_token_obtain_pair'),
+    path('accounts/login', TokenObtainPairView.as_view(), name='kensa_token_obtain_pair'),
     path('accounts/token/fresh', TokenRefreshView.as_view(), name='token_refresh'),
 
     path('accounts/', include('allauth.urls')),

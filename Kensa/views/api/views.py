@@ -5,13 +5,13 @@ import re
 
 from django.core.paginator import EmptyPage, Paginator, PageNotAnInteger
 from django.http import HttpResponse, JsonResponse
-
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from rest_framework_simplejwt import serializers
 from Kensa.utils import api_key
 from Kensa.views.api import tools
 from Kensa.views.home import Upload, RecentScans, delete_scan
@@ -22,7 +22,7 @@ from Kensa.views.api.permissions import (
     UserCanScan,
 )
 
-from Kensa.views.api.serializers import KensaTokenObtainPairSerializer
+from Kensa.views.api.serializers import KensaTokenObtainPairSerializer, ScanAppSerializer
 from StaticAnalyzer.models import (
     RecentScansDB,
     StaticAnalyzerAndroid,
@@ -31,9 +31,9 @@ from StaticAnalyzer.models import (
 from StaticAnalyzer.views.android import view_source
 from StaticAnalyzer.views.android.java import api_run_java_code
 from StaticAnalyzer.views.android.smali import api_run_smali
-from StaticAnalyzer.views.android.static_analyzer import static_analyzer
+from StaticAnalyzer.views.android.static_analyzer import static_analyzer, static_analyzer_android
 from StaticAnalyzer.views.ios import view_source as ios_view_source
-from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios
+from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios, static_analyzer_ios_api
 from StaticAnalyzer.views.shared_func import score, pdf
 from StaticAnalyzer.views.windows import windows
 
@@ -881,6 +881,9 @@ class GetManifestView(RetrieveAPIView):
 class UploadAppView(RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
 
+    def get(self, request, *args, **kwargs):
+        return make_api_response({"error": "Method not implemented"}, 405)
+
     def post(self, request, *args, **kwargs):
         """POST - Upload API."""
         upload = Upload(request)
@@ -890,41 +893,57 @@ class UploadAppView(RetrieveAPIView):
 
 class ScanAppView(RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
+    serializer_class = ScanAppSerializer
+    def get(self, request, *args, **kwargs):
+        return make_api_response({"error" : "Method not implemented"}, 405)
 
     def post(self, request, *args, **kwargs):
-        """POST - Scan API."""
-        params = ["scan_type", "hash", "file_name"]
-        if set(request.POST) >= set(params):
-            scan_type = request.POST["scan_type"]
-            # APK, Android ZIP and iOS ZIP
-            if scan_type in ["apk", "zip"]:
-                resp = static_analyzer(request, True)
-                if "type" in resp:
-                    # For now it's only ios_zip
-                    request.POST._mutable = True
-                    request.POST["scan_type"] = "ios"
-                    resp = static_analyzer_ios(request, True)
-                if "error" in resp:
-                    response = make_api_response(resp, 500)
+        """GET - Scan API."""
+        scan_type = request.POST["scan_type"]
+        organization_id = request.user.organization
+        file_name = request.POST['filename']
+        md5 = request.POST["md5"]
+
+        # APK, Android ZIP and iOS ZIP
+        if scan_type in ['apk', 'zip']:
+            resp, success = static_analyzer_android(md5=md5,
+                                                    scan_type=scan_type,
+                                                    filename=file_name,
+                                                    user_id=request.user,
+                                                    organization_id=organization_id)
+            if success == 'success':
+                return make_api_response(resp, OK)
+            elif success == 'err':
+                return make_api_response(resp, INTERNAL_SERVER_ERR)
+            elif success == 'ios':
+                # For now it's only ios_zip
+                resp, success = static_analyzer_ios_api(md5=md5,
+                                                        scan_type=scan_type,
+                                                        filename=file_name,
+                                                        user_id=request.user,
+                                                        organization_id=organization_id)
+                if success == 'success':
+                    return make_api_response(resp, OK)
                 else:
-                    response = make_api_response(resp, 200)
-            # IPA
-            elif scan_type == "ipa":
-                resp = static_analyzer_ios(request, True)
-                if "error" in resp:
-                    response = make_api_response(resp, 500)
-                else:
-                    response = make_api_response(resp, 200)
-            # APPX
-            elif scan_type == "appx":
-                resp = windows.staticanalyzer_windows(request, True)
-                if "error" in resp:
-                    response = make_api_response(resp, 500)
-                else:
-                    response = make_api_response(resp, 200)
-        else:
-            response = make_api_response({"error": "Missing Parameters"}, 422)
-        return response
+                    return make_api_response(resp, INTERNAL_SERVER_ERR)
+        # IPA
+        elif scan_type == 'ipa':
+            resp, success = static_analyzer_ios_api(md5=md5,
+                                                    scan_type=scan_type,
+                                                    filename=file_name,
+                                                    user_id=request.user,
+                                                    organization_id=organization_id)
+            if success == 'success':
+                return make_api_response(resp, OK)
+            else:
+                return make_api_response(resp, INTERNAL_SERVER_ERR)
+        # # APPX
+        # elif scan_type == 'appx':
+        #     resp = windows.staticanalyzer_windows(request, True)
+        #     if 'error' in resp:
+        #         response = make_api_response(resp, 500)
+        #     else:
+        #         response = make_api_response(resp, 200)
 
 
 class DeleteScanView(RetrieveAPIView):
@@ -1010,23 +1029,3 @@ class SourceView(RetrieveAPIView):
         return response
 
 
-class KensaObtainPairView(TokenObtainPairView):
-    serializer_class = KensaTokenObtainPairSerializer
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-
-        try:
-            serializer.is_valid(raise_exception=True)
-        except TokenError as e:
-            raise InvalidToken(e.args[0])
-
-        try:
-            data = serializer.validated_data
-            data["first_name"] = serializer.user.first_name or "<anonymous>"
-            data["last_name"] = serializer.user.last_name or "<anonymous>"
-            return Response(data=data, status=status.HTTP_200_OK)
-        except:
-            return Response(
-                serializer.validated_data, status=status.HTTP_200_OK
-            )

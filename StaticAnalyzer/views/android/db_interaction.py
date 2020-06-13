@@ -245,24 +245,10 @@ def save_or_update(update_type,
         }
 
         if update_type == 'save':
-            
-            status = StaticAnalyzerAndroid.cook_scan(**values)
-        
-            if status == True:
-                logger.info("Entry Stored in database")
-            else:
-                logger.info("Error creating entry, contact sysadmin")
-        
+            scan_obj = StaticAnalyzerAndroid.objects.create(**values)
         else:
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Otherwise just filter by id and update
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            StaticAnalyzerAndroid.objects.filter(
+            scan_obj = StaticAnalyzerAndroid.objects.filter(
                 MD5=app_dic['md5']).update(**values)
-
-    except Exception:
-        logger.exception('Updating DB')
-    try:
         values = {
             'APP_NAME': app_dic['real_name'],
             'PACKAGE_NAME': man_data_dic['packagename'],
@@ -270,5 +256,9 @@ def save_or_update(update_type,
         }
         RecentScansDB.objects.filter(
             MD5=app_dic['md5']).update(**values)
+
+        context = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
+        return context
     except Exception:
-        logger.exception('Updating RecentScansDB')
+        logger.exception('Updating DB')
+    return None
