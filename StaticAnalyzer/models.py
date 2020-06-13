@@ -26,6 +26,7 @@ class RecentScansDB(models.Model):
     APP_NAME = models.CharField(max_length=260)
     PACKAGE_NAME = models.CharField(max_length=260)
     VERSION_NAME = models.CharField(max_length=50)
+    ORGANIZATION_ID = models.IntegerField(verbose_name="organization_id_android")
 
 
     @staticmethod
@@ -49,8 +50,13 @@ class RecentScansDB(models.Model):
         return resp
 
     @classmethod
+<<<<<<< HEAD
     def get_recent_scans(cls, page):
         scans = cls.objects.all().order_by("-TIMESTAMP")
+=======
+    def get_recent_scans(cls, organization_id):
+        scans = cls.objects.filter(ORGANIZATION_ID=organization_id).order_by("-TIMESTAMP")
+>>>>>>> 5cbe8bc692cdfa77c039f52db9d5544a7ef50648
         if scans.count() == 0:
             return None
         scans_values = scans.values(
@@ -129,11 +135,9 @@ class StaticAnalyzerAndroid(models.Model):
     APKID = models.TextField(default={})
     TRACKERS = models.TextField(default={})
     PLAYSTORE_DETAILS = models.TextField(default={})
-    USER_ID = models.IntegerField(verbose_name="user_id_android")
-    ORGANIZATION_ID = models.IntegerField(
-        verbose_name="organization_id_android", )
     USER = models.ForeignKey(User, on_delete=models.CASCADE)
-    ORG_ID = models.TextField()
+    ORGANIZATION = models.CharField(max_length=254)
+    DATE = models.DateField(auto_now=True, auto_created=True, verbose_name='date_when_created')
 
 
     @staticmethod
@@ -164,12 +168,63 @@ class StaticAnalyzerAndroid(models.Model):
         return resp
 
     @classmethod
+    def get_single_or_none(cls, md5):
+        """Get a single model or None"""
+        try:
+            return cls.objects.get(MD5=md5)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            return None
+
+    @classmethod
     def get_md5s(cls, md5):
         md5s = cls.objects.filter(MD5__icontains=md5).values("MD5")
         if md5s.count() == 0:
             return []
         return md5s
 
+    @classmethod
+    def get_scan_info_from_obj(cls, scan_obj):
+        try:
+            if scan_obj.ICON_FOUND:
+                icon_url = "/download/{0}-icon.png".format(scan_obj.MD5)
+            else:
+                icon_url = 'img/no_icon.png'
+            certificate_analysis = scan_obj.CERTIFICATE_ANALYSIS
+            scan_info = {
+                'file_name': scan_obj.FILE_NAME,
+                'icon_url': icon_url,
+                'system': 'android',
+                'date': scan_obj.DATE,
+                'certificate_status':
+                    certificate_analysis['certificate_status'] if certificate_analysis is not None else '',
+                'app_info': {
+                    'file_name': scan_obj.FILE_NAME,
+                    'size': scan_obj.SIZE,
+                    'md5': scan_obj.MD5,
+                    'sha1': scan_obj.SHA1,
+                    'sha256': scan_obj.SHA256,
+                    'app_name': scan_obj.APP_NAME,
+                    'package_name': scan_obj.PACKAGE_NAME,
+                    'main_activity': scan_obj.MAIN_ACTIVITY,
+                    'target_sdk': scan_obj.TARGET_SDK,
+                    'max_sdk': scan_obj.MAX_SDK,
+                    'min_sdk': scan_obj.MIN_SDK,
+                    'version_name': scan_obj.VERSION_NAME,
+                    'version_code': scan_obj.VERSION_CODE
+                }
+            }
+            return scan_info
+        except:
+            return None
+
+    @classmethod
+    def get_scan_info(cls, md5):
+        try:
+            scan_obj = cls.objects.get(MD5=md5)
+            scan_info = cls.get_scan_info_from_obj(scan_obj)
+            return scan_info
+        except:
+            return None
 
     @classmethod
     def get_certificate_analysis_data(cls, md5):
@@ -687,8 +742,8 @@ class StaticAnalyzerAndroid(models.Model):
         logger.info("get_org_user of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
-            org_id = data_entry.ORG_ID
-            user = data_entry.USER
+            org_id = data_entry.ORGANIZATION_ID
+            user = data_entry.USER_ID
             return org_id, user
         except:
             logger.info("get_app_permissions error %s" % md5)
@@ -728,10 +783,14 @@ class StaticAnalyzerIOS(models.Model):
     STRINGS = models.TextField(default=[])
     FIREBASE_URLS = models.TextField(default=[])
     APPSTORE_DETAILS = models.TextField(default={})
-    USER_ID = models.IntegerField(verbose_name="user_id_ios")
-    ORGANIZATION_ID = models.IntegerField(verbose_name="organization_id_ios")
     USER = models.ForeignKey(User, on_delete=models.CASCADE)
-    ORG_ID = models.TextField()
+    ORGANIZATION = models.CharField(max_length=254)
+    DATE = models.DateField(
+        auto_now=True, 
+        auto_created=True, 
+        verbose_name='date_when_created'
+    )
+
 
     @staticmethod
     def paginate(load, page, count=30):
@@ -1086,8 +1145,8 @@ class StaticAnalyzerIOS(models.Model):
         logger.info("get_org_user of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
-            org_id = data_entry.ORG_ID
-            user = data_entry.USER
+            org_id = data_entry.ORGANIZATION_ID
+            user = data_entry.USER_ID
             return org_id, user
         except:
             logger.info("get_org_user error %s" % md5)
@@ -1166,6 +1225,47 @@ class StaticAnalyzerIOS(models.Model):
             logger.info("get_components_files error %s" % md5)
             return None
 
+    @classmethod
+    def get_scan_info(cls, md5):
+        try:
+            scan_obj = cls.objects.get(MD5=md5)
+            scan_info = cls.get_scan_info_from_obj(scan_obj)
+            return scan_info
+        except:
+            return None
+
+    @classmethod
+    def get_scan_info_from_obj(cls, scan_obj):
+        try:
+            if scan_obj.ICON_FOUND:
+                icon_url = "/download/{}-icon.png".format(scan_obj.MD5)
+            else:
+                icon_url = 'img/no_icon.png'
+            scan_info = {
+                'file_name': scan_obj.FILE_NAME,
+                'icon_url': icon_url,
+                'system': 'ios',
+                'date': scan_obj.DATE,
+                'app_info': {
+                    'file_name': scan_obj.FILE_NAME,
+                    'size': scan_obj.SIZE,
+                    'md5': scan_obj.MD5,
+                    'sha1': scan_obj.SHA1,
+                    'sha256': scan_obj.SHA256,
+                    'app_name': scan_obj.APP_NAME,
+                    'app_type': scan_obj.APP_TYPE,
+                    'identifier': scan_obj.BUNDLE_ID,
+                    'sdk_name': scan_obj.SDK_NAME,
+                    'version': scan_obj.APP_VERSION,
+                    'build': scan_obj.BUILD,
+                    'platform': scan_obj.PLATFORM,
+                    'min_os_version': scan_obj.MIN_OS_VERSION,
+                    'supported_platform': scan_obj.BUNDLE_SUPPORTED_PLATFORMS,
+                }
+            }
+            return scan_info
+        except:
+            return None
 
 class StaticAnalyzerWindows(models.Model):
     FILE_NAME = models.CharField(max_length=260)

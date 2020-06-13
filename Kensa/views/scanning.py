@@ -22,6 +22,7 @@ def add_to_recent_scan(name, md5, url):
     except Exception:
         logger.exception('Adding Scan URL to Database')
 
+
 def handle_uploaded_file(filecnt, typ):
     """Write Uploaded File."""
     md5 = hashlib.md5()  # modify if crash for large

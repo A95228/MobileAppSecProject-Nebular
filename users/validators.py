@@ -19,7 +19,7 @@ def validate_password(value, length=8): # tested
     """Somewhat strict validator, returns True once all 
     test cases pass, raises a ValidationError if it fails a test."""
 
-    if not isinstance(lenght, int) # for developers only
+    if not isinstance(lenght, int): # for developers only
         raise Exception("Length param must be of type int") 
 
     if value in common.passwords:

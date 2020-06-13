@@ -759,7 +759,7 @@ class GetDomainsDataView(RetrieveAPIView):
         request_ok = tools.request_check(request)
 
         if not request_ok[0]:
-            return make_api_response(*request[1:])
+            return make_api_response(*request_ok[1:])
 
         try:
             data = StaticAnalyzerAndroid.get_domains_data(
@@ -801,7 +801,8 @@ class GetRecentScansView(RetrieveAPIView):
 
     def get(self, request, *args, **kwargs):
         """Get Recent Scans """
-        data = RecentScansDB.get_recent_scans()
+        page = tools.get_page(request)
+        data = RecentScansDB.get_recent_scans(page)
         if data is not None:
             if isinstance(data, dict):
                 return make_api_response(data=data, status=OK)
@@ -928,7 +929,7 @@ class DeleteScanView(RetrieveAPIView):
         return response
 
 
-class PDFReportView(RetrieveAPIView):
+class PDFReportView(RetrieveAPIView): # working
     permission_classes = (IsAuthenticated,)
     def get(self, request, *args, **kwargs):
         """Generate and Download PDF."""

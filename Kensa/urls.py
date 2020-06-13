@@ -91,7 +91,7 @@ urlpatterns = [
     url(r'^mac_only/$', home.mac_only),
 
     # Android
-    url(r'^StaticAnalyzer/$', android_sa.static_analyzer),
+    url(r'^StaticAnalyzer/$', android_sa.static_analyzer_android),
     url(r'^ViewSource/$', view_source.run),
     url(r'^Smali/$', smali.run),
     url(r'^Java/$', java.run),
@@ -100,7 +100,7 @@ urlpatterns = [
     url(r'^ManifestView/$', manifest_view.run),
     
     # IOS
-    url(r'^StaticAnalyzer_iOS/$', ios_sa.static_analyzer_ios),
+    # url(r'^StaticAnalyzer_iOS/$', ios_sa.static_analyzer_ios),
     url(r'^ViewFile/$', io_view_source.run),
     
     # Windows
@@ -149,7 +149,7 @@ urlpatterns = [
     url(r'^api/v1/download_pdf$', PDFReportView.as_view()),
     url(r'^api/v1/report_json$', JSONReportView.as_view()),
     url(r'^api/v1/view_source$', SourceView.as_view()),
-    url(r'^api/v1/scans$', RecentScansView.as_view()),
+    # url(r'^api/v1/recent_scans$', RecentScansView.as_view()),
     url(r"^api/v1/recent_scans$", GetRecentScansView.as_view()),
     url(r"^api/v1/signer_certificate$", GetSignerCertificateView.as_view()),
     url(r"^api/v1/code/manifest$", GetManifestView.as_view()),

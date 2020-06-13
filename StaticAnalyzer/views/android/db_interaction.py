@@ -190,7 +190,9 @@ def save_or_update(update_type,
                    cert_dic,
                    bin_anal,
                    apk_id,
-                   trackers) -> None:
+                   trackers,
+                   user_id,
+                   org_id) -> None:
     """Save/Update an APK/ZIP DB entry."""
     try:
         values = {
@@ -234,15 +236,14 @@ def save_or_update(update_type,
             'APKID': apk_id,
             'TRACKERS': trackers,
             'PLAYSTORE_DETAILS': app_dic['playstore'],
+            'USER_ID': user_id,
+            'ORGANIZATION_ID': org_id,
         }
         if update_type == 'save':
-            StaticAnalyzerAndroid.objects.create(**values)
+            scan_obj = StaticAnalyzerAndroid.objects.create(**values)
         else:
-            StaticAnalyzerAndroid.objects.filter(
+            scan_obj = StaticAnalyzerAndroid.objects.filter(
                 MD5=app_dic['md5']).update(**values)
-    except Exception:
-        logger.exception('Updating DB')
-    try:
         values = {
             'APP_NAME': app_dic['real_name'],
             'PACKAGE_NAME': man_data_dic['packagename'],
@@ -250,5 +251,9 @@ def save_or_update(update_type,
         }
         RecentScansDB.objects.filter(
             MD5=app_dic['md5']).update(**values)
+
+        context = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
+        return context
     except Exception:
-        logger.exception('Updating RecentScansDB')
+        logger.exception('Updating DB')
+    return None
