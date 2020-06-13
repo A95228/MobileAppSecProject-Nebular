@@ -158,6 +158,7 @@ INSTALLED_APPS = (
     'corsheaders',
 )
 
+CORS_ORIGIN_ALLOW_ALL = True
 MIDDLEWARE_CLASSES = (
     'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
