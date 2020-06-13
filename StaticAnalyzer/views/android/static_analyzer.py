@@ -491,7 +491,7 @@ def key(data, key_name):
 #             return print_n_send_error_response(request, msg, False, exp)
 
 
-def static_analyzer_android(scan_type, md5, filename, user_id, organization_id):
+def static_analyzer_android(md5, filename, user_id, organization_id):
     """Do static analysis on an request and save to db."""
 
     try:
@@ -824,6 +824,7 @@ def valid_android_zip(app_dir):
         return '', False
     except Exception:
         logger.exception('Determining Upload type')
+
 
 
 def copy_icon(md5, icon_path=''):

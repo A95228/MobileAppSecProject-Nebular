@@ -1,7 +1,7 @@
 """
 Kensa's custom permissions.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-fuZ0XNIKLrCmaAbon6mhmRwfsQKR5uLIw/N472H4/9/0nmE='
+fuZ0XNIKLrCmaAbon6mhmRwfsQKR5uLIw/N472H4/9/0nmE=
 """
 
 import pdb

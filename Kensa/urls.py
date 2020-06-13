@@ -42,7 +42,6 @@ from Kensa.views.api.views import (
     UploadAppView, 
     ScanAppView,
     DeleteScanView,
-    RecentScansView,
     GetRecentScansView,
     GetSignerCertificateView,
     GetManifestView,
@@ -152,7 +151,6 @@ urlpatterns = [
     url(r'^api/v1/report_json$', JSONReportView.as_view()),
     url(r'^api/v1/view_source$', SourceView.as_view()),
     
-    # url(r'^api/v1/recent_scans$', RecentScansView.as_view()),
     url(r"^api/v1/recent_scans$", GetRecentScansView.as_view()),
     url(r"^api/v1/signer_certificate$", GetSignerCertificateView.as_view()),
     url(r"^api/v1/code/manifest$", GetManifestView.as_view()),

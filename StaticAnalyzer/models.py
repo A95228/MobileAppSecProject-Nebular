@@ -26,7 +26,7 @@ class RecentScansDB(models.Model):
     APP_NAME = models.CharField(max_length=260)
     PACKAGE_NAME = models.CharField(max_length=260)
     VERSION_NAME = models.CharField(max_length=50)
-    ORGANIZATION_ID = models.IntegerField()
+    ORGANIZATION_ID = models.CharField(max_length=254)
 
 
     @staticmethod
@@ -50,8 +50,8 @@ class RecentScansDB(models.Model):
         return resp
 
     @classmethod
-    def get_recent_scans(cls, organization_id):
-        scans = cls.objects.filter(ORGANIZATION_ID=organization_id).order_by("-TIMESTAMP")
+    def get_recent_scans(cls, page):
+        scans = cls.objects.all()
         if scans.count() == 0:
             return None
         scans_values = scans.values(

@@ -69,6 +69,7 @@ def get_context_from_db_entry(db_entry: QuerySet) -> dict:
     except Exception:
         logger.exception('Fetching from DB')
 
+
 def get_android_context(static_db)->dict:
     """Return the context for APK/ZIP from DB."""
     try:
@@ -122,6 +123,7 @@ def get_android_context(static_db)->dict:
         return context
     except Exception:
         logger.exception('Fetching from DB')
+
 
 def get_context_from_analysis(app_dic,
                               man_data_dic,
@@ -247,7 +249,7 @@ def save_or_update(
 
         if update_type == 'save':
             status = StaticAnalyzerAndroid.cook_scan(**values)
-        
+
             if status == True:
                 logger.info("Entry Stored in database")
             else:
@@ -266,8 +268,11 @@ def save_or_update(
             'VERSION_NAME': man_data_dic['androvername'],
         }
         RecentScansDB.objects.filter(MD5=app_dic['md5']).update(**values)
+
         context = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
+
         return context
+
     except Exception:
         logger.exception('Updating DB')
     return None

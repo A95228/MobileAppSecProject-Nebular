@@ -806,7 +806,7 @@ class GetManifestView(RetrieveAPIView):
 
 
 class UploadAppView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated, HasAPIKey)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
         """POST - Upload API."""
@@ -815,56 +815,61 @@ class UploadAppView(RetrieveAPIView):
         return make_api_response(resp, code)
 
 
-class RecentScansView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated) 
-
-    def get(self, request, *args, **kwargs):
-        """GET - get recent scans."""
-        scans = RecentScans(request)
-        resp = scans.recent_scans()
-        if 'error' in resp:
-            return make_api_response(resp, 500)
-        else:
-            return make_api_response(resp, 200)
-
-
 class ScanAppView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated, HasAPIKey)
+    permission_classes = (IsAuthenticated,)
 
     def get(self, request, *args, **kwargs):
         return make_api_response({"error": "Method GET not implemented"}, 405)
 
     def post(self, request, *args, **kwargs):
         """POST - Scan API."""
-        params = ['scan_type', 'hash', 'file_name']
-        if set(request.POST) >= set(params):
-            scan_type = request.POST['scan_type']
-            # APK, Android ZIP and iOS ZIP
-            if scan_type in ['apk', 'zip']:
-                resp = static_analyzer(request, True)
-                if 'type' in resp:
-                    # For now it's only ios_zip
-                    request.POST._mutable = True
-                    request.POST['scan_type'] = 'ios'
-                    resp = static_analyzer_ios(request, True)
-                if 'error' in resp:
-                    response = make_api_response(resp, 500)
-                else:
-                    response = make_api_response(resp, 200)
-            # IPA
-            elif scan_type == 'ipa':
-                resp = static_analyzer_ios(request, True)
-                if 'error' in resp:
-                    response = make_api_response(resp, 500)
-                else:
-                    response = make_api_response(resp, 200)
-            # APPX
-            elif scan_type == 'appx':
-                resp = windows.staticanalyzer_windows(request, True)
-                if 'error' in resp:
-                    response = make_api_response(resp, 500)
-                else:
-                    response = make_api_response(resp, 200)
+        
+        scan_type = request.POST.get('type')
+        md5 = request.POST.get("hash")
+
+        if md5 is None:
+            return make_api_response({"error" : "Missing hash"}, 400)
+
+        if not re.match('^[0-9a-f]{32}$', md5):
+            return make_api_response({"error" : "Missing hash"}, 400)
+
+        if scan_type is None:
+            return make_api_response({"error" : "No scan type"}, 400)
+        
+        if not scan_type in ['apk', 'ios']:
+            return make_api_response({"error" : "Invalid type"}, 400)
+        
+        if scan_type in ['apk', 'zip']:
+            resp = static_analyzer_android(
+                md5,
+                filename,
+                request.user.pk,
+                reques.user.organization
+            )
+            if 'type' in resp:
+                # For now it's only ios_zip
+                request.POST._mutable = True
+                request.POST['scan_type'] = 'ios' # ?
+                
+            if 'error' in resp:
+                response = make_api_response(resp, 500)
+            else:
+                response = make_api_response(resp, 200)
+        # IPA
+        elif scan_type == 'ipa':
+            resp = static_analyzer_ios(request, True)
+            if 'error' in resp:
+                response = make_api_response(resp, 500)
+            else:
+                response = make_api_response(resp, 200)
+        # APPX
+        elif scan_type == 'appx':
+            resp = windows.staticanalyzer_windows(request, True)
+            if 'error' in resp:
+                response = make_api_response(resp, 500)
+            else:
+                response = make_api_response(resp, 200)
+
         else:
             response = make_api_response(
                 {'error': 'Missing Parameters'}, 422)
@@ -872,7 +877,7 @@ class ScanAppView(RetrieveAPIView):
 
 
 class DeleteScanView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated, HasAPIKey)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
         """POST - Delete a Scan."""
@@ -889,7 +894,7 @@ class DeleteScanView(RetrieveAPIView):
 
 
 class PDFReportView(RetrieveAPIView): # working
-    permission_classes = (IsAuthenticated, HasAPIKey)
+    permission_classes = (IsAuthenticated,)
     def get(self, request, *args, **kwargs):
         """Generate and Download PDF."""
         md5 = request.GET.get('md5', None)
@@ -908,7 +913,7 @@ class PDFReportView(RetrieveAPIView): # working
 
 
 class JSONReportView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated, HasAPIKey)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
         """Generate JSON Report."""
@@ -934,7 +939,7 @@ class JSONReportView(RetrieveAPIView):
 
 
 class SourceView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated, HasAPIKey)
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request, *args, **kwargs):
         """View Source for android & ios source file."""
