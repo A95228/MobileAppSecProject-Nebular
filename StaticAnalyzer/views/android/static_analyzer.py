@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import shutil
+import pdb
 
 import MalwareAnalyzer.views.Trackers as Trackers
 import MalwareAnalyzer.views.VirusTotal as VirusTotal
@@ -62,6 +63,15 @@ def key(data, key_name):
 
 def static_analyzer(request, api=False):
     """Do static analysis on an request and save to db."""
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # User should be in the request by now because there
+    # are check in middleware and views that make this
+    # happen, leaving this here to avoid future confusion.
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    user = request.user
+    organization = user.organization 
     
     try:
         if api:
@@ -76,7 +86,6 @@ def static_analyzer(request, api=False):
             rescan = str(request.GET.get('rescan', 0))
         # Input validation
         app_dic = {}
-        app_dic.update({""})
         match = re.match('^[0-9a-f]{32}$', checksum)
         if (
                 (
@@ -221,15 +230,23 @@ def static_analyzer(request, api=False):
                     # Domain Extraction and Malware Check
                     logger.info(
                         'Performing Malware Check on extracted Domains')
-                    code_an_dic['domains'] = malware_check(
+                    try:
+                        code_an_dic['domains'] = malware_check(
                         list(set(code_an_dic['urls_list'])))
                     # Copy App icon
+                    except:
+                        pass
                     copy_icon(app_dic['md5'], app_dic['icon_path'])
                     app_dic['zipped'] = 'apk'
 
                     logger.info('Connecting to Database')
                     try:
-                        # SAVE TO DB
+
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        # This is where we save user and organization to
+                        # model by passing them to save_or_update.
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            
                         if rescan == '1':
                             logger.info('Updating Database...')
                             save_or_update(
@@ -242,8 +259,11 @@ def static_analyzer(request, api=False):
                                 bin_an_buff,
                                 apkid_results,
                                 tracker_res,
+                                user,
+                                organization
                             )
                             update_scan_timestamp(app_dic['md5'])
+
                         elif rescan == '0':
                             logger.info('Saving to Database')
                             save_or_update(
@@ -256,7 +276,10 @@ def static_analyzer(request, api=False):
                                 bin_an_buff,
                                 apkid_results,
                                 tracker_res,
+                                user,
+                                organization
                             )
+
                     except Exception:
                         logger.exception('Saving to Database Failed')
                     context = get_context_from_analysis(
@@ -408,7 +431,12 @@ def static_analyzer(request, api=False):
                             list(set(code_an_dic['urls_list'])))
                         logger.info('Connecting to Database')
                         try:
-                            # SAVE TO DB
+
+                            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                            # This is where we save user and organization to
+                            # model by passing them to save_or_update
+                            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
                             if rescan == '1':
                                 logger.info('Updating Database...')
                                 save_or_update(
@@ -421,21 +449,56 @@ def static_analyzer(request, api=False):
                                     bin_an_buff,
                                     {},
                                     {},
+                                    user,
+                                    organization
                                 )
                                 update_scan_timestamp(app_dic['md5'])
+
                             elif rescan == '0':
                                 logger.info('Saving to Database')
-                                save_or_update(
-                                    'save',
-                                    app_dic,
-                                    man_data_dic,
-                                    man_an_dic,
-                                    code_an_dic,
-                                    cert_dic,
-                                    bin_an_buff,
-                                    {},
-                                    {},
-                                )
+
+                                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                # Handle if request is via api interface.
+                                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                                if api == True:
+
+                                    save_status = save_or_update(
+                                            'save',
+                                            app_dic,
+                                            man_data_dic,
+                                            man_an_dic,
+                                            code_an_dic,
+                                            cert_dic,
+                                            bin_an_buff,
+                                            {},
+                                            {},
+                                            user,
+                                            organization
+                                        )
+
+                                    if save_status ==  False:
+                                        return {"error" : "cant save scan to db"}
+                                    
+                                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                    # If the scan was a success then just let it pass
+                                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                                else:
+                                    save_or_update(
+                                        'save',
+                                        app_dic,
+                                        man_data_dic,
+                                        man_an_dic,
+                                        code_an_dic,
+                                        cert_dic,
+                                        bin_an_buff,
+                                        {},
+                                        {},
+                                        user,
+                                        organization
+                                    )
+
                         except Exception:
                             logger.exception('Saving to Database Failed')
                         context = get_context_from_analysis(

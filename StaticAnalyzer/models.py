@@ -129,9 +129,6 @@ class StaticAnalyzerAndroid(models.Model):
     APKID = models.TextField(default={})
     TRACKERS = models.TextField(default={})
     PLAYSTORE_DETAILS = models.TextField(default={})
-    USER_ID = models.IntegerField(verbose_name="user_id_android")
-    ORGANIZATION_ID = models.IntegerField(
-        verbose_name="organization_id_android", )
     USER = models.ForeignKey(User, on_delete=models.CASCADE)
     ORG_ID = models.TextField()
 
@@ -713,6 +710,15 @@ class StaticAnalyzerAndroid(models.Model):
         except:
             logger.info("get_app_permissions error %s" % md5)
             return None, None
+    
+    @classmethod
+    def cook_scan(cls, **kwargs):
+        if 'USER' not in kwargs:
+            return False
+        if 'ORG_ID' not in kwargs:
+            return False
+        cls.objects.create(**kwargs)
+        return True 
 
 
 class StaticAnalyzerIOS(models.Model):
@@ -748,8 +754,6 @@ class StaticAnalyzerIOS(models.Model):
     STRINGS = models.TextField(default=[])
     FIREBASE_URLS = models.TextField(default=[])
     APPSTORE_DETAILS = models.TextField(default={})
-    USER_ID = models.IntegerField(verbose_name="user_id_ios")
-    ORGANIZATION_ID = models.IntegerField(verbose_name="organization_id_ios")
     USER = models.ForeignKey(User, on_delete=models.CASCADE)
     ORG_ID = models.TextField()
 
@@ -1204,6 +1208,17 @@ class StaticAnalyzerIOS(models.Model):
         except:
             logger.info("get_components_files error %s" % md5)
             return None
+
+
+    @classmethod
+    def cook_scan(cls, **kwargs):
+        """Stores and entry to the database, calls create from here."""
+        if 'USER' not in kwargs:
+            return False
+        if 'ORG_ID' not in kwargs:
+            return False
+        cls.objects.create(**kwargs)
+        return True 
 
 
 class StaticAnalyzerWindows(models.Model):
