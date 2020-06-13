@@ -8,7 +8,9 @@ from django.http import HttpResponse, JsonResponse
 
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
-
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework_simplejwt.views import (TokenObtainPairView)
 from Kensa.utils import api_key
 from Kensa.views.api import tools
 from Kensa.views.home import Upload, RecentScans, delete_scan
@@ -18,7 +20,7 @@ from Kensa.views.api.permissions import (
     HasAPIKey,
     UserCanScan
 )
-
+from Kensa.views.api.serializers import KensaTokenObtainPairSerializer
 from StaticAnalyzer.models import(
     RecentScansDB,
     StaticAnalyzerAndroid,
@@ -947,3 +949,24 @@ class SourceView(RetrieveAPIView):
         else:
             response = make_api_response({'error': 'Missing Parameters'}, 422)
         return response
+
+
+class KensaObtainPairView(TokenObtainPairView):
+    serializer_class = KensaTokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as e:
+            raise InvalidToken(e.args[0])
+
+        try:
+            data = serializer.validated_data
+            data["first_name"] = serializer.user.first_name or "<anonymous>"
+            data["last_name"] = serializer.user.last_name or "<anonymous>"
+            return Response(data=data, status=status.HTTP_200_OK)
+        except:
+            return Response(serializer.validated_data, 
+                status=status.HTTP_200_OK)

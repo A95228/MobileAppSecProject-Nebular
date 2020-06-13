@@ -1,16 +1,7 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from StaticAnalyzer import models
-
-
-class JavaCodeSerializer(serializers.Serializer):
-    title = serializers.CharField()
-    files = serializers.ListField(
-        child=serializers.CharField()
-    )
-    _hash = serializers.CharField()
-    _type = serializers.CharField()
-    version = serializers.CharField()
 
 
 class ReconDataSerializer(serializers.ModelSerializer):
@@ -26,5 +17,12 @@ class ScanAppSerializer(serializers.Serializer):
     organization_id = serializers.IntegerField()
     file_name = serializers.CharField()
 
+
+class KensaTokenObtainPairSerializer(TokenObtainPairSerializer):
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        return token
 
 
