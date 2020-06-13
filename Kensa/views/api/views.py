@@ -798,14 +798,10 @@ class GetSearchView(RetrieveAPIView):
 
 class GetRecentScansView(RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
-    serializer_class = serializers.GetRecentScansView
 
     def get(self, request, *args, **kwargs):
         """Get Recent Scans """
-        serializer = self.serializer_class(data=request.GET)
-        if not serializer.is_valid():
-            return make_api_response(data={"error": "Invalid Parameters"}, status=BAD_REQUEST)
-        organization_id = serializer.validated_data['organization_id']
+        organization_id = request.user.organization
         data = RecentScansDB.get_recent_scans(organization_id=organization_id)
         if data is not None:
             if isinstance(data, dict):

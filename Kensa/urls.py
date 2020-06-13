@@ -15,7 +15,7 @@ from Kensa.views.api.views import AppInfoView, AppStoreView, SecurityOverView, M
     ComponentsServices, ComponentsReceivers, ComponentsProviders, ComponentsLibraries, ComponentsFiles, DomainAnalysis, \
     APKIDAnalysis, ManifestAnalysis, CodeAnalysis, BinaryAnalysis, FileAnalysis, AppPermissions, JavaCodeView, \
     SmaliCodeView, ReconEmailsView, ReconFirebasedbURLsView, ReconURLsView, ReconTrackersView, ReconStringsView, \
-    UploadAppView, ScanAppView, DeleteScanView, RecentScansView, GetSignerCertificateView, \
+    UploadAppView, ScanAppView, DeleteScanView, GetSignerCertificateView, \
     GetManifestView, GetDomainsDataView, GetSearchView, PDFReportView, JSONReportView, SourceView, GetRecentScansView
 from users.views import api_user_urls
 from Kensa.views import home

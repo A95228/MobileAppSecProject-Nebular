@@ -27,7 +27,4 @@ class ScanAppSerializer(serializers.Serializer):
     file_name = serializers.CharField()
 
 
-class GetRecentScansView(serializers.Serializer):
-    organization_id = serializers.IntegerField()
-
 
