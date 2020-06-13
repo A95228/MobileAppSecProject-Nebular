@@ -159,6 +159,7 @@ INSTALLED_APPS = (
 )
 MIDDLEWARE_CLASSES = (
     'whitenoise.middleware.WhiteNoiseMiddleware',
+
     'corsheaders.middleware.CorsMiddleware',
 )
 
