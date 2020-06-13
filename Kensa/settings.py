@@ -156,8 +156,9 @@ INSTALLED_APPS = (
     'Kensa',
     'MalwareAnalyzer',
 )
-MIDDLEWARE_CLASSES = (
 
+
+MIDDLEWARE_CLASSES = (
     'whitenoise.middleware.WhiteNoiseMiddleware',
 )
 

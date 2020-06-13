@@ -71,7 +71,6 @@ from StaticAnalyzer.views.ios import static_analyzer as ios_sa
 from StaticAnalyzer.views.ios import view_source as io_view_source
 
 
-
 urlpatterns = [
 
     # General

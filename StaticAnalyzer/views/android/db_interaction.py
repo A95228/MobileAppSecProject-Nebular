@@ -242,7 +242,7 @@ def save_or_update(
             'TRACKERS': trackers,
             'PLAYSTORE_DETAILS': app_dic['playstore'],
             "USER" : user,
-            "ORG_ID" : organization
+            "ORGANIZATION" : organization
         }
 
         if update_type == 'save':

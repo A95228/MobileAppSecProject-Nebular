@@ -14,6 +14,7 @@ from django.db import IntegrityError
 from django.test import Client, TestCase
 from django.utils.crypto import get_random_string
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 from users.hasher import KensaApiKeyHasher
 from users.models import User
@@ -72,7 +73,6 @@ class BaseTest(TestCase):
         self.admin_user.delete()
         self.user.delete()
         
-
 
 
 class TestAUserCreation(BaseTest):
@@ -184,3 +184,10 @@ class TestUserUpdatingPassword(BaseTest):
         self.assertEqual(drop, 
             'Password is a common password, vulnerable to brute force attacks.')
         print("Password is a common password -> Passed")
+
+
+class TestUserValidators(BaseTest):
+
+    def test_a_email_validator(self):
+        with self.assertRaises(ValidationError):
+            pass

@@ -147,7 +147,7 @@ class StaticAnalyzerAndroid(models.Model):
         database -- do sanity checks here."""
         if 'USER' not in kwargs:
             return False
-        if 'ORG_ID' not in kwargs:
+        if 'ORGANIZATION' not in kwargs:
             return False
         cls.objects.create(**kwargs)
         return True 

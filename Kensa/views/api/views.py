@@ -11,6 +11,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import (TokenObtainPairView)
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+
 from Kensa.utils import api_key
 from Kensa.views.api import tools
 from Kensa.views.home import Upload, RecentScans, delete_scan
@@ -20,6 +22,7 @@ from Kensa.views.api.permissions import (
     HasAPIKey,
     UserCanScan
 )
+
 from Kensa.views.api.serializers import KensaTokenObtainPairSerializer
 from StaticAnalyzer.models import(
     RecentScansDB,
