@@ -174,6 +174,15 @@ class StaticAnalyzerAndroid(models.Model):
 
 
     @classmethod
+    def get_single_or_none(cls, md5):
+        """Get a single model or None"""
+        try:
+            return cls.objects.get(MD5=md5)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            return None
+
+
+    @classmethod
     def get_md5s(cls, md5):
         """Get md5 that match the given term for a search result,
         return an empty list otherwise."""
@@ -764,7 +773,7 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def cook_scan(cls, **kwargs):
-         """Create a scan and store it to 
+        """Create a scan and store it to 
         database do sanity checks here."""
         if 'USER' not in kwargs:
             return False

@@ -3,9 +3,9 @@
 
 import logging
 import os
+import pdb
 import re
 import shutil
-import pdb
 
 import MalwareAnalyzer.views.Trackers as Trackers
 import MalwareAnalyzer.views.VirusTotal as VirusTotal
@@ -64,14 +64,6 @@ def key(data, key_name):
 def static_analyzer(request, api=False):
     """Do static analysis on an request and save to db."""
 
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # User should be in the request by now because there
-    # are check in middleware and views that make this
-    # happen, leaving this here to avoid future confusion.
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    user = request.user
-    organization = user.organization 
     
     try:
         if api:
@@ -227,15 +219,19 @@ def static_analyzer(request, api=False):
                     # Firebase DB Check
                     code_an_dic['firebase'] = firebase_analysis(
                         list(set(code_an_dic['urls_list'])))
+
                     # Domain Extraction and Malware Check
                     logger.info(
                         'Performing Malware Check on extracted Domains')
                     try:
                         code_an_dic['domains'] = malware_check(
                         list(set(code_an_dic['urls_list'])))
-                    # Copy App icon
-                    except:
+                    except Exception as error:
+                        error = str(error)
+                        logger.info("Malware Check on Domains failed %s" % error)
                         pass
+
+                    # Copy App icon
                     copy_icon(app_dic['md5'], app_dic['icon_path'])
                     app_dic['zipped'] = 'apk'
 
@@ -259,8 +255,8 @@ def static_analyzer(request, api=False):
                                 bin_an_buff,
                                 apkid_results,
                                 tracker_res,
-                                user,
-                                organization
+                                request.user,
+                                request.user.organization
                             )
                             update_scan_timestamp(app_dic['md5'])
 
@@ -276,8 +272,8 @@ def static_analyzer(request, api=False):
                                 bin_an_buff,
                                 apkid_results,
                                 tracker_res,
-                                user,
-                                organization
+                                request.user,
+                                request.user.organization
                             )
 
                     except Exception:
@@ -421,14 +417,25 @@ def static_analyzer(request, api=False):
                             man_an_dic['permissons'],
                             pro_type,
                         )
+                    
                         # Firebase DB Check
                         code_an_dic['firebase'] = firebase_analysis(
                             list(set(code_an_dic['urls_list'])))
+                        
                         # Domain Extraction and Malware Check
                         logger.info(
                             'Performing Malware Check on extracted Domains')
-                        code_an_dic['domains'] = malware_check(
-                            list(set(code_an_dic['urls_list'])))
+                        try:
+                            code_an_dic['domains'] = malware_check(
+                                list(set(code_an_dic['urls_list'])))
+                        except Exception as error:
+                            error = str(error)
+                            logger.info(
+                                "Malware check on Domains failed %s" % error
+                            )
+                            pass
+
+                        # Connecting to database
                         logger.info('Connecting to Database')
                         try:
 
@@ -449,8 +456,8 @@ def static_analyzer(request, api=False):
                                     bin_an_buff,
                                     {},
                                     {},
-                                    user,
-                                    organization
+                                    request.user,
+                                    request.user.organization
                                 )
                                 update_scan_timestamp(app_dic['md5'])
 
@@ -458,7 +465,7 @@ def static_analyzer(request, api=False):
                                 logger.info('Saving to Database')
 
                                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                                # Handle if request is via api interface.
+                                # Handle if the request was put via api.
                                 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
                                 if api == True:
@@ -473,8 +480,8 @@ def static_analyzer(request, api=False):
                                             bin_an_buff,
                                             {},
                                             {},
-                                            user,
-                                            organization
+                                            request.user,
+                                            request.user.organization
                                         )
 
                                     if save_status ==  False:
@@ -482,9 +489,10 @@ def static_analyzer(request, api=False):
                                     
                                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                     # If the scan was a success then just let it pass
-                                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
                                 else:
+
                                     save_or_update(
                                         'save',
                                         app_dic,
@@ -495,10 +503,10 @@ def static_analyzer(request, api=False):
                                         bin_an_buff,
                                         {},
                                         {},
-                                        user,
-                                        organization
+                                        request.user,
+                                        request.user.organization
                                     )
-
+                                    
                         except Exception:
                             logger.exception('Saving to Database Failed')
                         context = get_context_from_analysis(
