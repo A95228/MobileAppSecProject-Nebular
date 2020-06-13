@@ -4,11 +4,9 @@ import pdb
 import re
 import unittest
 
-from bs4 import BeautifulSoup
-
 from django.test import TestCase, Client 
-from rest_framework.test import APITestCase
 from django.urls import reverse
+
 
 from users.models import User
 
@@ -31,6 +29,10 @@ class TestAndroidAnalyzerRoutes(TestCase):
             email="test@regular.com",
             password="RegularUser123!"
         )   
+
+
+    def test_a_access_token(self):
+        pass
 
 
     def tearDown(self):

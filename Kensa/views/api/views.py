@@ -1,30 +1,38 @@
-from django.http import JsonResponse, HttpResponse
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+"""Kensa's api views."""
+
+import logging
+import re
+
+from django.core.paginator import  EmptyPage, Paginator, PageNotAnInteger
+from django.http import HttpResponse, JsonResponse
+
+from rest_framework.generics import RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated
 
 from Kensa.utils import api_key
 from Kensa.views.api import tools
 from Kensa.views.home import Upload, RecentScans, delete_scan
+from Kensa.views.api.permissions import (
+    GETDataCheck,
+    GETSystemsCheck,
+    HasAPIKey,
+    UserCanScan
+)
+
 from StaticAnalyzer.models import(
     RecentScansDB,
     StaticAnalyzerAndroid,
     StaticAnalyzerIOS
 )
-
-from rest_framework.generics import RetrieveAPIView
-from rest_framework.permissions import IsAuthenticated
-from StaticAnalyzer.views.ios import view_source as ios_view_source
-
-import logging
-import re
-
-
 from StaticAnalyzer.views.android import view_source
 from StaticAnalyzer.views.android.java import api_run_java_code
 from StaticAnalyzer.views.android.smali import api_run_smali
-from StaticAnalyzer.views.android.static_analyzer import static_analyzer
-from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios
+from StaticAnalyzer.views.android.static_analyzer import static_analyzer_android
+from StaticAnalyzer.views.ios import view_source as ios_view_source
+from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios_api
 from StaticAnalyzer.views.shared_func import score, pdf
 from StaticAnalyzer.views.windows import windows
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +42,7 @@ OK = 200
 NOT_FOUND = 404
 FORBIDDEN = 403
 INTERNAL_SERVER_ERR = 500
+
 
 def create_pagination_response(context, page):
     paginator = Paginator(context, 30)
@@ -537,14 +546,10 @@ class BinaryAnalysis(RetrieveAPIView):
 
 
 class JavaCodeView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, GETDataCheck)
 
     def get(self, request, *args, **kwargs):
         """Get a list of java code files"""
-        request_ok = tools.request_check(request)
-
-        if not request_ok[0]:
-            return make_api_response(*request_ok[1:])
 
         try:
             ctx = api_run_java_code(request)
@@ -567,14 +572,10 @@ class JavaCodeView(RetrieveAPIView):
 
 
 class SmaliCodeView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, GETDataCheck)
 
     def get(self, request, *args, **kwargs):
         """Get smali code"""
-        request_ok = tools.request_check(request)
-
-        if not request_ok[0]:
-            return make_api_response(*request_ok[1:])
 
         try:
             ctx = api_run_smali(request)
@@ -607,18 +608,10 @@ class SmaliCodeView(RetrieveAPIView):
 
 
 class ReconEmailsView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, GETDataCheck, GETSystemsCheck)
 
     def get(self, request, *args, **kwargs):
         """Get reconnaissance emails or error"""
-        request_ok = tools.request_check(request)
-        system_ok = tools.system_check(request)
-
-        if not request_ok[0]:
-            return make_api_response(*request_ok[1:])
-
-        if not system_ok[0]:
-            return make_api_response(*system_ok[1:])
 
         page = tools.get_page(request)
         system = request.GET.get("system")
@@ -637,19 +630,10 @@ class ReconEmailsView(RetrieveAPIView):
 
 
 class ReconURLsView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, GETDataCheck, GETSystemsCheck)
 
     def get(self, request, *args, **kwargs):
         """Get reconnaissance urls"""
-        request_ok = tools.request_check(request)
-        system_ok = tools.system_check(request)
-
-        if not request_ok[0]:
-            return make_api_response(*request_ok[1:])
-
-        if not system_ok[0]:
-            return make_api_response(*system_ok[1:])
-
         system = request.GET.get("system")
         page = tools.get_page(request)
         md5 = request.GET.get("md5")
@@ -661,25 +645,16 @@ class ReconURLsView(RetrieveAPIView):
 
         if urls is None:
             return make_api_response({"error": "no urls for %s" % md5},
-                                     status=NOT_FOUND)
+                                        status=NOT_FOUND)
 
         return make_api_response(urls, status=OK)
 
 
 class ReconFirebasedbURLsView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated,GETDataCheck, GETSystemsCheck)
 
     def get(self, request, *args, **kwargs):
         """Get recon firebase or error"""
-        request_ok = tools.request_check(request)
-        system_ok = tools.system_check(request)
-
-        if not request_ok[0]:
-            return make_api_response(*request_ok[1:])
-
-        if not system_ok[0]:
-            return make_api_response(*system_ok[1:])
-
         system = request.GET.get("system")
         page = tools.get_page(request)
         md5 = request.GET.get("md5")
@@ -696,19 +671,10 @@ class ReconFirebasedbURLsView(RetrieveAPIView):
 
 
 class ReconStringsView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, GETDataCheck, GETSystemsCheck)
 
     def get(self, request, *args, **kwargs):
         """Get recon strings or error"""
-        request_ok = tools.request_check(request)
-        system_ok = tools.system_check(request)
-
-        if not request_ok[0]:
-            return make_api_response(*request_ok[1:])
-
-        if not system_ok[0]:
-            return make_api_response(*system_ok[1:])
-
         system = request.GET.get("system")
         page = tools.get_page(request)
         md5 = request.GET.get("md5")
@@ -726,14 +692,10 @@ class ReconStringsView(RetrieveAPIView):
 
 
 class ReconTrackersView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, GETDataCheck)
 
     def get(self, request, *args, **kwargs):
         """Get recon trackers or error"""
-        request_ok = tools.request_check(request)
-
-        if not request_ok[0]:
-            return make_api_response(*request_ok[1:])
 
         page = tools.get_page(request)
         md5 = request.GET.get("md5")
@@ -752,14 +714,10 @@ class ReconTrackersView(RetrieveAPIView):
 
 
 class GetDomainsDataView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, GETDataCheck)
 
     def get(self, request, *args, **kwargs):
         """Get domains data"""
-        request_ok = tools.request_check(request)
-
-        if not request_ok[0]:
-            return make_api_response(*request_ok[1:])
 
         try:
             data = StaticAnalyzerAndroid.get_domains_data(
@@ -811,13 +769,10 @@ class GetRecentScansView(RetrieveAPIView):
 
 
 class GetSignerCertificateView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, GETDataCheck)
 
     def get(self, request, *args, **kwargs):
         """Get certificate"""
-        request_ok = tools.request_check(request)
-        if not request_ok[0]:
-            return make_api_response(*request[1:])
         try:
             data = StaticAnalyzerAndroid.get_certificate_analysis_data(
                 request.GET["md5"])
@@ -831,13 +786,10 @@ class GetSignerCertificateView(RetrieveAPIView):
 
 
 class GetManifestView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, GETDataCheck)
 
     def get(self, request, *args, **kwargs):
         """Get manifest"""
-        request_ok = tools.request_check(request)
-        if not request_ok[0]:
-            return make_api_response(*request[1:])
         try:
             data = StaticAnalyzerAndroid.get_manifest(request.GET["md5"])
         except:
@@ -850,7 +802,7 @@ class GetManifestView(RetrieveAPIView):
 
 
 class UploadAppView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, HasAPIKey)
 
     def post(self, request, *args, **kwargs):
         """POST - Upload API."""
@@ -860,7 +812,7 @@ class UploadAppView(RetrieveAPIView):
 
 
 class RecentScansView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated) 
 
     def get(self, request, *args, **kwargs):
         """GET - get recent scans."""
@@ -873,7 +825,10 @@ class RecentScansView(RetrieveAPIView):
 
 
 class ScanAppView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, HasAPIKey)
+
+    def get(self, request, *args, **kwargs):
+        return make_api_response({"error": "Method GET not implemented"}, 405)
 
     def post(self, request, *args, **kwargs):
         """POST - Scan API."""
@@ -913,7 +868,7 @@ class ScanAppView(RetrieveAPIView):
 
 
 class DeleteScanView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, HasAPIKey)
 
     def post(self, request, *args, **kwargs):
         """POST - Delete a Scan."""
@@ -930,7 +885,7 @@ class DeleteScanView(RetrieveAPIView):
 
 
 class PDFReportView(RetrieveAPIView): # working
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, HasAPIKey)
     def get(self, request, *args, **kwargs):
         """Generate and Download PDF."""
         md5 = request.GET.get('md5', None)
@@ -949,7 +904,7 @@ class PDFReportView(RetrieveAPIView): # working
 
 
 class JSONReportView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, HasAPIKey)
 
     def post(self, request, *args, **kwargs):
         """Generate JSON Report."""
@@ -975,7 +930,7 @@ class JSONReportView(RetrieveAPIView):
 
 
 class SourceView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, HasAPIKey)
 
     def post(self, request, *args, **kwargs):
         """View Source for android & ios source file."""

@@ -107,15 +107,19 @@ def get_context_from_analysis(app_dict,
         logger.exception('Rendering to Template')
 
 
-def save_or_update(update_type,
-                   app_dict,
-                   info_dict,
-                   code_dict,
-                   bin_dict,
-                   all_files,
-                   user,
-                   organization):
-    """Save/Update an IPA/ZIP DB entry."""
+def save_or_update(
+        update_type,
+        app_dict,
+        info_dict,
+        code_dict,
+        bin_dict,
+        all_files,
+        user,
+        organization
+    ):
+    """
+    Save/Update an IPA/ZIP DB entry.
+    """
 
     try:
         values = {
@@ -152,17 +156,16 @@ def save_or_update(update_type,
             'STRINGS': bin_dict['strings'],
             'FIREBASE_URLS': code_dict['firebase'],
             'APPSTORE_DETAILS': app_dict['appstore'],
-            "USER_ID" : user,
-            "ORG_ID" : organization
+            "USER" : user,
+            "ORGANIZATION" : organization
         }
         if update_type == 'save':
-
             status = StaticAnalyzerIOS.cook_scan(**values)
 
             if status == True:
-                logger.info("Entry %s stored in the database" % app_dict["md5_hash"])
+                logger.info("Entry stored in the database")
             else:
-                logger.info("Error creating entry %s" % app_dict["md5_hash"])
+                logger.info("Error storing scan to database.")
         
         else:
             scan_obj = StaticAnalyzerIOS.objects.filter(

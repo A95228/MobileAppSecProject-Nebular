@@ -6,7 +6,6 @@ Kensa's User module.
 import os
 import pdb
 
-from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.contrib.auth.models import (
   AbstractBaseUser,
   BaseUserManager,

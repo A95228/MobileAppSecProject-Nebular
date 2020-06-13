@@ -26,7 +26,7 @@ class RecentScansDB(models.Model):
     APP_NAME = models.CharField(max_length=260)
     PACKAGE_NAME = models.CharField(max_length=260)
     VERSION_NAME = models.CharField(max_length=50)
-    ORGANIZATION_ID = models.IntegerField(verbose_name="organization_id_android")
+    ORGANIZATION_ID = models.IntegerField()
 
 
     @staticmethod
@@ -50,13 +50,8 @@ class RecentScansDB(models.Model):
         return resp
 
     @classmethod
-<<<<<<< HEAD
-    def get_recent_scans(cls, page):
-        scans = cls.objects.all().order_by("-TIMESTAMP")
-=======
     def get_recent_scans(cls, organization_id):
         scans = cls.objects.filter(ORGANIZATION_ID=organization_id).order_by("-TIMESTAMP")
->>>>>>> 5cbe8bc692cdfa77c039f52db9d5544a7ef50648
         if scans.count() == 0:
             return None
         scans_values = scans.values(
@@ -95,6 +90,15 @@ class RecentScansDB(models.Model):
 
 
 class StaticAnalyzerAndroid(models.Model):
+    # Relational Fields
+    USER = models.ForeignKey(User, on_delete=models.CASCADE)
+    ORGANIZATION = models.CharField(max_length=254)
+    # Informational Fields
+    DATE = models.DateField(
+        auto_now=True, 
+        auto_created=True, 
+        verbose_name='date_when_created'
+    )
     FILE_NAME = models.CharField(max_length=260)
     APP_NAME = models.CharField(max_length=255)
     APP_TYPE = models.CharField(max_length=20, default='')
@@ -135,15 +139,12 @@ class StaticAnalyzerAndroid(models.Model):
     APKID = models.TextField(default={})
     TRACKERS = models.TextField(default={})
     PLAYSTORE_DETAILS = models.TextField(default={})
-    USER = models.ForeignKey(User, on_delete=models.CASCADE)
-    ORGANIZATION = models.CharField(max_length=254)
-    DATE = models.DateField(auto_now=True, auto_created=True, verbose_name='date_when_created')
 
 
     @classmethod
     def cook_scan(cls, **kwargs):
         """Create a scan and store it to 
-        database do sanity checks here."""
+        database -- do sanity checks here."""
         if 'USER' not in kwargs:
             return False
         if 'ORG_ID' not in kwargs:
@@ -190,14 +191,6 @@ class StaticAnalyzerAndroid(models.Model):
 
 
     @classmethod
-    def get_single_or_none(cls, md5):
-        """Get a single model or None"""
-        try:
-            return cls.objects.get(MD5=md5)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            return None
-
-    @classmethod
     def get_md5s(cls, md5):
         """Get md5 that match the given term for a search result,
         return an empty list otherwise."""
@@ -205,6 +198,7 @@ class StaticAnalyzerAndroid(models.Model):
         if md5s.count() == 0:
             return []
         return md5s
+
 
     @classmethod
     def get_scan_info_from_obj(cls, scan_obj):
@@ -241,6 +235,7 @@ class StaticAnalyzerAndroid(models.Model):
         except:
             return None
 
+
     @classmethod
     def get_scan_info(cls, md5):
         try:
@@ -249,6 +244,7 @@ class StaticAnalyzerAndroid(models.Model):
             return scan_info
         except:
             return None
+
 
     @classmethod
     def get_certificate_analysis_data(cls, md5):
@@ -259,7 +255,7 @@ class StaticAnalyzerAndroid(models.Model):
             cert = cls.objects.get(MD5=md5)
             cert = cert.CERTIFICATE_ANALYSIS
         except: 
-            logger.error("Possibly ObjectNotFound with md5 %s" % md5)
+            logger.error("ObjectNotFound with md5 %s" % md5)
             return None
         return eval(cert)
 
@@ -273,7 +269,7 @@ class StaticAnalyzerAndroid(models.Model):
             cert = cls.objects.get(MD5=md5)
             manifest = cert.MANIFEST_ANALYSIS
         except:
-            logger.error("Possibly ObjectNotFound with md5 %s" % md5)
+            logger.error("ObjectNotFound with md5 %s" % md5)
             return None
         manifest = dict(manifest_analysis=eval(manifest))
         return manifest
@@ -310,30 +306,32 @@ class StaticAnalyzerAndroid(models.Model):
                 holder[country].update(geolocation)
                 countries.append(holder)
         except:
-            logger.info("Issue getting domains for object : %s" % md5)
+            logger.info("Error getting domains for object : %s" % md5)
             return None
         return {"countries" : countries}
 
 
     @classmethod
     def get_recon_emails(cls, md5, page):
-        """Get Recon emails or None. Requires pagination"""
+        """Get Reconnaissance emails or return None. 
+        Requires pagination"""
         logger.info("Getting reconnassaince emails of %s" % md5)
         try:
             query = cls.objects.get(MD5=md5)
             emails = eval(query.EMAILS)
         except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
+            logger.error("Object %s does not exists" % md5)
             return None
         except Exception:
-            logger.error("Unexpected error geting recon emails of %s" % md5)
+            logger.error("Error geting reconnaissance emails of %s" % md5)
             return None
         return {"emails": cls.paginate(emails, page)}
 
 
     @classmethod
     def get_recon_urls(cls, md5, page):
-        """Get recon urls or None. Requires pagination."""
+        """Get reconnaissance urls or None. 
+        Requires pagination."""
         logger.info("Getting urls of %s" % md5)
         try:
             query = cls.objects.get(MD5=md5)
@@ -349,7 +347,8 @@ class StaticAnalyzerAndroid(models.Model):
 
     @classmethod
     def get_recon_firebase_db(cls, md5, page):
-        """Get recon firebase url. Requires pagination."""
+        """Get reconnaissance firebase url. 
+        Requires pagination."""
         logger.info("Getting firebase urls of %s" % md5)
         try:
             query = cls.objects.get(MD5=md5)
@@ -365,7 +364,8 @@ class StaticAnalyzerAndroid(models.Model):
 
     @classmethod
     def get_recon_strings(cls, md5, page):
-        """Get recon strings. Requires pagination."""
+        """Get reconnaissance strings, or return None 
+        Requires pagination."""
         logger.info("Getting strings of %s" % md5)
         try:
             query = cls.objects.get(MD5=md5)
@@ -381,7 +381,8 @@ class StaticAnalyzerAndroid(models.Model):
 
     @classmethod
     def get_recon_trackers(cls, md5, page):
-        """Get recon trackers. Requires pagination."""
+        """Get reconnaisance trackers, or return None.
+        Requires pagination."""
         logger.info("Getting reconnassaince trackers of %s" % md5)
         try:
             query = cls.objects.get(MD5=md5)
@@ -397,6 +398,8 @@ class StaticAnalyzerAndroid(models.Model):
 
     @classmethod
     def get_app_info(cls, md5):
+        """Get application information, or return None.
+        Does not paginate."""
         logger.info("get_app_info of %s" % md5)
         try:
             db_entry = cls.objects.get(MD5=md5)
@@ -423,6 +426,8 @@ class StaticAnalyzerAndroid(models.Model):
 
     @classmethod
     def get_app_store(cls, md5):
+        """Get's application store information, or
+        returns None."""
         try:
             logger.info("get_app_store of %s" % md5)
             db_entry = cls.objects.get(MD5=md5)
@@ -435,6 +440,8 @@ class StaticAnalyzerAndroid(models.Model):
 
     @classmethod
     def get_security_overview(cls, md5):
+        """Generates a security overview context, 
+        or returns None."""
         try:
             logger.info("get_security_overview of %s" % md5)
             db_entry = cls.objects.get(MD5=md5)
@@ -496,6 +503,7 @@ class StaticAnalyzerAndroid(models.Model):
 
     @classmethod
     def get_code_analysis(cls, md5):
+        """Gets code analysis, or returns None."""
         logger.info("get_code_analysis of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
@@ -508,6 +516,7 @@ class StaticAnalyzerAndroid(models.Model):
 
     @classmethod
     def get_code_analysis_report(cls, md5):
+        """Get's code analysis report, or returns None."""
         logger.info("get_code_analysis of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
@@ -783,7 +792,7 @@ class StaticAnalyzerAndroid(models.Model):
         logger.info("get_org_user of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
-            org_id = data_entry.ORGANIZATION_ID
+            org_id = data_entry.ORGANIZATION
             user = data_entry.USER_ID
             return org_id, user
         except:
@@ -793,6 +802,15 @@ class StaticAnalyzerAndroid(models.Model):
 
 
 class StaticAnalyzerIOS(models.Model):
+    """This model represents the information obtained from a scan operation."""
+
+    USER = models.ForeignKey(User, on_delete=models.CASCADE)
+    ORGANIZATION = models.CharField(max_length=254)
+    DATE = models.DateField(
+        auto_now=True, 
+        auto_created=True, 
+        verbose_name='date_when_created'
+    )
     FILE_NAME = models.CharField(max_length=255)
     APP_NAME = models.CharField(max_length=255)
     APP_TYPE = models.CharField(max_length=20, default='')
@@ -825,14 +843,6 @@ class StaticAnalyzerIOS(models.Model):
     STRINGS = models.TextField(default=[])
     FIREBASE_URLS = models.TextField(default=[])
     APPSTORE_DETAILS = models.TextField(default={})
-    USER = models.ForeignKey(User, on_delete=models.CASCADE)
-    ORGANIZATION = models.CharField(max_length=254)
-    DATE = models.DateField(
-        auto_now=True, 
-        auto_created=True, 
-        verbose_name='date_when_created'
-    )
-
 
 
     @classmethod
@@ -841,7 +851,7 @@ class StaticAnalyzerIOS(models.Model):
         database do sanity checks here."""
         if 'USER' not in kwargs:
             return False
-        if 'ORG_ID' not in kwargs:
+        if 'ORGANIZATION' not in kwargs:
             return False
         cls.objects.create(**kwargs)
         return True 
@@ -851,10 +861,7 @@ class StaticAnalyzerIOS(models.Model):
     def paginate(load, page, count=30):
         """Paginate a context"""
         try:
-            if 'trackers' in load:
-                paginator = Paginator(load["trackers"], count)
-            else:
-                paginator = Paginator(load, count)
+            paginator = Paginator(load, count)
             activities = paginator.page(page)
         except PageNotAnInteger:
             activities = paginator.page(1)
@@ -928,7 +935,7 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def get_recon_emails(cls, md5, page):
-        """Get Recon emails or None"""
+        """Get Reconnaissance emails or None"""
         logger.info("Getting reconnassaince emails of %s" % md5)
         try:
             query = cls.objects.get(MD5=md5)
@@ -992,6 +999,7 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def get_app_info(cls, md5):
+        """Get's application information, or returns None."""
         logger.info("ios get_app_info of %s" % md5)
         try:
             db_entry = cls.objects.get(MD5=md5)
@@ -1019,6 +1027,7 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def get_app_store(cls, md5):
+        """Gets application store information, or returns None."""
         try:
             logger.info("get_app_store of %s" % md5)
             db_entry = cls.objects.get(MD5=md5)
@@ -1031,6 +1040,7 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def get_security_overview(cls, md5):
+        """Gets security overview, or returns None."""
         try:
             logger.info("get_security_overview of %s" % md5)
             db_entry = cls.objects.get(MD5=md5)
@@ -1081,6 +1091,7 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def get_code_analysis(cls, md5):
+        """Get code analysis, or returns None."""
         logger.info("get_code_analysis of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
@@ -1093,6 +1104,7 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def get_code_analysis_report(cls, md5):
+        """Generates a code analysis report, or returns None."""
         logger.info("get_code_analysis of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
@@ -1127,6 +1139,7 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def get_binary_analysis(cls, md5):
+        """Generates binary analysis or returns None."""
         logger.info("get_binary_analysis of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
@@ -1154,6 +1167,7 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def get_file_analysis(cls, md5):
+        """Get's file analysis or returns None."""
         logger.info("get_file_analysis of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
@@ -1166,6 +1180,7 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def get_app_permissions(cls, md5):
+        """Get's applications permissions or returns None."""
         logger.info("get_app_permissions of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
@@ -1217,7 +1232,7 @@ class StaticAnalyzerIOS(models.Model):
         logger.info("get_org_user of %s" % md5)
         try:
             data_entry = cls.objects.get(MD5=md5)
-            org_id = data_entry.ORGANIZATION_ID
+            org_id = data_entry.ORGANIZATION
             user = data_entry.USER_ID
             return org_id, user
         except:
@@ -1300,6 +1315,7 @@ class StaticAnalyzerIOS(models.Model):
 
     @classmethod
     def get_scan_info(cls, md5):
+        """Get's scan information"""
         try:
             scan_obj = cls.objects.get(MD5=md5)
             scan_info = cls.get_scan_info_from_obj(scan_obj)
@@ -1307,8 +1323,10 @@ class StaticAnalyzerIOS(models.Model):
         except:
             return None
 
+
     @classmethod
     def get_scan_info_from_obj(cls, scan_obj):
+        """Get's information from a scan or returns None"""
         try:
             if scan_obj.ICON_FOUND:
                 icon_url = "/download/{}-icon.png".format(scan_obj.MD5)

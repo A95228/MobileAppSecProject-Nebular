@@ -57,10 +57,15 @@ class Scanning(object):
             'file_name': self.file_name,
         }
 
-        add_to_recent_scan(self.file_name, md5, data['url'])
+        add_to_recent_scan(
+            self.file_name,
+            md5,
+            data['url'],
+        )
 
         logger.info('Performing Static Analysis of Android APK')
         return data
+
     def scan_zip(self):
         """Android /iOS Zipped Source."""
         md5 = handle_uploaded_file(self.file, '.zip')

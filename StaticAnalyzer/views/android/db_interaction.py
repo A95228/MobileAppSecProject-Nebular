@@ -182,21 +182,21 @@ def get_context_from_analysis(app_dic,
         logger.exception('Rendering to Template')
 
 
-def save_or_update(update_type,
-                   app_dic,
-                   man_data_dic,
-                   man_an_dic,
-                   code_an_dic,
-                   cert_dic,
-                   bin_anal,
-                   apk_id,
-                   trackers,
-                   user,
-                   organization):
+def save_or_update(
+        update_type,
+        app_dic,
+        man_data_dic,
+        man_an_dic,
+        code_an_dic,
+        cert_dic,
+        bin_anal,
+        apk_id,
+        trackers,
+        user,
+        organization
+    ):
     """
     Save/Update an APK/ZIP DB entry.
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    [!] This function might return False if it fails
     """
 
     try:
@@ -246,8 +246,6 @@ def save_or_update(update_type,
         }
 
         if update_type == 'save':
-        
-            
             status = StaticAnalyzerAndroid.cook_scan(**values)
         
             if status == True:
@@ -256,10 +254,6 @@ def save_or_update(update_type,
                 logger.info("Error creating entry, contact sysadmin")
         
         else:
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            # Otherwise just filter by id and update
-            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        
             StaticAnalyzerAndroid.objects.filter(
                 MD5=app_dic['md5']).update(**values)
 
@@ -271,9 +265,7 @@ def save_or_update(update_type,
             'PACKAGE_NAME': man_data_dic['packagename'],
             'VERSION_NAME': man_data_dic['androvername'],
         }
-        RecentScansDB.objects.filter(
-            MD5=app_dic['md5']).update(**values)
-
+        RecentScansDB.objects.filter(MD5=app_dic['md5']).update(**values)
         context = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
         return context
     except Exception:
