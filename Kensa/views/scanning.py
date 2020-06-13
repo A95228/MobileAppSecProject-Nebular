@@ -11,13 +11,17 @@ from django.contrib.auth.decorators import permission_required
 
 logger = logging.getLogger(__name__)
 
-def add_to_recent_scan(name, md5, url):
+def add_to_recent_scan(name, md5, url, organization_id):
     """Add Entry to Database under Recent Scan."""
     try:
         db_obj = RecentScansDB.objects.filter(MD5=md5)
         if not db_obj.exists():
             new_db_obj = RecentScansDB(
-                FILE_NAME=name, MD5=md5, URL=url, TIMESTAMP=timezone.now())
+                FILE_NAME=name, 
+                MD5=md5, 
+                URL=url, 
+                TIMESTAMP=timezone.now(),
+                ORGANIZATION_ID=organization_id)
             new_db_obj.save()
     except Exception:
         logger.exception('Adding Scan URL to Database')
@@ -56,7 +60,7 @@ class Scanning(object):
             'file_name': self.file_name,
         }
 
-        add_to_recent_scan(self.file_name, md5, data['url'])
+        add_to_recent_scan(self.file_name, md5, data['url'], self.request.user.organization)
 
         logger.info('Performing Static Analysis of Android APK')
         return data
@@ -73,7 +77,7 @@ class Scanning(object):
             'file_name': self.file_name,
         }
 
-        add_to_recent_scan(self.file_name, md5, data['url'])
+        add_to_recent_scan(self.file_name, md5, data['url'], self.request.user.organization)
         logger.info('Performing Static Analysis of Android/iOS Source Code')
         return data
     def scan_ipa(self):
@@ -89,7 +93,7 @@ class Scanning(object):
             'status': 'success',
         }
 
-        add_to_recent_scan(self.file_name, md5, data['url'])
+        add_to_recent_scan(self.file_name, md5, data['url'], self.request.user.organization)
         logger.info('Performing Static Analysis of iOS IPA')
         return data
     def scan_appx(self):
@@ -104,6 +108,6 @@ class Scanning(object):
             'url': url,
             'status': 'success',
         }
-        add_to_recent_scan(self.file_name, md5, data['url'])
+        add_to_recent_scan(self.file_name, md5, data['url'], self.request.user.organization)
         logger.info('Performing Static Analysis of Windows APP')
         return data

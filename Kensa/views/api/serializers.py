@@ -5,7 +5,6 @@ from StaticAnalyzer import models
 
 
 class ReconDataSerializer(serializers.ModelSerializer):
-    
     class Meta:
         fields = ("URLS",)
         model = models.StaticAnalyzerAndroid
@@ -19,10 +18,7 @@ class ScanAppSerializer(serializers.Serializer):
 
 
 class KensaTokenObtainPairSerializer(TokenObtainPairSerializer):
-
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
         return token
-
-
