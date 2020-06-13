@@ -257,6 +257,7 @@ logger = logging.getLogger(__name__)
 
 def static_analyzer_ios_api(scan_type, md5, filename, user_id, organization_id):
     """Module that performs iOS IPA/ZIP Static Analysis."""
+    
     try:
         logger.info('iOS Static Analysis Started')
 

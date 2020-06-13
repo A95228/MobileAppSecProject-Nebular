@@ -6,8 +6,12 @@ This module contains validators for the User API
 import re
 import pdb
 
-from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import CommonPasswordValidator
+from django.contrib.auth.validators import (
+    ASCIIUsernameValidator,
+    UnicodeUsernameValidator
+)
+from django.core.exceptions import ValidationError
 
 from . import models
 
@@ -19,7 +23,7 @@ def validate_password(value, length=8): # tested
     """Somewhat strict validator, returns True once all 
     test cases pass, raises a ValidationError if it fails a test."""
 
-    if not isinstance(lenght, int): # for developers only
+    if not isinstance(length, int): # for developers only
         raise Exception("Length param must be of type int") 
 
     if value in common.passwords:
@@ -50,28 +54,31 @@ def validate_password(value, length=8): # tested
     return True
 
 
-def validate_not_taken_email(email):
-    """Validate if email is taken, returns green if it's ok to update 
-    the email with the param value"""
-    if models.User.objects.get(email=email).exists():
-        raise ValidationError(
+def validate_email(email):
+    """Check if email is taken."""
+    try:
+        models.User.objects.get(email=email)
+    except:
+        return True
+    raise ValidationError(
                 'A user with that email already exists.') from None
-    return True
 
 
 def validate_username(username):
-    """Validate if username is taken, raises ValidationError is User 
-    with username exists, otherwise returns green."""
-    if models.User.objects.get(username=username).exists():
-        raise ValidationError(
+    """Check if username is taken"""
+    try:
+        models.User.objects.get(username=username)
+    except:
+        return True
+    raise ValidationError(
             "A user with that username already exists") from None
-    return True
 
 
 def validate_api_key(api_key):
-    """Validate a fresh out of the function api_key for a fresh user"""
-    if models.User.objects.get(api_key=api_key).exists():
-        raise ValidationError(
+    """Check if user with api key does not exists"""
+    try:
+        models.User.objects.get(api_key=api_key)
+    except:
+        return True
+    raise ValidationError(
             "api_key is already taken, try again.") from None
-    return True
-

@@ -191,11 +191,16 @@ def save_or_update(update_type,
                    bin_anal,
                    apk_id,
                    trackers,
-                   user_id,
-                   org_id) -> None:
-    """Save/Update an APK/ZIP DB entry."""
+                   user,
+                   organization):
+    """
+    Save/Update an APK/ZIP DB entry.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    [!] This function might return False if it fails
+    """
+
     try:
-        values = {
+        values = { 
             'FILE_NAME': app_dic['app_name'],
             'APP_NAME': app_dic['real_name'],
             'APP_TYPE': app_dic['zipped'],
@@ -236,14 +241,31 @@ def save_or_update(update_type,
             'APKID': apk_id,
             'TRACKERS': trackers,
             'PLAYSTORE_DETAILS': app_dic['playstore'],
-            'USER_ID': user_id,
-            'ORGANIZATION_ID': org_id,
+            "USER" : user,
+            "ORG_ID" : organization
         }
+
         if update_type == 'save':
-            scan_obj = StaticAnalyzerAndroid.objects.create(**values)
+        
+            
+            status = StaticAnalyzerAndroid.cook_scan(**values)
+        
+            if status == True:
+                logger.info("Entry Stored in database")
+            else:
+                logger.info("Error creating entry, contact sysadmin")
+        
         else:
-            scan_obj = StaticAnalyzerAndroid.objects.filter(
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            # Otherwise just filter by id and update
+            # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        
+            StaticAnalyzerAndroid.objects.filter(
                 MD5=app_dic['md5']).update(**values)
+
+    except Exception:
+        logger.exception('Updating DB')
+    try:
         values = {
             'APP_NAME': app_dic['real_name'],
             'PACKAGE_NAME': man_data_dic['packagename'],

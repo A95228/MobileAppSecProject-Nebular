@@ -140,7 +140,7 @@ def pdf(md5, system, jsonres=False):
         context['base_url'] = proto + settings.BASE_DIR
         context['dwd_dir'] = proto + settings.DWD_DIR
         context['host_os'] = host_os
-        if  jsonres:
+        if jsonres:
             return {'report_dat': context}, 200
         else:
             options = {

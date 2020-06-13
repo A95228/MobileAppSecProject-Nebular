@@ -113,10 +113,10 @@ def save_or_update(update_type,
                    code_dict,
                    bin_dict,
                    all_files,
-                   user_id,
-                   organization_id
-                   ):
+                   user,
+                   organization):
     """Save/Update an IPA/ZIP DB entry."""
+
     try:
         values = {
             'FILE_NAME': app_dict['file_name'],
@@ -152,14 +152,25 @@ def save_or_update(update_type,
             'STRINGS': bin_dict['strings'],
             'FIREBASE_URLS': code_dict['firebase'],
             'APPSTORE_DETAILS': app_dict['appstore'],
-            'USER_ID': user_id,
-            'ORGANIZATION_ID': organization_id
+            "USER_ID" : user,
+            "ORG_ID" : organization
         }
         if update_type == 'save':
-            scan_obj = StaticAnalyzerIOS.objects.create(**values)
+
+            status = StaticAnalyzerIOS.cook_scan(**values)
+
+            if status == True:
+                logger.info("Entry %s stored in the database" % app_dict["md5_hash"])
+            else:
+                logger.info("Error creating entry %s" % app_dict["md5_hash"])
+        
         else:
             scan_obj = StaticAnalyzerIOS.objects.filter(
                 MD5=app_dict['md5_hash']).update(**values)
+            
+    except Exception:
+        logger.exception('Updating DB')
+    try:
         values = {
             'APP_NAME': info_dict['bin_name'],
             'PACKAGE_NAME': info_dict['id'],
