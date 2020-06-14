@@ -151,8 +151,8 @@ def save_or_update(update_type,
             'STRINGS': bin_dict['strings'],
             'FIREBASE_URLS': code_dict['firebase'],
             'APPSTORE_DETAILS': app_dict['appstore'],
-            "USER_ID" : user,
-            "ORG_ID" : organization
+            "USER" : user,   # change to USER
+            "ORGANIZATION" : organization # change to ORGANIZATION
         }
         if update_type == 'save':
             scan_obj = StaticAnalyzerIOS.objects.create(**values)
