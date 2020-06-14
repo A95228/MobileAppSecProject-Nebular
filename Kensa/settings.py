@@ -158,26 +158,26 @@ INSTALLED_APPS = (
     'corsheaders',
 )
 
-CORS_ORIGIN_ALLOW_ALL = True
+
 MIDDLEWARE_CLASSES = (
-    'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
 )
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware', # cors middleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'Kensa.views.api.rest_api_middleware.RestApiAuthMiddleware',
-
 ]
 
+
 CORS_ORIGIN_ALLOW_ALL = True
+
 
 ROOT_URLCONF = 'Kensa.urls'
 WSGI_APPLICATION = 'Kensa.wsgi.application'
