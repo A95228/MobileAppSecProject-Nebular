@@ -73,9 +73,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin):
 
-    api_key = models.CharField(
-        max_length=254, unique=True
-    )  # unsure if editable=True.
+    api_key = models.CharField(max_length=254, unique=True, editable=False)
     email = models.EmailField(max_length=254, unique=True)
     name = models.CharField(max_length=254, null=True, blank=True)
     username = models.CharField(
@@ -107,27 +105,22 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_absolute_url(self):
         return "/users/%i/" % (self.pk)
 
-    def save(self, *args, **kwargs):  # tested
+    def save(self, *args, **kwargs):
         """Override save to inject api_key into model."""
+        if hasattr(self, "date_joined") and self.date_joined < timezone.now():
+            super().save(*args, **kwargs)
+
         key = "{0}{1}".format(self.email, str(self.date_joined))
         self.api_key = KENSA_HASHER.encode(key)
         super().save(*args, **kwargs)
 
     @classmethod
-    def verify_api_key(cls, key, pk) -> bool:
+    def verify_api_key(cls, x, y) -> bool:
         """Verify an api_key, for interal use only"""
-        try:
-            user = cls.objects.get(pk=pk)
-        except:
-            return False
-
-        if key != user.api_key:
-            return False
-
-        return True
+        return bool(x.api_key == y)
 
     @classmethod
-    def update_password(cls, password, pk) -> tuple:  # tested
+    def update_password(cls, password, pk) -> tuple:
         """Updates the password if validation passes and user exists."""
         try:
             validate_password(password)

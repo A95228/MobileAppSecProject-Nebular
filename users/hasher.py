@@ -8,7 +8,7 @@ import hashlib
 import os
 
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
-from django.utils.crypto import constant_time_compare, pbkdf2
+from django.utils.crypto import pbkdf2
 
 
 class KensaApiKeyHasher(PBKDF2PasswordHasher):
@@ -20,7 +20,7 @@ class KensaApiKeyHasher(PBKDF2PasswordHasher):
 
 
     def encode(self, api_key):
-        """Encode an api_key"""
+        """Encode the secret"""
         key = pbkdf2(api_key, self.salt, self.iterations, digest=self.digest)
         key = base64.b64encode(key).decode('ascii').strip()
         return "%s%s" % (self.salt, key)

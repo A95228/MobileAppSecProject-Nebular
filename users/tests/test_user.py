@@ -19,6 +19,8 @@ from django.core.exceptions import ValidationError
 from users.hasher import KensaApiKeyHasher
 from users.models import User
 
+from users.tests.test_data import admin_data, user_data, super_user_data
+
 
 hasher = KensaApiKeyHasher()
 
@@ -28,43 +30,12 @@ class BaseTest(TestCase):
 
     def setUp(self):
         """This runs before each test function"""
-
-        self.user_data = dict(
-            email="test@regular.com",
-            name="Regular User",
-            username="",
-            password="RegularUser123!",
-            organization=1,
-            short_name="RU",
-            first_name="Regular",
-            last_name="User",
-        )
-
-        self.admin_data = dict(
-            email="test@admin.com",
-            name="Admin User",
-            username="admin_user",
-            password="AdminUser123!",
-            organization=1,
-            short_name="AU",
-            first_name="Admin",
-            last_name="User",
-        )
-
-        self.super_user_data = dict(
-            email="test@sudo.com",
-            name="Super User",
-            username="super_user",
-            password="SuperUser01!",
-            organization=1,
-            short_name="SU",
-            first_name="Super",
-            last_name="User",
-        )
-
-        self.super_user = User.objects.create_superuser(**self.super_user_data)
-        self.admin_user = User.objects.create_admin(**self.admin_data)
-        self.user = User.objects.create_user(**self.user_data)
+        self.super_user_data = super_user_data
+        self.admin_data = admin_data
+        self.user_data = user_data
+        self.user = User.objects.create_user(**user_data)
+        self.admin_user = User.objects.create_admin(**admin_data)
+        self.super_user = User.objects.create_superuser(**super_user_data)
 
     def tearDown(self):
         """Delete the user on each test run"""
@@ -109,6 +80,20 @@ class TestUserApiKeys(BaseTest):
         given email exists on instance."""
         user_api_key = self.user.api_key
         self.assertIsNotNone(user_api_key)
+
+    def test_c_changing_user_api_key(self):
+        """Test trying to change the api key"""
+        old_key = self.user.api_key
+        new_key = "**this-is-a-n3w-key**"
+        self.user.api_key = new_key
+        self.user.save()
+        self.assertFalse(self.user.api_key == new_key)
+        self.assertTrue(self.user.api_key == old_key)
+
+    def test_verify_api_key_user_method(self):
+        """Test that the api_key matches the users key"""
+        api_key = self.user.api_key
+        self.assertTrue(self.user.verify_api_key(self.user, api_key))
 
 
 class TestUserUpdatingPassword(BaseTest):
@@ -175,16 +160,12 @@ class TestUserUpdatingPassword(BaseTest):
         self.assertRegexpMatches(drop, r"Password must be \d+ chars or more.")
         print("Password must be of a certain length -> Passed")
 
-        status, drop = self.user.update_password("ronaldo123", pk=self.user.pk)
+        status, drop = self.user.update_password(
+            "ronaldo123", pk=self.user.pk
+        )
         self.assertFalse(status)
         self.assertEqual(
             drop,
             "Password is a common password, vulnerable to brute force attacks.",
         )
         print("Password is a common password -> Passed")
-
-
-class TestUserValidators(BaseTest):
-    def test_a_email_validator(self):
-        with self.assertRaises(ValidationError):
-            pass

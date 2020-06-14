@@ -1,6 +1,6 @@
 """
-This module contains validators for the User API
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This file holds validators for the User API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 """
 
 import re
@@ -12,11 +12,19 @@ from django.contrib.auth.validators import (
     UnicodeUsernameValidator
 )
 from django.core.exceptions import ValidationError
+from django import forms
 
-from . import models
+from users import models
 
 
 common = CommonPasswordValidator()
+
+def is_email(email):
+    """Verifies if the field is an email"""
+    try:
+        forms.EmailField().clean(email)
+    except ValidationError:
+        raise ValidationError("Invalid email.") from None
 
 
 def validate_password(value, length=8): # tested
@@ -29,56 +37,56 @@ def validate_password(value, length=8): # tested
     if value in common.passwords:
         raise ValidationError(
             "Password is a common password, vulnerable to brute force attacks."
-        ) from None
+        )
 
     if len(value) < length:
         raise ValidationError(
-            'Password must be %s chars or more.' % length) from None
+            'Password must be %s chars or more.' % length)
 
     elif len(re.findall(r'\W', value)) == 0:
         raise ValidationError(
-            'Password must include special characters.') from None
+            'Password must include special characters.')
 
     elif len(re.findall(r'[A-Z]', value)) == 0:
         raise ValidationError(
-            'Password must include uppercase letters.') from None
+            'Password must include uppercase letters.')
 
     elif len(re.findall(r'[a-z]', value)) == 0:
         raise ValidationError(
-            'Password must include lowercase letters.') from None
+            'Password must include lowercase letters.')
 
     elif len(re.findall(r'[0-9]', value)) == 0:
         raise ValidationError(
-            'Password must include digits.') from None
+            'Password must include digits.')
 
     return True
 
 
+
 def validate_email(email):
     """Check if email is taken."""
-    try:
-        models.User.objects.get(email=email)
-    except:
-        return True
-    raise ValidationError(
-                'A user with that email already exists.') from None
+    is_email(email)
+    if models.User.objects.filter(email=email).exists():
+        raise ValidationError(
+            'A user with that email already exists.') from None
+    return True
+
 
 
 def validate_username(username):
     """Check if username is taken"""
-    try:
-        models.User.objects.get(username=username)
-    except:
-        return True
-    raise ValidationError(
-            "A user with that username already exists") from None
+    if models.User.objects.filter(username=username).exists():
+        raise ValidationError(
+            'A user with that email already exists.') from None
+    return True
+    
 
 
 def validate_api_key(api_key):
     """Check if user with api key does not exists"""
-    try:
-        models.User.objects.get(api_key=api_key)
-    except:
-        return True
-    raise ValidationError(
-            "api_key is already taken, try again.") from None
+    if models.User.objects.filter(api_key=api_key).exists():
+        raise ValidationError(
+            'A user with that email already exists.') from None
+    return True
+
+
