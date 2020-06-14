@@ -1,6 +1,7 @@
 """Kensa's api views."""
 
 import logging
+import pdb
 import re
 
 from django.core.paginator import EmptyPage, Paginator, PageNotAnInteger
@@ -31,9 +32,15 @@ from StaticAnalyzer.models import (
 from StaticAnalyzer.views.android import view_source
 from StaticAnalyzer.views.android.java import api_run_java_code
 from StaticAnalyzer.views.android.smali import api_run_smali
-from StaticAnalyzer.views.android.static_analyzer import static_analyzer, static_analyzer_android
+from StaticAnalyzer.views.android.static_analyzer import (
+    static_analyzer,
+    static_analyzer_android
+)
 from StaticAnalyzer.views.ios import view_source as ios_view_source
-from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios, static_analyzer_ios_api
+from StaticAnalyzer.views.ios.static_analyzer import (
+    static_analyzer_ios,
+    static_analyzer_ios_api
+)
 from StaticAnalyzer.views.shared_func import score, pdf
 from StaticAnalyzer.views.windows import windows
 
@@ -70,7 +77,6 @@ def make_api_response(data, status=OK):
     resp = JsonResponse(data=data, status=status)
     resp["Access-Control-Allow-Origin"] = "*"
     resp["Access-Control-Allow-Methods"] = "POST"
-    resp['Access-Control-Allow-Methods'] = "POST, GET, OPTIONS"
     resp["Content-Type"] = "application/json; charset=utf-8"
     return resp
 
@@ -648,10 +654,11 @@ class SmaliCodeView(RetrieveAPIView):
         try:
             ctx = api_run_smali(request)
         except RecursionError as run_error:
-            return make_api_response({"error": "contact sysadmin"}, status=500)
+            logger.error(str(run_error))
+            return make_api_response({"error": "contact sysadmin"}, 500)
         except Exception as error:
             logger.error(str(error))
-            return make_api_response({"error": "contact sysadmin"}, status=500)
+            return make_api_response({"error": "contact sysadmin"}, 500)
 
         if "error" in ctx:
             return make_api_response(ctx, 500)
@@ -660,7 +667,7 @@ class SmaliCodeView(RetrieveAPIView):
 
         if ctx["files"].__len__() == 0:
             return make_api_response(
-                {"error": "no smali files for %s" % request.GET["md5"]}, 500
+                {"error": "no smali files for %s" % request.GET["md5"]}, 404
             )
 
         try:
@@ -805,6 +812,7 @@ class GetDomainsDataView(RetrieveAPIView):
         return make_api_response(data=data, status=OK)
 
 
+
 class GetSearchView(RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
 
@@ -814,19 +822,23 @@ class GetSearchView(RetrieveAPIView):
             return make_api_response(
                 {"error": "Missing Identifier"}, status=BAD_REQUEST
             )
+
         if not re.match(r"^[0-9a-f]{1,32}$", request.GET["md5"]):
             return make_api_response(
                 {"error": "Invalid identifier"}, status=BAD_REQUEST
             )
+
         md5 = request.GET["md5"]
         ios_md5s = StaticAnalyzerIOS.get_md5s(md5)
         android_md5s = StaticAnalyzerAndroid.get_md5s(md5)
         search_results = tools.merge_searches(ios_md5s, android_md5s)
+
         if not len(search_results) > 0:
             return make_api_response(
                 {"error": "0 search results for %s." % md5}, status=NOT_FOUND
             )
         return make_api_response({"results": search_results}, status=OK)
+
 
 
 class GetRecentScansView(RetrieveAPIView):
@@ -836,6 +848,7 @@ class GetRecentScansView(RetrieveAPIView):
         """Get Recent Scans """
         page = tools.get_page(request)
         data = RecentScansDB.get_recent_scans(request.user.organization)
+
         if data is not None:
             if isinstance(data, dict):
                 return make_api_response(data=data, status=OK)
@@ -878,32 +891,33 @@ class GetManifestView(RetrieveAPIView):
         return JsonResponse(data=data, status=OK)
 
 
-class UploadAppView(RetrieveAPIView):
-    permission_classes = (IsAuthenticated,)
-
-    def get(self, request, *args, **kwargs):
-        return make_api_response({"error": "Method not implemented"}, 405)
-
-    def post(self, request, *args, **kwargs):
-        """POST - Upload API."""
-        upload = Upload(request)
-        resp, code = upload.upload_api()
-        return make_api_response(resp, code)
-
-
 class ScanAppView(RetrieveAPIView):
     permission_classes = (IsAuthenticated,)
-    serializer_class = ScanAppSerializer
+
     def get(self, request, *args, **kwargs):
         return make_api_response({"error" : "Method not implemented"}, 405)
 
     def post(self, request, *args, **kwargs):
-        """GET - Scan API."""
-        scan_type = request.POST["scan_type"]
-        organization_id = request.user.organization
-        file_name = request.POST['filename']
-        md5 = request.POST["md5"]
+        """POST - Scan API."""
+        # sanity checks
+        try:
+            upload = Upload(request)
+            resp, code = upload.upload_api()
+        except:
+            return make_api_response({"error" : "error uploading file"}, 500)
 
+        if code != 200:
+            return make_api_response({"error" : "error uploading file"}, 500)
+
+        try:
+            scan_type = resp["scan_type"]
+            md5 = resp["hash"]
+            file_name = resp["file_name"]
+        except KeyError as resp_error:
+            make_api_response({"error" : str(resp_error)}, 500)
+    
+        organization_id = request.user.organization
+    
         # APK, Android ZIP and iOS ZIP
         if scan_type in ['apk', 'zip']:
             resp, success = static_analyzer_android(md5=md5,
@@ -930,7 +944,7 @@ class ScanAppView(RetrieveAPIView):
         elif scan_type == 'ipa':
             resp, success = static_analyzer_ios_api(md5=md5,
                                                     scan_type=scan_type,
-                                                    filename=file_name,
+                       ~                             filename=file_name,
                                                     user_id=request.user,
                                                     organization_id=organization_id)
             if success == 'success':

@@ -39,7 +39,6 @@ from Kensa.views.api.views import (
     ReconURLsView, 
     ReconTrackersView, 
     ReconStringsView,
-    UploadAppView, 
     ScanAppView,
     DeleteScanView,
     GetRecentScansView,
@@ -49,7 +48,7 @@ from Kensa.views.api.views import (
     GetSearchView,
     PDFReportView, 
     JSONReportView,
-    SourceView
+    SourceView,
 )
 from Kensa.views import home
 
@@ -143,8 +142,7 @@ urlpatterns = [
     url(r'^dynamic_view_file/$', report.view_file),
 
     # REST API
-    url(r'^api/v1/upload$', UploadAppView.as_view()),
-    url(r'^api/v1/scan$', ScanAppView.as_view()),
+    url(r'^api/v1/upload_scan$', ScanAppView.as_view()),
     url(r'^api/v1/delete_scan$', DeleteScanView.as_view()),
     url(r'^api/v1/download_pdf$', PDFReportView.as_view()),
     url(r'^api/v1/report_json$', JSONReportView.as_view()),
