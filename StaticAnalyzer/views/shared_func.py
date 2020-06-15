@@ -106,7 +106,7 @@ def unzip(app_path, ext_path):
             except Exception:
                 logger.exception('Unzipping Error')
 
-def pdf(md5, system, jsonres=False):
+def pdf(organization, md5, system, jsonres=False):
     try:
         # Do Lookups
         context = None
@@ -127,6 +127,7 @@ def pdf(md5, system, jsonres=False):
         if settings.VT_ENABLED and ext != '.zip':
             app_bin = os.path.join(
                 settings.UPLD_DIR,
+                organization + '/',
                 md5 + '/',
                 md5 + ext)
             vt = VirusTotal.VirusTotal()

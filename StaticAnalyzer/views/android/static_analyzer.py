@@ -532,7 +532,7 @@ def static_analyzer(request, api=False):
             app_dic["app_name"] = filename  # APP ORGINAL NAME
             app_dic["md5"] = checksum  # MD5
             app_dic["app_dir"] = os.path.join(
-                settings.UPLD_DIR, app_dic["md5"] + "/"
+                settings.UPLD_DIR, request.user.organization + '/', app_dic["md5"] + "/"
             )  # APP DIRECTORY
             app_dic["tools_dir"] = os.path.join(
                 app_dic["dir"], "StaticAnalyzer/tools/"
@@ -989,7 +989,7 @@ def static_analyzer_android(scan_type, md5, filename, user_id, organization_id):
             app_dic['dir'] = settings.BASE_DIR  # BASE DIR
             app_dic['app_name'] = filename  # APP ORGINAL NAME
             app_dic['md5'] = md5  # MD5
-            app_dic['app_dir'] = os.path.join(settings.UPLD_DIR, app_dic[
+            app_dic['app_dir'] = os.path.join(settings.UPLD_DIR, organization_id + '/', app_dic[
                 'md5'] + '/')  # APP DIRECTORY
             app_dic['tools_dir'] = os.path.join(
                 app_dic['dir'], 'StaticAnalyzer/tools/')  # TOOLS DIR

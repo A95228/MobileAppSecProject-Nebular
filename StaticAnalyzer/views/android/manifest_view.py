@@ -27,7 +27,7 @@ def run(request):
                 (typ in ['eclipse', 'studio', 'apk']) and
                 (binary in ['1', '0'])):
             app_dir = os.path.join(
-                settings.UPLD_DIR, md5 + '/')  # APP DIRECTORY
+                settings.UPLD_DIR, request.user.organization + '/', md5 + '/')  # APP DIRECTORY
             tools_dir = os.path.join(
                 directory, 'StaticAnalyzer/tools/')  # TOOLS DIR
             if binary == '1':

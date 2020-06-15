@@ -988,7 +988,7 @@ class PDFReportView(RetrieveAPIView):  # working
         jsonres = request.GET.get("jsonres", None)
         if md5 is None:
             return make_api_response({"error": "Bad Request"}, BAD_REQUEST)
-        msg, err = pdf(md5, system, jsonres=jsonres)
+        msg, err = pdf(request.user.organization, md5, system, jsonres=jsonres)
         response = HttpResponse(msg["pdf_dat"], content_type="application/pdf")
         response["Access-Control-Allow-Origin"] = "*"
         return response

@@ -290,7 +290,8 @@ def delete_scan(request, api=False):
                     StaticAnalyzerIOS.objects.filter(MD5=md5_hash).delete()
                     StaticAnalyzerWindows.objects.filter(MD5=md5_hash).delete()
                     # Delete Upload Dir Contents
-                    app_upload_dir = os.path.join(settings.UPLD_DIR, md5_hash)
+                    sub_path = "{}/{}".format(request.user.organization, md5_hash)
+                    app_upload_dir = os.path.join(settings.UPLD_DIR, sub_path)
                     if is_dir_exists(app_upload_dir):
                         shutil.rmtree(app_upload_dir)
                     # Delete Download Dir Contents

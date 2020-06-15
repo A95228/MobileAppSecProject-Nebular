@@ -26,12 +26,12 @@ def run(request):
         java_files = []
         md5 = request.GET['md5']
         if typ == 'eclipse':
-            src = os.path.join(settings.UPLD_DIR, md5 + '/src/')
+            src = os.path.join(settings.UPLD_DIR, request.user.organization + '/', md5 + '/src/')
         elif typ == 'studio':
-            src = os.path.join(settings.UPLD_DIR, md5 +
+            src = os.path.join(settings.UPLD_DIR, request.user.organization + '/', md5 +
                                '/app/src/main/java/')
         elif typ == 'apk':
-            src = os.path.join(settings.UPLD_DIR, md5 + '/java_source/')
+            src = os.path.join(settings.UPLD_DIR, request.user.organization + '/', md5 + '/java_source/')
         else:
             return print_n_send_error_response(
                 request,
@@ -76,12 +76,12 @@ def api_run_java_code(request):
         java_files = []
         md5 = request.GET['md5']
         if typ == 'eclipse':
-            src = os.path.join(settings.UPLD_DIR, md5 + '/src/')
+            src = os.path.join(settings.UPLD_DIR, request.user.organization + '/', md5 + '/src/')
         elif typ == 'studio':
-            src = os.path.join(settings.UPLD_DIR, md5 +
+            src = os.path.join(settings.UPLD_DIR, request.user.organization + '/', md5 +
                                '/app/src/main/java/')
         elif typ == 'apk':
-            src = os.path.join(settings.UPLD_DIR, md5 + '/java_source/')
+            src = os.path.join(settings.UPLD_DIR, request.user.organization + '/', md5 + '/java_source/')
         else:
             return print_n_send_error_response(
                 request,

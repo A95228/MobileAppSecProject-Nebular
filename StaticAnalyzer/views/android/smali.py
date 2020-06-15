@@ -23,7 +23,7 @@ def run(request):
         if not match:
             return print_n_send_error_response(request, 'Scan hash not found')
         md5 = request.GET['md5']
-        src = os.path.join(settings.UPLD_DIR, md5 + '/smali_source/')
+        src = os.path.join(settings.UPLD_DIR, request.user.organization + '/', md5 + '/smali_source/')
         smali_files = []
         # pylint: disable=unused-variable
         # Needed by os.walk
@@ -61,7 +61,7 @@ def api_run_smali(request):
         if not match:
             return print_n_send_error_response(request, 'Scan hash not found')
         md5 = request.GET['md5']
-        src = os.path.join(settings.UPLD_DIR, md5 + '/smali_source/')
+        src = os.path.join(settings.UPLD_DIR, request.user.organization + '/', md5 + '/smali_source/')
         smali_files = []
         # pylint: disable=unused-variable
         # Needed by os.walk

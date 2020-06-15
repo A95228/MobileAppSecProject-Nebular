@@ -27,14 +27,15 @@ def add_to_recent_scan(name, md5, url, organization_id):
         logger.exception('Adding Scan URL to Database')
 
 
-def handle_uploaded_file(filecnt, typ):
+def handle_uploaded_file(filecnt, organization, typ):
     """Write Uploaded File."""
     md5 = hashlib.md5()  # modify if crash for large
     try:
         for chunk in filecnt.chunks():
             md5.update(chunk)
         md5sum = md5.hexdigest()
-        anal_dir = os.path.join(settings.UPLD_DIR, md5sum + '/')
+        sub_path = "{}/{}/".format(organization, md5sum)
+        anal_dir = os.path.join(settings.UPLD_DIR, sub_path)
         if not os.path.exists(anal_dir):
             os.makedirs(anal_dir)
         with open(anal_dir + md5sum + typ, 'wb+') as destination:
@@ -54,7 +55,7 @@ class Scanning(object):
 
     def scan_app(self, typ):
         exe_type = "." + typ
-        md5, resp = handle_uploaded_file(self.file, exe_type)
+        md5, resp = handle_uploaded_file(self.file, self.request.user.organization, exe_type)
         data = {
             # 'url': url,
             'status': resp,

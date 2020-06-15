@@ -69,7 +69,7 @@ def static_analyzer_ios(request, api=False):
             app_dict['file_name'] = filename  # APP ORGINAL NAME
             app_dict['md5_hash'] = checksum  # MD5
             app_dict['app_dir'] = os.path.join(
-                settings.UPLD_DIR, app_dict['md5_hash'] + '/')  # APP DIRECTORY
+                settings.UPLD_DIR, request.user.organization + '/', app_dict['md5_hash'] + '/')  # APP DIRECTORY
             tools_dir = os.path.join(
                 app_dict['directory'], 'StaticAnalyzer/tools/ios/')
             if file_type == 'ipa':
@@ -279,7 +279,7 @@ def static_analyzer_ios_api(scan_type, md5, filename, user_id, organization_id):
             app_dict['file_name'] = filename  # APP ORGINAL NAME
             app_dict['md5_hash'] = md5  # MD5
             app_dict['app_dir'] = os.path.join(
-                settings.UPLD_DIR, app_dict['md5_hash'] + '/')  # APP DIRECTORY
+                settings.UPLD_DIR, organization_id + '/', app_dict['md5_hash'] + '/')  # APP DIRECTORY
             tools_dir = os.path.join(
                 app_dict['directory'], 'StaticAnalyzer/tools/ios/')
             if scan_type == 'ipa':
