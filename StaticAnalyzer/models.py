@@ -7,7 +7,7 @@ from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import EmptyPage, Paginator, PageNotAnInteger
 
-
+from StaticAnalyzer.views.shared_func import score
 from users.models import User
 
 
@@ -157,10 +157,10 @@ class StaticAnalyzerAndroid(models.Model):
         return resp
 
     @classmethod
-    def get_single_or_none(cls, md5):
+    def get_single_or_none(cls, organization, md5):
         """Get a single model or None"""
         try:
-            return cls.objects.get(MD5=md5)
+            return cls.objects.get(ORGANIZATION=organization, MD5=md5)
         except (cls.DoesNotExist, ObjectDoesNotExist):
             return None
 
@@ -181,13 +181,14 @@ class StaticAnalyzerAndroid(models.Model):
             else:
                 icon_url = "img/no_icon.png"
             certificate_analysis = json.loads(scan_obj.CERTIFICATE_ANALYSIS)
+
             scan_info = {
                 "file_name": scan_obj.FILE_NAME,
                 "icon_url": icon_url,
                 "system": "android",
                 "date": scan_obj.DATE,
-                "certificate_status":
-                    certificate_analysis["certificate_status"] if certificate_analysis is not None else "",
+                "certificate_status": certificate_analysis[
+                    "certificate_status"] if certificate_analysis is not None else "",
                 "app_info": {
                     "file_name": scan_obj.FILE_NAME,
                     "size": scan_obj.SIZE,
@@ -203,15 +204,22 @@ class StaticAnalyzerAndroid(models.Model):
                     "version_name": scan_obj.VERSION_NAME,
                     "version_code": scan_obj.VERSION_CODE,
                 },
+                 "average_cvss": score(json.loads(scan_obj.CODE_ANALYSIS))[0],
+                 "security_score": score(json.loads(scan_obj.CODE_ANALYSIS))[1]
             }
+
+            code_analysis = json.loads(scan_obj.CODE_ANALYSIS)
+            t_issue = 0
+            for issue, details in code_analysis["items"]:
+                t_issue = t_issue + issue
             return scan_info
         except:
             return None
 
     @classmethod
-    def get_scan_info(cls, md5):
+    def get_scan_info(cls, organization, md5):
         try:
-            scan_obj = cls.objects.get(MD5=md5)
+            scan_obj = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             scan_info = cls.get_scan_info_from_obj(scan_obj)
             return scan_info
         except:
@@ -878,10 +886,10 @@ class StaticAnalyzerIOS(models.Model):
         return resp
 
     @classmethod
-    def get_single_or_none(cls, md5):
+    def get_single_or_none(cls, organization, md5):
         """Get a single model or None"""
         try:
-            return cls.objects.get(MD5=md5)
+            return cls.objects.get(ORGANIZATION=organization, MD5=md5)
         except (cls.DoesNotExist, ObjectDoesNotExist):
             return None
 

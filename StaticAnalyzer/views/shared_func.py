@@ -111,10 +111,10 @@ def pdf(organization, md5, system, jsonres=False):
         # Do Lookups
         context = None
         if system == 'android':
-            android_static_db = StaticAnalyzerAndroid.get_single_or_none(md5=md5)
+            android_static_db = StaticAnalyzerAndroid.get_single_or_none(organization=organization,md5=md5)
             context, template = handle_pdf_android(android_static_db)
         elif system =='ios':
-            ios_static_db = StaticAnalyzerIOS.objects.get_single_or_none(md5=md5)
+            ios_static_db = StaticAnalyzerIOS.objects.get_single_or_none(organization=organization, md5=md5)
             context, template = handle_pdf_ios(ios_static_db)
         elif system == 'windows':
             win_static_db = StaticAnalyzerWindows.objects.filter(MD5=md5)

@@ -998,8 +998,11 @@ def static_analyzer_android(scan_type, md5, filename, user_id, organization_id):
             if filename.lower().endswith('.apk'):
                 # Check if in DB
                 # pylint: disable=E1101
-                context = StaticAnalyzerAndroid.get_scan_info(md5)
+                context = StaticAnalyzerAndroid.get_scan_info(organization_id, md5)
                 if context is not None:
+                    context['average_cvss'], context[
+                        'security_score'] = score(context['code_analysis'])
+
                     return context, 'success'
                 app_dic['app_file'] = app_dic[
                                           'md5'] + '.apk'  # NEW FILENAME
