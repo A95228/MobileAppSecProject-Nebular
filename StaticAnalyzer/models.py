@@ -72,19 +72,23 @@ class RecentScansDB(models.Model):
                     if isinstance(_scan, StaticAnalyzerAndroid):
                         scan = StaticAnalyzerAndroid.get_scan_info_from_obj(_scan)
                         try:
-                            seco = StaticAnalyzerAndroid.get_security_overview(
-                                _scan.MD5
-                            )
+                            
+                            detected_trackers = eval(_scan.TRACKERS)['detected_trackers']
+                            total_trackers = eval(_scan.TRACKERS)["total_trackers"]
+                            anal_code = {"detected" : detected_trackers, "total" : total_trackers}
                         except:
-                            seco = ""
-                        toap = {"scan": scan, "seco": seco}
+                            anal_code = ""
+                        toap = {"scan": scan, "anal_code" : anal_code}
+
                     else:
                         scan = StaticAnalyzerIOS.get_scan_info_from_obj(_scan)
                         try:
-                            seco = StaticAnalyzerIOS.get_security_overview(_scan.MD5)
+                            anal_code = StaticAnalyzerAndroid.get_code_analysis_report(
+                                _scan.MD5
+                            )
                         except:
-                            seco = ""
-                        toap = {"scan": scan, "seco": seco}
+                            anal_code = ""
+                        toap = {"scan": scan, "anal_code" : anal_code}
                 except Exception as error:
                     recent_scans.append({})
                     continue
@@ -193,7 +197,7 @@ class StaticAnalyzerAndroid(models.Model):
         if md5s.count() == 0:
             return []
         return md5s
-
+    
     @classmethod
     def get_scan_info_from_obj(cls, scan_obj):
         try:
@@ -220,7 +224,7 @@ class StaticAnalyzerAndroid(models.Model):
                 "file_name": scan_obj.FILE_NAME,
                 "icon_url": icon_url,
                 "system": "android",
-                "date": scan_obj.DATE,
+                "date": str(scan_obj.DATE).__str__(),
                 "certificate_status": cert_stat,
                 "app_info": {
                     "file_name": scan_obj.FILE_NAME,
@@ -241,7 +245,7 @@ class StaticAnalyzerAndroid(models.Model):
             return scan_info
         except Exception as error:
             return None
-
+    
     @classmethod
     def get_scan_info(cls, md5):
         try:
@@ -504,6 +508,7 @@ class StaticAnalyzerAndroid(models.Model):
         except:
             logger.info("get_code_analysis error %s" % md5)
             return None
+
 
     @classmethod
     def get_code_analysis_report(cls, md5):
@@ -1145,7 +1150,7 @@ class StaticAnalyzerIOS(models.Model):
             code_analysis = eval(data_entry.CODE_ANALYSIS)
             code_high = code_good = code_warning = code_info = 0
             resp_code = []
-            for issue, details in code_analysis["items"]:
+            for issue, details in code_analysis.items():
                 if details["level"] == "high":
                     code_high = code_high + 1
                 elif details["level"] == "good":
