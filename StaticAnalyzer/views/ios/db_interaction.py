@@ -1,5 +1,7 @@
 """Module holding the functions for the db."""
 import logging
+import os
+import shutil
 
 from django.conf import settings
 
@@ -106,15 +108,16 @@ def get_context_from_analysis(app_dict,
     except Exception:
         logger.exception('Rendering to Template')
 
-
-def save_or_update(update_type,
-                   app_dict,
-                   info_dict,
-                   code_dict,
-                   bin_dict,
-                   all_files,
-                   user,
-                   organization):
+def save_or_update(
+        update_type,
+        app_dict,
+        info_dict,
+        code_dict,
+        bin_dict,
+        all_files,
+        user,
+        organization
+    ):
     """Save/Update an IPA/ZIP DB entry."""
     try:
         values = {
@@ -151,28 +154,79 @@ def save_or_update(update_type,
             'STRINGS': bin_dict['strings'],
             'FIREBASE_URLS': code_dict['firebase'],
             'APPSTORE_DETAILS': app_dict['appstore'],
-            "USER" : user,   # change to USER
-            "ORGANIZATION" : organization # change to ORGANIZATION
+            "USER" : user,
+            "ORGANIZATION" : organization 
         }
+
+
         if update_type == 'save':
-            logger.info("creating new ios scan")
+            logger.info("calling StaticAnalizerIOS.objects.create")
             scan_obj = StaticAnalyzerIOS.objects.create(**values)
-        else:
-            logger.info("upating new os scan")
-            scan_obj = StaticAnalyzerIOS.objects.filter(
-                MD5=app_dict['md5_hash']).update(**values)
-        try:
+
+            logger.info("updating RecentScansDB")
             values = {
                 'APP_NAME': info_dict['bin_name'],
                 'PACKAGE_NAME': info_dict['id'],
                 'VERSION_NAME': info_dict['bundle_version_name'],
             }
-            context = StaticAnalyzerIOS.get_scan_info_from_obj(scan_obj)
-            return context
-        except Exception as error:
+            RecentScansDB.objects.filter(MD5=app_dict['md5_hash']).update(**values)
+            logger.info("RecentScansDB entry %s updated" % app_dict["md5_hash"])
+
+            app_info = StaticAnalyzerIOS.get_scan_info_from_obj(scan_obj)
+
+            if app_info is not None:
+                return app_info
+
             return None
 
-    except Exception:
-        logger.exception('Updating DB')
+        else:
+            logger.info("updating StaticAnlaizerAndroid")
+            StaticAnalyzerIOS.objects.filter(MD5=app_dict['md5_hash']).update(**values)
+            logger.info("StaticAnalizerAndroid %s updated" % app_dict["md5_hash"])
+
+            logger.info("updating RecentScansDB")
+            values = {
+                'APP_NAME': info_dict['bin_name'],
+                'PACKAGE_NAME': info_dict['id'],
+                'VERSION_NAME': info_dict['bundle_version_name'],
+            }
+            RecentScansDB.objects.filter(MD5=app_dict['md5_hash']).update(**values)
+            logger.info("RecentScansDB entry %s updated" % app_dict["md5_hash"])
+
+            logger.info("Getting scan info from object scan_obj %s" % scan_obj.MD5)
+            scan_obj = StaticAnalyzerIOS.objects.get(MD5=app_dict["md5_hash"])
+            context = StaticAnalyzerIOS.get_scan_info_from_obj(scan_obj)
+            if context is not None:
+                return context
+
+        return None
+
+    except Exception as error:
+        import pdb
+        pdb.set_trace()
+        try:
+            logger.error('db_interaction.save_or_update failed.')
+
+            logger.info("removing entry from RecentScansDB")
+            RecentScansDB.objects.filter(MD5=app_dict['md5_hash']).delete()
+            logger.info("RecentScanDB entry deleted")
+
+            logger.info("Removing StaticAnalizerIOS scan")
+            StaticAnalyzerIOS.objects.filter(MD5=app_dict["md5_hash"]).delete()
+            logger.info("StaticAnalizerIOS scan %s removed" % app_dict["md5_hash"])
+
+            logger.info("removing %s from uploads" % app_dict["md5_hash"])
+            target = os.path.join(settings.UPLD_DIR, app_dict["md5_hash"])
+            
+            if os.path.exists(target):
+                logging.info("removing %s" % target)
+                shutil.rmtree(target)
+                logging.info("removed %s" % target)
+            else:
+                logging.info("upload directory %s does not exist" % target)
+        except:
+            return None
+        
+    return None
 
 

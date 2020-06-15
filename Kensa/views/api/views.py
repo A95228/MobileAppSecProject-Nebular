@@ -32,15 +32,9 @@ from StaticAnalyzer.models import (
 from StaticAnalyzer.views.android import view_source
 from StaticAnalyzer.views.android.java import api_run_java_code
 from StaticAnalyzer.views.android.smali import api_run_smali
-from StaticAnalyzer.views.android.static_analyzer import (
-    static_analyzer,
-    static_analyzer_android
-)
+from StaticAnalyzer.views.android.static_analyzer import static_analyzer_android
 from StaticAnalyzer.views.ios import view_source as ios_view_source
-from StaticAnalyzer.views.ios.static_analyzer import (
-    static_analyzer_ios,
-    static_analyzer_ios_api
-)
+from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios_api
 from StaticAnalyzer.views.shared_func import score, pdf
 from StaticAnalyzer.views.windows import windows
 
@@ -917,41 +911,47 @@ class ScanAppView(RetrieveAPIView):
             make_api_response({"error" : str(resp_error)}, 500)
     
         organization_id = request.user.organization
-    
-        # APK, Android ZIP and iOS ZIP
-        if scan_type in ['apk', 'zip']:
-            resp, success = static_analyzer_android(md5=md5,
-                                                    scan_type=scan_type,
-                                                    filename=file_name,
-                                                    user_id=request.user,
-                                                    organization_id=organization_id)
-            if success == 'success':
-                return make_api_response(resp, OK)
-            elif success == 'err':
-                return make_api_response(resp, INTERNAL_SERVER_ERR)
-            elif success == 'ios':
-                # For now it's only ios_zip
-                resp, success = static_analyzer_ios_api(md5=md5,
+
+        try:
+            # APK, Android ZIP and iOS ZIP
+            if scan_type in ['apk', 'zip']:
+                resp, code = static_analyzer_android(md5=md5,
                                                         scan_type=scan_type,
                                                         filename=file_name,
                                                         user_id=request.user,
                                                         organization_id=organization_id)
-                if success == 'success':
+                if code == 200:
+                    if resp is None:
+                        resp = {"success" : "cant retreive data"}
                     return make_api_response(resp, OK)
-                else:
+            
+                elif code == 500:
+                    if resp is None:
+                        resp = {"error" : "error saving to database"}
                     return make_api_response(resp, INTERNAL_SERVER_ERR)
-        # IPA
-        elif scan_type == 'ipa':
-            resp, success = static_analyzer_ios_api(md5=md5,
-                                                    scan_type=scan_type,
-                                                    filename=file_name,
-                                                    user_id=request.user,
-                                                    organization_id=organization_id)
-            if success == 'success':
-                return make_api_response(resp, OK)
-            else:
-                
-                return make_api_response(resp, INTERNAL_SERVER_ERR)
+    
+                elif code == 'ios':
+                    # For now it's only ios_zip
+                    resp, code = static_analyzer_ios_api(md5=md5,
+                                                            scan_type=scan_type,
+                                                            filename=file_name,
+                                                            user_id=request.user,
+                                                            organization_id=organization_id)
+                    if code == 200:
+                        return make_api_response(resp, OK)
+                    else:
+                        return make_api_response(resp, OK)
+            # IPA
+            elif scan_type == 'ipa':
+                resp, code = static_analyzer_ios_api(md5=md5,
+                                                        scan_type=scan_type,
+                                                        filename=file_name,
+                                                        user_id=request.user,
+                                                        organization_id=organization_id)
+                if code == 200:
+                    return make_api_response(resp, code)
+                else:
+                    return make_api_response(resp, 500)
         # # APPX
         # elif scan_type == 'appx':
         #     resp = windows.staticanalyzer_windows(request, True)
@@ -959,6 +959,12 @@ class ScanAppView(RetrieveAPIView):
         #         response = make_api_response(resp, 500)
         #     else:
         #         response = make_api_response(resp, 200)
+            else:
+                pdb.set_trace()
+            pdb.set_trace()
+        except Exception as error:
+            pdb.set_trace()
+        return make_api_response({"error" : "error updating and saving scan"}, 500)
 
 
 class DeleteScanView(RetrieveAPIView):

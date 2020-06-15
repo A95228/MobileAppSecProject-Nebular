@@ -60,7 +60,7 @@ class Scanning(object):
         md5 = handle_uploaded_file(self.file, '.apk')
         url = 'StaticAnalyzer/?name={}&type=apk&checksum={}'.format(
             self.file_name, md5)
-
+        
         data = {
             'url': url,
             'status': 'success',
@@ -99,6 +99,7 @@ class Scanning(object):
 
     def scan_ipa(self):
         """IOS Binary."""
+        
         logger.info("Scanning.scan_ipa() starting execution.")
         md5 = handle_uploaded_file(self.file, '.ipa')
         url = 'StaticAnalyzer_iOS/?name={}&type=ipa&checksum={}'.format(

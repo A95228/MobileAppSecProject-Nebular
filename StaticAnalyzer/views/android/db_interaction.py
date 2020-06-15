@@ -1,15 +1,16 @@
 # -*- coding: utf_8 -*-
 import logging
+import os
+import shutil
 
 from django.conf import settings
 from django.db.models import QuerySet
-
+from django.conf import settings
 from Kensa.utils import python_dict, python_list
 
 from StaticAnalyzer.models import StaticAnalyzerAndroid
 from StaticAnalyzer.models import RecentScansDB
 
-"""Module holding the functions for the db."""
 
 
 logger = logging.getLogger(__name__)
@@ -245,23 +246,74 @@ def save_or_update(update_type,
         }
 
         if update_type == 'save':
+            logger.info("calling StaticAnalizerAndroid.objects.create")
             scan_obj = StaticAnalyzerAndroid.objects.create(**values)
-        else:
-            scan_obj = StaticAnalyzerAndroid.objects.filter(
-                MD5=app_dic['md5']).update(**values)
-        values = {
-            'APP_NAME': app_dic['real_name'],
-            'PACKAGE_NAME': man_data_dic['packagename'],
-            'VERSION_NAME': man_data_dic['androvername'],
-        }
-        RecentScansDB.objects.filter(
-            MD5=app_dic['md5']).update(**values)
 
-        context = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
-        return context
+            logger.info("updating RecentScansDB")
+            values = {
+                'APP_NAME': app_dic['real_name'],
+                'PACKAGE_NAME': man_data_dic['packagename'],
+                'VERSION_NAME': man_data_dic['androvername'],
+            }
+            RecentScansDB.objects.filter(MD5=app_dic['md5']).update(**values)
+            logger.info("RecentScansDB entry %s updated" % app_dic["md5"])
+
+            app_info = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
+
+            if app_info is None:
+                return {"error" : "error getting scan info from obj %s" % app_dic["md5"]}, 500
+            else:
+                return app_info, 200
+
+            return {"error" : "error getting scan info from obj %s" % app_dic["md5"]}, 500
+
+        else:
+            logger.info("updating StaticAnlaizerAndroid")
+            StaticAnalyzerAndroid.objects.filter(MD5=app_dic['md5']).update(**values)
+            logger.info("StaticAnalizerAndroid %s updated" % app_dic["md5"])
+
+            logger.info("updating RecentScansDB")
+            values = {
+                'APP_NAME': app_dic['real_name'],
+                'PACKAGE_NAME': man_data_dic['packagename'],
+                'VERSION_NAME': man_data_dic['androvername'],
+            }
+            RecentScansDB.objects.filter(MD5=app_dic['md5']).update(**values)
+            logger.info("RecentScansDB entry %s updated" % app_dic["md5"])
+
+            logger.info("Getting scan info from object scan_obj %s" % scan_obj.MD5)
+            scan_obj = StaticAnalyzerAndroid.objects.get(MD5=app_dic["md5"])
+            context = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
+        
+        if context is not None:
+            return context, 200
+    
+        return {"error" : "error getting scan info"}, 500
+    
     except Exception as error:
-        error = str(error)
-        import pdb
-        pdb.set_trace()
-        logger.exception('Updating DB')
-    return None
+        logger.error('db_interaction.save_or_update failed.')
+
+        logger.info("removing entry from RecentScansDB")
+        RecentScansDB.objects.filter(MD5=app_dic['md5']).delete()
+        logger.info("RecentScanDB entry deleted")
+
+        logger.info("Removing StaticAnalizerAndroid scan")
+        StaticAnalyzerAndroid.objects.filter(MD5=app_dic["md5"]).delete()
+        logger.info("StaticAnalizerAndroid scan %s removed" % app_dic["md5"])
+
+        logger.info("removing %s from uploads" % app_dic["md5"])
+        target = os.path.join(settings.UPLD_DIR, app_dic["md5"])
+        
+        try:
+            if os.path.exists(target):
+                logging.info("removing %s" % target)
+                shutil.rmtree(target)
+                logging.info("removed %s" % target)
+            else:
+                logging.info("upload directory %s does not exist" % target)
+        except:
+            return {"error" : "save_or_update failed"}, 500
+
+        return {"error" : "save_or_update failed"}, 500
+    
+    return {"error" : "save_or_update failed"}, 500

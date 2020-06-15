@@ -14,6 +14,11 @@ from users.models import User
 logger = logging.getLogger(__name__)
 
 
+class StaticAnalyzer(models.Model):
+    """Base Static Analyzer Model"""
+    pass
+
+
 class RecentScansDB(models.Model):
     FILE_NAME = models.CharField(max_length=260)
     MD5 = models.CharField(max_length=32)
@@ -44,9 +49,10 @@ class RecentScansDB(models.Model):
         }
         return resp
 
-
     @classmethod
     def get_recent_scans(cls, organization_id):
+        """Get recent scans from StaticAnalizer models"""
+
         scans = [
             StaticAnalyzerAndroid.objects.filter(
                 ORGANIZATION=organization_id).order_by("-DATE"),
@@ -54,19 +60,34 @@ class RecentScansDB(models.Model):
                 ORGANIZATION=organization_id
             ).order_by("-DATE")
         ]
+
         recent_scans = []
-        for scan_type in scans:
-            if scan_type.count() == 0:
+        for queryset in scans:
+            if queryset.count() == 0:
                 continue
-            for scan in scan_type:
-                if isinstance(scan, StaticAnalyzerAndroid):
-                    scan = StaticAnalyzerAndroid.get_scan_info_from_obj(scan)
-                else:
-                    scan = StaticAnalyzerIOS.get_scan_info_from_obj(scan)
-                recent_scans.append(scan)
+            for _scan in queryset:
+                try:
+                    if isinstance(_scan, StaticAnalyzerAndroid):
+                        scan = StaticAnalyzerAndroid.get_scan_info_from_obj(_scan)
+                        try:
+                            seco = StaticAnalyzerAndroid.get_security_overview(_scan.MD5)
+                        except:
+                            seco = ''
+                        toap = {"scan" : scan, "seco" : seco}
+                    else:
+                        scan = StaticAnalyzerIOS.get_scan_info_from_obj(_scan)
+                        try:
+                            seco = StaticAnalyzerIOS.get_security_overview(_scan.MD5)
+                        except:
+                            seco = ''
+                        toap = {"scan" : scan, seco : seco}
+                except:
+                    recent_scans.append({})
+                    continue
+                recent_scans.append(toap)
         return recent_scans
 
-    
+
 
 class StaticAnalyzerAndroid(models.Model):
     # Relational Fields
@@ -119,8 +140,7 @@ class StaticAnalyzerAndroid(models.Model):
 
     @classmethod
     def cook_scan(cls, **kwargs):
-        """Create a scan and store it to 
-        database -- do sanity checks here."""
+        """Create a scan and store it to database -- do sanity checks here."""
         if "USER" not in kwargs:
             return False
         if "ORGANIZATION" not in kwargs:
@@ -182,16 +202,17 @@ class StaticAnalyzerAndroid(models.Model):
             try:
                 ca = scan_obj.CERTIFICATE_ANALYSIS
                 try:
-                    cert_stat = eval(ca)["certificate_status"]
+                    ca = eval(ca)
+                    cert_stat = ca["certificate_status"]
                 except KeyError:
                     cert_stat = ""
                 except TypeError:
                     cert_stat = ca
                 except:
                     cert_stat = "" 
-            except AttributeError:
+            except:
                 cert_stat = ""
-                
+        
             scan_info = {
                 "file_name": scan_obj.FILE_NAME,
                 "icon_url": icon_url,
@@ -199,20 +220,20 @@ class StaticAnalyzerAndroid(models.Model):
                 "date": scan_obj.DATE,
                 "certificate_status": cert_stat,
                 "app_info": {
-                    "file_name": scan_obj.FILE_NAME,
-                    "size": scan_obj.SIZE,
-                    "md5": scan_obj.MD5,
-                    "sha1": scan_obj.SHA1,
-                    "sha256": scan_obj.SHA256,
-                    "app_name": scan_obj.APP_NAME,
-                    "package_name": scan_obj.PACKAGE_NAME,
-                    "main_activity": scan_obj.MAIN_ACTIVITY,
-                    "target_sdk": scan_obj.TARGET_SDK,
-                    "max_sdk": scan_obj.MAX_SDK,
-                    "min_sdk": scan_obj.MIN_SDK,
-                    "version_name": scan_obj.VERSION_NAME,
-                    "version_code": scan_obj.VERSION_CODE,
-                },
+                    'file_name': scan_obj.FILE_NAME,
+                    'size': scan_obj.SIZE,
+                    'md5': scan_obj.MD5,
+                    'sha1': scan_obj.SHA1,
+                    'sha256': scan_obj.SHA256,
+                    'app_name': scan_obj.APP_NAME,
+                    'package_name': scan_obj.PACKAGE_NAME,
+                    'main_activity': scan_obj.MAIN_ACTIVITY,
+                    'target_sdk': scan_obj.TARGET_SDK,
+                    'max_sdk': scan_obj.MAX_SDK,
+                    'min_sdk': scan_obj.MIN_SDK,
+                    'version_name': scan_obj.VERSION_NAME,
+                    'version_code': scan_obj.VERSION_CODE
+                }
             }
             return scan_info
         except Exception as error:
@@ -491,7 +512,7 @@ class StaticAnalyzerAndroid(models.Model):
             code_analysis = eval(data_entry.CODE_ANALYSIS)
             code_high = code_good = code_warning = code_info = 0
             resp_code = []
-            for issue, details in code_analysis["items"]:
+            for issue, details in code_analysis.items():
                 if details["level"] == "high":
                     code_high = code_high + 1
                 elif details["level"] == "good":
@@ -522,7 +543,8 @@ class StaticAnalyzerAndroid(models.Model):
                 },
                 "list": resp_code,
             }
-        except:
+        except Exception as error:
+            logger.error(str(error))
             logger.info("get_code_analysis error %s" % md5)
             return None
 
@@ -913,7 +935,7 @@ class StaticAnalyzerIOS(models.Model):
             }
             return app_info
         except:
-            logger.info("error get_app_info of %s" % md5)
+            logger.info("error get_app_info %s" % md5)
             return None
 
 
@@ -923,19 +945,12 @@ class StaticAnalyzerIOS(models.Model):
             if scan_obj.ICON_FOUND:
                 icon_url = "/download/{0}-icon.png".format(scan_obj.MD5)
             else:
-                icon_url = 'img/no_icon.png'
+                icon_url = 'img/no_icon.png'                
             scan_info = {
                 'file_name': scan_obj.FILE_NAME,
                 'icon_url': icon_url,
                 'date': scan_obj.DATE,
-                'app_info': {
-                    'file_name': scan_obj.FILE_NAME,
-                    'size': scan_obj.SIZE,
-                    'md5': scan_obj.MD5,
-                    'sha1': scan_obj.SHA1,
-                    'sha256': scan_obj.SHA256,
-                    'app_name': scan_obj.APP_NAME,
-                }
+                'app_info': cls.get_app_info(scan_obj.MD5)
             }
             return scan_info
         except:
