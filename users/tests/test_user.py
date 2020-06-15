@@ -82,7 +82,7 @@ class TestUserApiKeys(BaseTest):
         self.assertIsNotNone(user_api_key)
 
     def test_c_changing_user_api_key(self):
-        """Test trying to change the api key"""
+        """Test trying to change the api key on save()"""
         old_key = self.user.api_key
         new_key = "**this-is-a-n3w-key**"
         self.user.api_key = new_key
@@ -110,7 +110,7 @@ class TestUserUpdatingPassword(BaseTest):
         time.sleep(1.5)
 
     def test_b_updating_password_with_current_password(self):
-        """Test updating password with current password"""
+        """Test updating passwords and validators"""
 
         status, drop = self.user.update_password(
             self.user_data["password"], self.user.pk

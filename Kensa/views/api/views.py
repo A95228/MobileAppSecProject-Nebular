@@ -944,12 +944,13 @@ class ScanAppView(RetrieveAPIView):
         elif scan_type == 'ipa':
             resp, success = static_analyzer_ios_api(md5=md5,
                                                     scan_type=scan_type,
-                       ~                             filename=file_name,
+                                                    filename=file_name,
                                                     user_id=request.user,
                                                     organization_id=organization_id)
             if success == 'success':
                 return make_api_response(resp, OK)
             else:
+                
                 return make_api_response(resp, INTERNAL_SERVER_ERR)
         # # APPX
         # elif scan_type == 'appx':

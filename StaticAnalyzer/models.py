@@ -47,27 +47,26 @@ class RecentScansDB(models.Model):
 
     @classmethod
     def get_recent_scans(cls, organization_id):
-        scans = cls.objects.filter(ORGANIZATION_ID=organization_id).order_by("-TIMESTAMP")
-        if scans.count() == 0:
-            return None
-        scans_values = scans.values(
-            "APP_NAME",
-            "FILE_NAME",
-            "TIMESTAMP",
-            "MD5",
-            "PACKAGE_NAME",
-            "URL",
-            "VERSION_NAME"
-        )
-        try:
-            to_return = list(scans_values)
-        except Exception as e:
-            e = str(e) + " Sending back None"
-            logger.warning(msg=e)
-            return None
-        else:
-            return to_return
+        scans = [
+            StaticAnalyzerAndroid.objects.filter(
+                ORGANIZATION=organization_id).order_by("-DATE"),
+            StaticAnalyzerIOS.objects.filter(
+                ORGANIZATION=organization_id
+            ).order_by("-DATE")
+        ]
+        recent_scans = []
+        for scan_type in scans:
+            if scan_type.count() == 0:
+                continue
+            for scan in scan_type:
+                if isinstance(scan, StaticAnalyzerAndroid):
+                    scan = StaticAnalyzerAndroid.get_scan_info_from_obj(scan)
+                else:
+                    scan = StaticAnalyzerIOS.get_scan_info_from_obj(scan)
+                recent_scans.append(scan)
+        return recent_scans
 
+    
 
 class StaticAnalyzerAndroid(models.Model):
     # Relational Fields
@@ -145,7 +144,6 @@ class StaticAnalyzerAndroid(models.Model):
         except EmptyPage:
             activities = paginator.page(paginator.num_pages)
         except Exception as e:
-            pdb.set_trace()
             return None
 
         resp = {
@@ -180,17 +178,26 @@ class StaticAnalyzerAndroid(models.Model):
                 icon_url = "/download/{0}-icon.png".format(scan_obj.MD5)
             else:
                 icon_url = "img/no_icon.png"
-            certificate_analysis = scan_obj.CERTIFICATE_ANALYSIS
+    
+            try:
+                ca = scan_obj.CERTIFICATE_ANALYSIS
+                try:
+                    cert_stat = eval(ca)["certificate_status"]
+                except KeyError:
+                    cert_stat = ""
+                except TypeError:
+                    cert_stat = ca
+                except:
+                    cert_stat = "" 
+            except AttributeError:
+                cert_stat = ""
+                
             scan_info = {
                 "file_name": scan_obj.FILE_NAME,
                 "icon_url": icon_url,
                 "system": "android",
                 "date": scan_obj.DATE,
-                "certificate_status": certificate_analysis[
-                    "certificate_status"
-                ]
-                if certificate_analysis is not None
-                else "",
+                "certificate_status": cert_stat,
                 "app_info": {
                     "file_name": scan_obj.FILE_NAME,
                     "size": scan_obj.SIZE,
@@ -208,7 +215,7 @@ class StaticAnalyzerAndroid(models.Model):
                 },
             }
             return scan_info
-        except:
+        except Exception as error:
             return None
 
     @classmethod
@@ -880,6 +887,61 @@ class StaticAnalyzerIOS(models.Model):
         }
         return resp
 
+
+    @classmethod
+    def get_app_info(cls, md5):
+        """Get's application information, or returns None."""
+        logger.info("ios get_app_info of %s" % md5)
+        try:
+            db_entry = cls.objects.get(MD5=md5)
+            app_info = {
+                "file_name": db_entry.FILE_NAME,
+                "size": db_entry.SIZE,
+                "md5": db_entry.MD5,
+                "sha1": db_entry.SHA1,
+                "sha256": db_entry.SHA256,
+                "app_name": db_entry.APP_NAME,
+                "app_type": db_entry.APP_TYPE,
+                "identifier": db_entry.BUNDLE_ID,
+                "version": db_entry.APP_VERSION,
+                "build": db_entry.BUILD,
+                "platform": db_entry.PLATFORM,
+                "min_os_version": db_entry.MIN_OS_VERSION,
+                "supported_platform": eval(
+                    db_entry.BUNDLE_SUPPORTED_PLATFORMS
+                ),
+            }
+            return app_info
+        except:
+            logger.info("error get_app_info of %s" % md5)
+            return None
+
+
+    @classmethod
+    def get_scan_info_from_obj(cls, scan_obj):
+        try:
+            if scan_obj.ICON_FOUND:
+                icon_url = "/download/{0}-icon.png".format(scan_obj.MD5)
+            else:
+                icon_url = 'img/no_icon.png'
+            scan_info = {
+                'file_name': scan_obj.FILE_NAME,
+                'icon_url': icon_url,
+                'date': scan_obj.DATE,
+                'app_info': {
+                    'file_name': scan_obj.FILE_NAME,
+                    'size': scan_obj.SIZE,
+                    'md5': scan_obj.MD5,
+                    'sha1': scan_obj.SHA1,
+                    'sha256': scan_obj.SHA256,
+                    'app_name': scan_obj.APP_NAME,
+                }
+            }
+            return scan_info
+        except:
+            return None
+
+
     @classmethod
     def get_single_or_none(cls, md5):
         """Get a single model or None"""
@@ -991,34 +1053,6 @@ class StaticAnalyzerIOS(models.Model):
             return None
         return {"strings": cls.paginate(strings, page)}
 
-    @classmethod
-    def get_app_info(cls, md5):
-        """Get's application information, or returns None."""
-        logger.info("ios get_app_info of %s" % md5)
-        try:
-            db_entry = cls.objects.get(MD5=md5)
-            app_info = {
-                "file_name": db_entry.FILE_NAME,
-                "size": db_entry.SIZE,
-                "md5": db_entry.MD5,
-                "sha1": db_entry.SHA1,
-                "sha256": db_entry.SHA256,
-                "app_name": db_entry.APP_NAME,
-                "app_type": db_entry.APP_TYPE,
-                "identifier": db_entry.BUNDLE_ID,
-                "sdk_name": db_entry.SDK_NAME,
-                "version": db_entry.APP_VERSION,
-                "build": db_entry.BUILD,
-                "platform": db_entry.PLATFORM,
-                "min_os_version": db_entry.MIN_OS_VERSION,
-                "supported_platform": eval(
-                    db_entry.BUNDLE_SUPPORTED_PLATFORMS
-                ),
-            }
-            return app_info
-        except:
-            logger.info("error get_app_info of %s" % md5)
-            return None
 
     @classmethod
     def get_app_store(cls, md5):
@@ -1136,42 +1170,6 @@ class StaticAnalyzerIOS(models.Model):
             }
         except:
             logger.info("get_code_analysis error %s" % md5)
-            return None
-
-
-    @classmethod
-    def get_scan_info_from_obj(cls, scan_obj):
-        try:
-            if scan_obj.ICON_FOUND:
-                icon_url = "/download/{0}-icon.png".format(scan_obj.MD5)
-            else:
-                icon_url = 'img/no_icon.png'
-            certificate_analysis = scan_obj.CERTIFICATE_ANALYSIS
-            scan_info = {
-                'file_name': scan_obj.FILE_NAME,
-                'icon_url': icon_url,
-                'system': 'android',
-                'date': scan_obj.DATE,
-                'certificate_status':
-                    certificate_analysis['certificate_status'] if certificate_analysis is not None else '',
-                'app_info': {
-                    'file_name': scan_obj.FILE_NAME,
-                    'size': scan_obj.SIZE,
-                    'md5': scan_obj.MD5,
-                    'sha1': scan_obj.SHA1,
-                    'sha256': scan_obj.SHA256,
-                    'app_name': scan_obj.APP_NAME,
-                    'package_name': scan_obj.PACKAGE_NAME,
-                    'main_activity': scan_obj.MAIN_ACTIVITY,
-                    'target_sdk': scan_obj.TARGET_SDK,
-                    'max_sdk': scan_obj.MAX_SDK,
-                    'min_sdk': scan_obj.MIN_SDK,
-                    'version_name': scan_obj.VERSION_NAME,
-                    'version_code': scan_obj.VERSION_CODE
-                }
-            }
-            return scan_info
-        except:
             return None
 
 
@@ -1393,39 +1391,7 @@ class StaticAnalyzerIOS(models.Model):
         except:
             return None
 
-    @classmethod
-    def get_scan_info_from_obj(cls, scan_obj):
-        """Get's information from a scan or returns None"""
-        try:
-            if scan_obj.ICON_FOUND:
-                icon_url = "/download/{}-icon.png".format(scan_obj.MD5)
-            else:
-                icon_url = "img/no_icon.png"
-            scan_info = {
-                "file_name": scan_obj.FILE_NAME,
-                "icon_url": icon_url,
-                "system": "ios",
-                "date": scan_obj.DATE,
-                "app_info": {
-                    "file_name": scan_obj.FILE_NAME,
-                    "size": scan_obj.SIZE,
-                    "md5": scan_obj.MD5,
-                    "sha1": scan_obj.SHA1,
-                    "sha256": scan_obj.SHA256,
-                    "app_name": scan_obj.APP_NAME,
-                    "app_type": scan_obj.APP_TYPE,
-                    "identifier": scan_obj.BUNDLE_ID,
-                    "sdk_name": scan_obj.SDK_NAME,
-                    "version": scan_obj.APP_VERSION,
-                    "build": scan_obj.BUILD,
-                    "platform": scan_obj.PLATFORM,
-                    "min_os_version": scan_obj.MIN_OS_VERSION,
-                    "supported_platform": scan_obj.BUNDLE_SUPPORTED_PLATFORMS,
-                },
-            }
-            return scan_info
-        except:
-            return None
+
 
 
 class StaticAnalyzerWindows(models.Model):
@@ -1450,3 +1416,4 @@ class StaticAnalyzerWindows(models.Model):
     STRINGS = models.TextField()
     BINARY_ANALYSIS = models.TextField()
     BINARY_WARNINGS = models.TextField()
+

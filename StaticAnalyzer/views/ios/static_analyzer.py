@@ -390,20 +390,27 @@ def static_analyzer_ios_api(scan_type, md5, filename, user_id, organization_id):
                 }
                 # Saving to DB
                 logger.info('Updating Database...')
-                context = save_or_update(
-                    'save',
-                    app_dict,
-                    infoplist_dict,
-                    code_analysis_dic,
-                    fake_bin_dict,
-                    all_files,
-                    user_id,
-                    organization_id
-                )
-                update_scan_timestamp(app_dict['md5_hash'])
-                if context is not None:
-                    return context, 'success'
-                return {'err': 'Updating Database err'}, 'err'
+                try:
+                    context = save_or_update(
+                        'save',
+                        app_dict,
+                        infoplist_dict,
+                        code_analysis_dic,
+                        fake_bin_dict,
+                        all_files,
+                        user_id,
+                        organization_id
+                    )
+                    logger.info("save or update called on ios")
+                    update_scan_timestamp(app_dict['md5_hash'])
+                    logger.info("updated scan timestamp")
+                    if context is not None:
+                        logger.info("update succeded")
+                        return context, 'success'
+                    
+                    return {'err': 'Updating Database err'}, 'err'
+                except Exception as error:
+                    return {'err' : "Updating to Database err"}, 'err'
 
             else:
                 msg = 'File Type not supported!'

@@ -259,6 +259,9 @@ def save_or_update(update_type,
 
         context = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
         return context
-    except Exception:
+    except Exception as error:
+        error = str(error)
+        import pdb
+        pdb.set_trace()
         logger.exception('Updating DB')
     return None

@@ -155,19 +155,24 @@ def save_or_update(update_type,
             "ORGANIZATION" : organization # change to ORGANIZATION
         }
         if update_type == 'save':
+            logger.info("creating new ios scan")
             scan_obj = StaticAnalyzerIOS.objects.create(**values)
         else:
+            logger.info("upating new os scan")
             scan_obj = StaticAnalyzerIOS.objects.filter(
                 MD5=app_dict['md5_hash']).update(**values)
-        values = {
-            'APP_NAME': info_dict['bin_name'],
-            'PACKAGE_NAME': info_dict['id'],
-            'VERSION_NAME': info_dict['bundle_version_name'],
-        }
-        RecentScansDB.objects.filter(
-            MD5=app_dict['md5_hash']).update(**values)
-        context = StaticAnalyzerIOS.get_scan_info_from_obj(scan_obj)
-        return context
+        try:
+            values = {
+                'APP_NAME': info_dict['bin_name'],
+                'PACKAGE_NAME': info_dict['id'],
+                'VERSION_NAME': info_dict['bundle_version_name'],
+            }
+            context = StaticAnalyzerIOS.get_scan_info_from_obj(scan_obj)
+            return context
+        except Exception as error:
+            return None
+
     except Exception:
         logger.exception('Updating DB')
+
 

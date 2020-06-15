@@ -11,8 +11,9 @@ from django.contrib.auth.decorators import permission_required
 
 logger = logging.getLogger(__name__)
 
+
 def add_to_recent_scan(name, md5, url, organization_id):
-    """Add Entry to Database under Recent Scan."""
+    """Add Entry to Database under RecentScanDB."""
     try:
         db_obj = RecentScansDB.objects.filter(MD5=md5)
         if not db_obj.exists():
@@ -26,6 +27,7 @@ def add_to_recent_scan(name, md5, url, organization_id):
     except Exception:
         logger.exception('Adding Scan URL to Database')
 
+
 def handle_uploaded_file(filecnt, typ):
     """Write Uploaded File."""
     md5 = hashlib.md5()  # modify if crash for large
@@ -35,6 +37,7 @@ def handle_uploaded_file(filecnt, typ):
     anal_dir = os.path.join(settings.UPLD_DIR, md5sum + '/')
     if not os.path.exists(anal_dir):
         os.makedirs(anal_dir)
+    
     with open(anal_dir + md5sum + typ, 'wb+') as destination:
         for chunk in filecnt.chunks():
             destination.write(chunk)
@@ -42,16 +45,22 @@ def handle_uploaded_file(filecnt, typ):
 
 
 class Scanning(object):
+    """Scanner that handles uploaded file 
+    and adds to recent stans db."""
 
     def __init__(self, request):
         self.request = request
         self.file = request.FILES['file']
         self.file_name = request.FILES['file'].name
+
+
     def scan_apk(self):
         """Android APK."""
+        logger.info("scan_ipa() called.")
         md5 = handle_uploaded_file(self.file, '.apk')
         url = 'StaticAnalyzer/?name={}&type=apk&checksum={}'.format(
             self.file_name, md5)
+
         data = {
             'url': url,
             'status': 'success',
@@ -60,12 +69,16 @@ class Scanning(object):
             'file_name': self.file_name,
         }
 
-        add_to_recent_scan(self.file_name, md5, data['url'], self.request.user.organization)
+        add_to_recent_scan(self.file_name, md5, data['url'], 
+            self.request.user.organization)
+        logger.info('Scanning scan_apk() finished execution.')
 
-        logger.info('Performing Static Analysis of Android APK')
         return data
+
+
     def scan_zip(self):
         """Android /iOS Zipped Source."""
+        logging.info("Scanning.scan_zip() starting execution.")
         md5 = handle_uploaded_file(self.file, '.zip')
         url = 'StaticAnalyzer/?name={}&type=zip&checksum={}'.format(
             self.file_name, md5)
@@ -77,11 +90,16 @@ class Scanning(object):
             'file_name': self.file_name,
         }
 
-        add_to_recent_scan(self.file_name, md5, data['url'], self.request.user.organization)
-        logger.info('Performing Static Analysis of Android/iOS Source Code')
+        add_to_recent_scan(self.file_name, md5, data['url'], 
+            self.request.user.organization)
+        logger.info('Scanning.scan_zip() finished execution.')
+
         return data
+
+
     def scan_ipa(self):
         """IOS Binary."""
+        logger.info("Scanning.scan_ipa() starting execution.")
         md5 = handle_uploaded_file(self.file, '.ipa')
         url = 'StaticAnalyzer_iOS/?name={}&type=ipa&checksum={}'.format(
             self.file_name, md5)
@@ -92,10 +110,14 @@ class Scanning(object):
             'url': url,
             'status': 'success',
         }
+        
+        add_to_recent_scan(self.file_name, md5, data['url'], 
+            self.request.user.organization)
+        logger.info('Scanning.scan_ipa() finished execution.')
 
-        add_to_recent_scan(self.file_name, md5, data['url'], self.request.user.organization)
-        logger.info('Performing Static Analysis of iOS IPA')
         return data
+
+
     def scan_appx(self):
         """Windows appx."""
         md5 = handle_uploaded_file(self.file, '.appx')
@@ -110,4 +132,5 @@ class Scanning(object):
         }
         add_to_recent_scan(self.file_name, md5, data['url'], self.request.user.organization)
         logger.info('Performing Static Analysis of Windows APP')
+        
         return data
