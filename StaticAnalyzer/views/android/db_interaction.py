@@ -1,4 +1,5 @@
 # -*- coding: utf_8 -*-
+import json
 import logging
 
 from django.conf import settings
@@ -47,7 +48,7 @@ def get_context_from_db_entry(db_entry: QuerySet) -> dict:
             'icon_hidden': db_entry[0].ICON_HIDDEN,
             'icon_found': db_entry[0].ICON_FOUND,
             'permissions': python_dict(db_entry[0].PERMISSIONS),
-            'certificate_analysis': python_dict(
+            'certificate_analysis': json.loads(
                 db_entry[0].CERTIFICATE_ANALYSIS),
             'manifest_analysis': python_list(db_entry[0].MANIFEST_ANALYSIS),
             'binary_analysis': python_list(db_entry[0].BINARY_ANALYSIS),
@@ -101,7 +102,7 @@ def get_android_context(static_db)->dict:
             'icon_hidden': static_db.ICON_HIDDEN,
             'icon_found': static_db.ICON_FOUND,
             'permissions': python_dict(static_db.PERMISSIONS),
-            'certificate_analysis': python_dict(
+            'certificate_analysis': json.loads(
                 static_db.CERTIFICATE_ANALYSIS),
             'manifest_analysis': python_list(static_db.MANIFEST_ANALYSIS),
             'binary_analysis': python_list(static_db.BINARY_ANALYSIS),
@@ -223,7 +224,7 @@ def save_or_update(update_type,
             'VERSION_CODE': man_data_dic['androver'],
             'ICON_HIDDEN': app_dic['icon_hidden'],
             'ICON_FOUND': app_dic['icon_found'],
-            'CERTIFICATE_ANALYSIS': cert_dic,
+            'CERTIFICATE_ANALYSIS': json.dumps(cert_dic),
             'PERMISSIONS': man_an_dic['permissons'],
             'MANIFEST_ANALYSIS': man_an_dic['manifest_anal'],
             'BINARY_ANALYSIS': bin_anal,
@@ -254,10 +255,11 @@ def save_or_update(update_type,
             'PACKAGE_NAME': man_data_dic['packagename'],
             'VERSION_NAME': man_data_dic['androvername'],
         }
+        context = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
+
         RecentScansDB.objects.filter(
             MD5=app_dic['md5']).update(**values)
 
-        context = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
         return context
     except Exception:
         logger.exception('Updating DB')

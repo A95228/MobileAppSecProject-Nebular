@@ -266,7 +266,6 @@ def static_analyzer_ios(request, api=False):
             return print_n_send_error_response(request, msg, False, exp_doc)
 
 
-
 def static_analyzer_ios_api(scan_type, md5, filename, user_id, organization_id):
     """Module that performs iOS IPA/ZIP Static Analysis."""
     try:

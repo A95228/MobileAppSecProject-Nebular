@@ -267,6 +267,16 @@ def run_process(args):
         return ''
 
 
+def remove_directory(dir_path):
+    # anal_dir = os.path.join(settings.UPLD_DIR, md5sum + '/')
+    try:
+        shutil.rmtree(dir_path)
+        return True
+    except OSError as e:
+        print("Error: %s : %s" % (dir_path, e.strerror))
+        return False
+
+
 def print_n_send_error_response(request,
                                 msg,
                                 api=False,

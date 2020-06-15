@@ -909,13 +909,10 @@ class ScanAppView(RetrieveAPIView):
         if code != 200:
             return make_api_response({"error" : "error uploading file"}, 500)
 
-        try:
-            scan_type = resp["scan_type"]
-            md5 = resp["hash"]
-            file_name = resp["file_name"]
-        except KeyError as resp_error:
-            make_api_response({"error" : str(resp_error)}, 500)
-    
+        scan_type = resp["scan_type"]
+        md5 = resp["hash"]
+        file_name = resp["file_name"]
+
         organization_id = request.user.organization
     
         # APK, Android ZIP and iOS ZIP
@@ -944,7 +941,7 @@ class ScanAppView(RetrieveAPIView):
         elif scan_type == 'ipa':
             resp, success = static_analyzer_ios_api(md5=md5,
                                                     scan_type=scan_type,
-                       ~                             filename=file_name,
+                                                    filename=file_name,
                                                     user_id=request.user,
                                                     organization_id=organization_id)
             if success == 'success':

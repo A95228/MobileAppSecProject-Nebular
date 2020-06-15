@@ -180,17 +180,14 @@ class StaticAnalyzerAndroid(models.Model):
                 icon_url = "/download/{0}-icon.png".format(scan_obj.MD5)
             else:
                 icon_url = "img/no_icon.png"
-            certificate_analysis = scan_obj.CERTIFICATE_ANALYSIS
+            certificate_analysis = json.loads(scan_obj.CERTIFICATE_ANALYSIS)
             scan_info = {
                 "file_name": scan_obj.FILE_NAME,
                 "icon_url": icon_url,
                 "system": "android",
                 "date": scan_obj.DATE,
-                "certificate_status": certificate_analysis[
-                    "certificate_status"
-                ]
-                if certificate_analysis is not None
-                else "",
+                "certificate_status":
+                    certificate_analysis["certificate_status"] if certificate_analysis is not None else "",
                 "app_info": {
                     "file_name": scan_obj.FILE_NAME,
                     "size": scan_obj.SIZE,
@@ -1146,7 +1143,7 @@ class StaticAnalyzerIOS(models.Model):
                 icon_url = "/download/{0}-icon.png".format(scan_obj.MD5)
             else:
                 icon_url = 'img/no_icon.png'
-            certificate_analysis = scan_obj.CERTIFICATE_ANALYSIS
+            certificate_analysis = json.loads(scan_obj.CERTIFICATE_ANALYSIS)
             scan_info = {
                 'file_name': scan_obj.FILE_NAME,
                 'icon_url': icon_url,

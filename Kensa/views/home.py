@@ -133,17 +133,9 @@ class Upload(object):
             'file_name': data['file_name'],
         }
         if data["status"] == "success":
-            add_to_recent_scan(
-                data["file_name"], 
-                data["hash"], 
-                data["url"], 
-                self.request.user.organization
-            )
-            logger.info("RecentScanDB was updated")
             return api_response, 200
         else:
-            return JsonResponse({"status" : "scan failed"}, 400)
-
+            return {}, 500
 
     def upload(self):
         request = self.request
@@ -153,14 +145,15 @@ class Upload(object):
 
         logger.info('MIME Type: %s FILE: %s', file_type, file_name_lower)
         if self.file_type.is_apk():
-            return scanning.scan_apk()
+            return scanning.scan_app('apk')
         elif self.file_type.is_zip():
-            return scanning.scan_zip()
+            return scanning.scan_app('zip')
         elif self.file_type.is_ipa():
-            return scanning.scan_ipa()
+            return scanning.scan_app('ipa')
         # Windows APPX
         elif self.file_type.is_appx():
-            return scanning.scan_appx()
+            return scanning.scan_app('appx')
+
 
 def api_docs(request):
     """Api Docs Route."""
