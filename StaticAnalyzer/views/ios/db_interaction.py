@@ -1,4 +1,5 @@
 """Module holding the functions for the db."""
+import json
 import logging
 
 from django.conf import settings
@@ -141,7 +142,7 @@ def save_or_update(update_type,
             'ATS_ANALYSIS': info_dict['inseccon'],
             'BINARY_ANALYSIS': bin_dict['bin_res'],
             'IOS_API': code_dict['api'],
-            'CODE_ANALYSIS': code_dict['code_anal'],
+            'CODE_ANALYSIS': json.dumps(code_dict['code_anal']),
             'FILE_ANALYSIS': all_files['special_files'],
             'LIBRARIES': bin_dict['libs'],
             'FILES': all_files['files_short'],

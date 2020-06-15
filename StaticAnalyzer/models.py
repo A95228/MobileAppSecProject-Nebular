@@ -7,11 +7,34 @@ from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import EmptyPage, Paginator, PageNotAnInteger
 
-from StaticAnalyzer.views.shared_func import score
+from StaticAnalyzer.views.rules_properties import Level
 from users.models import User
 
 
 logger = logging.getLogger(__name__)
+
+def score(findings):
+    # Score Apps based on AVG CVSS Score
+    cvss_scores = []
+    avg_cvss = 0
+    app_score = 100
+    for _, finding in findings.items():
+        if 'cvss' in finding:
+            if finding['cvss'] != 0:
+                cvss_scores.append(finding['cvss'])
+        if finding['level'] == Level.high.value:
+            app_score = app_score - 15
+        elif finding['level'] == Level.warning.value:
+            app_score = app_score - 10
+        elif finding['level'] == Level.good.value:
+            app_score = app_score + 5
+    if cvss_scores:
+        avg_cvss = round(sum(cvss_scores) / len(cvss_scores), 1)
+    if app_score < 0:
+        app_score = 10
+    elif app_score > 100:
+        app_score = 100
+    return avg_cvss, app_score
 
 
 class RecentScansDB(models.Model):
