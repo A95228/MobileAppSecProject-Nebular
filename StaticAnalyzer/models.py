@@ -208,10 +208,10 @@ class StaticAnalyzerAndroid(models.Model):
                  "security_score": score(json.loads(scan_obj.CODE_ANALYSIS))[1]
             }
 
-            code_analysis = json.loads(scan_obj.CODE_ANALYSIS)
-            t_issue = 0
-            for issue, details in code_analysis["items"]:
-                t_issue = t_issue + issue
+            # code_analysis = json.loads(scan_obj.CODE_ANALYSIS)
+            # t_issue = 0
+            # for issue, details in code_analysis["items"]:
+            #     t_issue = t_issue + issue
             return scan_info
         except:
             return None
