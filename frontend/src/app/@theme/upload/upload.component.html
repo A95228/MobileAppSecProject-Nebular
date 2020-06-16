@@ -1,0 +1,12 @@
+<div class="center">
+  <div class="drop-zone" ngFileDrop [options]="options" (uploadOutput)="onUploadOutput($event)" [uploadInput]="uploadInput" [ngClass]="{ 'is-drop-over': dragOver }">
+    <span>Drag and drop to upload</span>
+    <img src="assets/images/upload.png">
+    <div class="select-file">
+      <label type="button" class="upload-button">
+        <input class="invisible" type="file" ngFileSelect [options]="options" (uploadOutput)="onUploadOutput($event)" [uploadInput]="uploadInput" multiple>
+        <span>Select File</span>
+      </label>
+    </div>
+  </div>
+</div>

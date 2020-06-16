@@ -1,0 +1,17 @@
+<div class="top-nav-guide"><span>{{ title }}</span></div>
+
+<div class="row">
+  <div class="col-xxxl-12 col-xxl-12 col-md-12">
+    <div *ngIf="empty" class="recent-scans-empty">
+      <div class="empty-span"><span>Empty</span></div>
+      <div class="bottom-span">
+        <div class="nothing"><span>Notting scanned, yet</span></div>
+        <div class="nothing-bottom"><span>You can start scaning by uploading your file in the scanning area</span></div>
+      </div>
+
+    </div>
+    <div *ngIf="!empty" class="recent-scans">
+      <ngx-recent-scan [recentScans]="recentScans"></ngx-recent-scan>
+    </div>
+  </div>
+</div>

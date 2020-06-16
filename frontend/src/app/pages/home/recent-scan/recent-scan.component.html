@@ -1,0 +1,37 @@
+<nb-card *ngFor="let recentScan of recentScans">
+  <div class="report">
+    <div class="image click" routerLink="/pages/summary/{{ recentScan.md5 }}">
+      <img [src]="recentScan.image_link" width="80px" height="80px">
+    </div>
+    <div class="app-info click" routerLink="/pages/summary/{{ recentScan.md5 }}">
+      <div class="app-system"><span>
+          <mat-icon aria-hidden="false">android</mat-icon>
+        </span></div>
+      <div class="app-details">
+        <div class="app-title"><span>{{ recentScan.app_name }}</span></div>
+        <div class="app-version"><span>{{ recentScan.version_name }}.{{ recentScan.file_name }}</span></div>
+        <div class="app-update"><span>{{ recentScan.timestamp_formated }}</span></div>
+      </div>
+    </div>
+    <div class="app-errors">
+      <div class="app-errors-count"><span>129</span></div>
+      <div class="app-errors-issues"><span>issues</span></div>
+    </div>
+    <div class="chart">
+      <div class="chart-spans">
+        <div class="chart-span"><span>5.9</span></div>
+        <div class="cvss"><span>CVSS</span></div>
+      </div>
+      <ngx-charts-pie-chart [scheme]="colorScheme" [view]="view" [doughnut]="true" [results]="single">
+      </ngx-charts-pie-chart>
+    </div>
+    <div class="app-scores">
+      <div class="app-score"><span>Security Score</span><span class="score">22/100</span></div>
+      <div class="app-score"><span>Trackers Detection</span><span class="score">20/293</span></div>
+    </div>
+    <div class="scan-action">
+      <mat-icon aria-hidden="false">more_vert</mat-icon>
+      <button type="button" name="button">Bad</button>
+    </div>
+  </div>
+</nb-card>

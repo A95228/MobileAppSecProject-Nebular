@@ -1,0 +1,315 @@
+<!--<nb-sidebar state="expanded" class="menu-sidebar-scan" tag="nbmenu" fixed>
+  <div class="container">
+      <ul class="nav navbar-nav" routerLinkActive="active">
+         <li class="nav-item"><a class="nav-link" routerLink="summary/{{ md5 }}">Summary</a></li>
+         <li class="nav-item"><a class="nav-link" routerLink="summary/{{ md5 }}">Security</a></li>
+         <li class="nav-item"><a class="nav-link" routerLink="summary/{{ md5 }}">Summary</a></li>
+         <li class="nav-item"><a class="nav-link" routerLink="summary/{{ md5 }}">Summary</a></li>
+
+     </ul>
+  </div>
+</nb-sidebar>-->
+<div class="top-action">
+  <div class="top-action-container">
+    <button (click)="toggleNewScan()" class="new_scan">New Scan</button>
+    <button class="view_dc">View Dynamic Scan</button>
+    <button [nbContextMenu]="items" class="export">Export Report</button>
+  </div>
+</div>
+<nb-sidebar tag="summary-right" class="info-sidebard" state="collapsed" right fixed>
+  <div class="section infos">
+    <div class="header">
+      <div (click)="toggleRight()" class="close">
+        <mat-icon aria-hidden="false">close</mat-icon>
+      </div>
+      <span>App Information</span>
+      <div class="line"></div>
+    </div>
+    <div class="content">
+      <div class="img-name">
+        <img src="assets/images/zoom-logo.png">
+        <div class="app-name"><span>Zoom.Us</span></div>
+      </div>
+      <div class="app-infos-sidebar">
+        <div class="app-info-sidebar">
+          <div class="title"><span>App Name</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>File Name</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>File Size</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Package Name</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Main Activity</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Target SDK</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Min SDK</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Max SDK</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Android Version Name</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Android Version Code</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="section appstore">
+    <div class="header">
+      <span>Playstore Information</span>
+      <div class="line"></div>
+    </div>
+    <div class="content">
+      <div class="img-name">
+      </div>
+      <div class="app-infos-sidebar general">
+        <div class="app-info-sidebar">
+          <div class="title"><span>Title</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Score</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Price</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Category</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Play Store URL</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+      </div>
+      <div class="app-infos-sidebar dev">
+        <div class="app-info-sidebar">
+          <div class="title"><span>Developer</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Developer ID</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Developer Address</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Developer Website</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Developer Email</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Release Date</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Privacy Policy</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="section certif">
+    <div class="header">
+      <span>Signer Certificat</span>
+      <div class="line"></div>
+    </div>
+    <div class="content">
+      <div class="img-name">
+      </div>
+      <div class="app-infos-sidebar">
+        <div class="app-info-sidebar">
+          <div class="app-encryp"><span>SHA512</span></div>
+          <div class="app-encryp"><span>SHA256</span></div>
+          <div class="app-encryp"><span>SHA1</span></div>
+          <div class="app-encryp"><span>MD5</span></div>
+        </div>
+
+        <div class="app-info-sidebar">
+          <div class="title remove-weight"><span>APK is signed</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title remove-weight"><span>v1 signature: True</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title remove-weight"><span>v2 signature: False</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title remove-weight"><span>v3 signature: False</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title remove-weight"><span>Found 1 unique certificates</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+        <div class="clear"></div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Certificate Status</span></div>
+          <div class="content">
+            <div class="button-desc"><span>Good</span></div>
+          </div>
+        </div>
+        <div class="app-info-sidebar">
+          <div class="title"><span>Description</span></div>
+          <div class="content"><span>App Name</span></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</nb-sidebar>
+<nb-sidebar tag="java-right" class="info-sidebard" state="collapsed" right fixed>
+  <div class="section infos">
+    <div class="header">
+      <div (click)="toggleRightJava()" class="close">
+        <mat-icon aria-hidden="false">close</mat-icon>
+      </div>
+      <span>Java Classe</span>
+      <div class="line"></div>
+    </div>
+    <div class="content">
+
+    </div>
+  </div>
+</nb-sidebar>
+<nb-sidebar tag="samali-right" class="info-sidebard" state="collapsed" right fixed>
+  <div class="section infos">
+    <div class="header">
+      <div (click)="toggleRightSamali()" class="close">
+        <mat-icon aria-hidden="false">close</mat-icon>
+      </div>
+      <span>Samali Code</span>
+      <div class="line"></div>
+    </div>
+    <div class="content">
+
+    </div>
+  </div>
+</nb-sidebar>
+<div class="backdrop" (click)="toggleRightSamali()" *ngIf="backdropSamali"></div>
+<div class="backdrop" (click)="toggleRightJava()" *ngIf="backdropJava"></div>
+<div class="backdrop" (click)="toggleRight()" *ngIf="backdrop"></div>
+<div class="row">
+  <div class="col-9">
+    <nb-card>
+      <div class="row">
+        <div class="col-2">
+          <div class="app-logo">
+            <img src="assets/images/zoom-logo.png">
+            <div class="app-name"><span>Zoom.Us</span></div>
+          </div>
+
+        </div>
+        <div class="col-6">
+          <div class="app-infos">
+            <div class="app-info">
+              <div class="title">File Name</div>
+              <div class="content">Zoom.us _v260.0.0.22.122.apk</div>
+            </div>
+            <div class="app-info">
+              <div class="title">System</div>
+              <div class="content">
+                <mat-icon aria-hidden="false">android</mat-icon>
+              </div>
+            </div>
+            <div class="app-info">
+              <div class="title">Date</div>
+              <div class="content">May, 15, 2020</div>
+            </div>
+            <div class="app-info">
+              <div class="title">Certificat Status</div><button>good</button>
+              <div (click)="toggleRight()" class="more-app-info"><span>More app info</span>
+                <mat-icon aria-hidden="false">play_arrow</mat-icon>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="chart">
+            <div class="chart-spans">
+              <div class="chart-span"><span>6.5</span></div>
+              <div class="cvss"><span>CVSS</span></div>
+            </div>
+            <ngx-charts-pie-chart [scheme]="colorScheme" [view]="view" [doughnut]="true" [results]="single">
+            </ngx-charts-pie-chart>
+            <div class="chart-infos">
+              <div class="chart-info">
+                <div class="circle high"></div>
+                <div class="sev">High</div>
+              </div>
+              <div class="chart-info">
+                <div class="circle medium"></div>
+                <div class="sev">Medium</div>
+              </div>
+              <div class="chart-info">
+                <div class="circle low"></div>
+                <div class="sev">Low</div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </nb-card>
+  </div>
+  <div class="col-3">
+    <nb-card class="decompile">
+      <h3>Decompiled Code</h3>
+      <div class="decompiled">
+        <div class="decompiled-title"><span>Java</span></div>
+        <div class="decompiled-actions">
+          <img class="img-search" src="source/images/search.png">
+          <div class="span-search" (click)="toggleRightJava()"><span>View</span></div>
+          <img class="img-download" src="source/images/download.png">
+          <div class="span-download"><span>Download</span></div>
+        </div>
+      </div>
+      <div class="decompiled">
+        <div class="decompiled-title"><span>Samali</span></div>
+        <div class="decompiled-actions">
+          <img class="img-search" src="source/images/search.png">
+          <div class="span-search" (click)="toggleRightSamali()"><span>View</span></div>
+          <img class="img-download" src="source/images/download.png">
+          <div class="span-download"><span>Download</span></div>
+        </div>
+      </div>
+      <div class="decompile-button-container">
+        <div class="decompile-button">
+          <span>View AndroidManifest.xml</span>
+        </div>
+      </div>
+    </nb-card>
+
+  </div>
+</div>

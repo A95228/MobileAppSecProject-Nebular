@@ -1,0 +1,243 @@
+@import '../../@theme/styles/themes';
+@import '~bootstrap/scss/mixins/breakpoints';
+@import '~@nebular/theme/styles/global/breakpoints';
+@import '~@angular/material/prebuilt-themes/indigo-pink.css';
+@include nb-install-component() {
+  nb-card {
+    padding: 22px 0;
+  }
+
+  ::ng-deep nb-tabset .tabset {
+    border-bottom: none;
+  }
+
+  table {
+    width: 100%;
+    box-shadow: none;
+  }
+
+  td,
+  th {
+    border-bottom: 1px solid #EBEFF2;
+    border-top: none;
+    padding-top: 18px;
+  }
+
+  ::ng-deep thead tr {
+    height: 36px;
+  }
+
+  ::ng-deep thead tr th {
+    color: #334D6E;
+    font-family: "IBM Plex Sans";
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 20px;
+  }
+
+  ::ng-deep tbody tr {
+    height: 112px;
+    color: #192A3E;
+    font-family: "IBM Plex Sans";
+    font-size: 15px;
+    font-weight: 300;
+    letter-spacing: 0.1px;
+    line-height: 23px;
+  }
+
+  ::ng-deep nb-tab {
+    padding: 1rem 0;
+  }
+
+  ::ng-deep nb-tabset {
+    width: 100%;
+    border-radius: 4px;
+    background-color: #FFFFFF;
+  }
+
+  ::ng-deep nb-tabset .tab {
+  }
+
+  ::ng-deep nb-tabset .tab .tab-link {
+    font-family: "IBM Plex Sans";
+    font-size: 16px;
+    letter-spacing: 0;
+    line-height: 0;
+    font-weight: 400;
+    border-radius: 22px;
+    color: #334D6E;
+  }
+
+  ::ng-deep nb-tabset .tab.active .tab-link,
+  ::ng-deep nb-tabset .tab:hover .tab-link {
+    background-color: #007BFF;
+    color: #FFFFFF;
+  }
+  ::ng-deep nb-tabset .tab .tab-link{
+    margin: 1rem 1rem 1rem 0.6rem;
+    height: 31px;
+    width: 96%;
+    padding: 1rem 2rem;
+  }
+  ::ng-deep nb-tabset .tab a::before {
+    display: none !important;
+  }
+
+  ::ng-deep nb-tabset .tab a span {
+    position: relative;
+    right: -15px;
+    /* font-weight: 400; */
+    text-transform: none;
+    line-height: 0;
+  }
+
+  ::ng-deep nb-tabset .tab nb-badge {
+    left: 0.6rem;
+        top: 1rem;
+        right: unset;
+        border-radius: 16px;
+        height: 31px;
+        width: 31px;
+        cursor: pointer;
+        color: #FFFFFF;
+        font-family: "IBM Plex Sans";
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 0;
+        line-height: 25px;
+        text-align: center;
+        background-color: #334D6E;
+  }
+
+  ::ng-deep nb-tabset .tab.active nb-badge,
+  ::ng-deep nb-tabset .tab:hover nb-badge {
+    background-color: #007BFF;
+    color: #FFFFFF;
+  }
+
+  ::ng-deep td.mat-cell:first-of-type,
+  ::ng-deep td.mat-footer-cell:first-of-type,
+  ::ng-deep th.mat-header-cell:first-of-type {
+    padding-left: 14px;
+    width: 15%;
+    position: relative;
+  }
+  .table.codeanalysis ::ng-deep .mat-column-issue{
+      width: 20%
+  }
+  .severity-render {
+    height: 22px;
+    width: 56px;
+    border-radius: 4px;
+    color: #FFFFFF;
+    font-family: "IBM Plex Sans";
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    line-height: 22px;
+    text-align: center;
+  }
+
+  .severity-render.High {
+    background-color: #F7685B;
+  }
+
+  .severity-render.Low {}
+
+  .severity-render.Medium {}
+
+  .issues-sep {
+    display: flex;
+    margin-left: 22px;
+  }
+
+  .issue-sep {
+    display: flex;
+    height: 23px;
+  }
+
+  .issue-sep mat-icon {
+    font-size: 10px;
+    opacity: 0.5;
+    margin-right: 11px;
+    margin-left: 0;
+    height: 10px;
+    width: 10px;
+    margin-bottom: 2px;
+  }
+
+  ::ng-deep nb-select button {
+    padding: 0 0 !important;
+    width: 30px;
+    min-width: 40px;
+    color: #109CF1 !important;
+  }
+
+  ::ng-deep .filter-option,
+  ::ng-deep nb-select button {
+    font-family: "IBM Plex Sans" !important;
+    font-size: 12px !important;
+    letter-spacing: 0.1px !important;
+    line-height: 18px !important;
+  }
+
+  ::ng-deep nb-select.appearance-outline.status-basic .select-button:focus {
+    background-color: #FFFFFF;
+    border: none;
+  }
+
+  .issue-sep.high mat-icon {
+    color: #B12316;
+  }
+
+  .issue-sep.medium mat-icon {
+    color: #F7685B;
+  }
+
+  .issue-sep.low mat-icon {
+    color: #FFB946;
+  }
+
+  .issue-sep .issue-count {
+    width: 55px;
+    color: #192A3E;
+    font-family: "IBM Plex Sans";
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.07px;
+    line-height: 12px;
+  }
+
+  .filter {
+    position: absolute;
+    right: 5px;
+    top: 16px;
+  }
+  .file-button{
+    color: #FFFFFF;
+font-family: "IBM Plex Sans";
+font-size: 11px;
+font-weight: 500;
+letter-spacing: 0.2px;
+line-height: 20px;
+text-align: center;
+height: 22px;
+width: 90px;
+border-radius: 4px;
+background-color: #109CF1;
+  }
+  .cvss{
+    height: 31px;
+width: 31px;
+  background-color: #F7BA5B;
+  border-radius: 16px;
+  color: #FFFFFF;
+ font-family: "IBM Plex Sans";
+ font-size: 16px;
+ font-weight: 600;
+ letter-spacing: 0;
+ line-height: 26px;
+ text-align: center;
+  }
+}

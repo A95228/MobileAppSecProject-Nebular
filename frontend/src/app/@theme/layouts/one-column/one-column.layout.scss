@@ -1,0 +1,152 @@
+@import '../../styles/themes';
+@import '~bootstrap/scss/mixins/breakpoints';
+@import '~@nebular/theme/styles/global/breakpoints';
+@include nb-install-component() {
+  nb-layout-column {
+    margin-top: 60px;
+  }
+
+  .menu-sidebar ::ng-deep .scrollable {
+    padding: 22px;
+  }
+
+  .logo {
+    padding: 22px 51px;
+    font-size: 1.75rem;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+
+  .logo img {
+    width: 114px;
+    height: 27px;
+  }
+
+  .search {
+    height: 40px;
+    width: 191px;
+    position: relative;
+    margin: 22px 13px;
+  }
+
+  .upload {
+    position: relative;
+  }
+
+  .upload h2 {
+    color: #334D6E;
+    font-family: "IBM Plex Sans";
+    font-size: 25px;
+    letter-spacing: 0;
+    line-height: 33px;
+    text-align: center;
+    font-weight: 400;
+  }
+
+  .upload h3 {
+    width: 171px;
+    margin-left: 22px;
+    color: #4C5862;
+    font-family: "IBM Plex Sans";
+    font-size: 13px;
+    letter-spacing: 0.1px;
+    line-height: 20px;
+    font-weight: 400;
+  }
+
+  .search input,
+  .search input:focus,
+  .search input:hover {
+    height: 40px;
+    width: 191px;
+    border-radius: 4px;
+    background-color: #ECECEC;
+    color: #707683;
+    font-family: "IBM Plex Sans";
+    font-size: 12px;
+    letter-spacing: 0.1px;
+    line-height: 18px;
+    padding: 11px 4px 11px 41px;
+    border: none;
+    outline: none;
+  }
+
+  .search mat-icon {
+    position: absolute;
+    font-size: 16px;
+    left: 19px;
+    top: 12px;
+  }
+
+  .top-nav {
+    height: 60px;
+    background-color: #ffffff;
+    margin: -2.25rem -2.25rem -0.75rem;
+  }
+
+  ::ng-deep .top-nav-guide {
+    height: 60px;
+    background-color: #ffffff;
+    margin: -2.25rem -2.25rem -0.75rem;
+  }
+
+  ::ng-deep .top-nav-guide span {
+    height: 25px;
+    width: 74px;
+    color: #334D6E;
+    font-family: "IBM Plex Sans";
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 25px;
+    position: relative;
+    left: 50px;
+    top: 18px;
+  }
+
+  ::ng-deep nav.fixed {
+    border-bottom: 1px solid #809AAD;
+    box-shadow: unset;
+    height: 60px;
+  }
+
+  nb-layout-header {
+    padding-left: 16rem !important;
+  }
+
+  ::ng-deep .layout-container {
+    padding-top: 0 !important;
+  }
+
+  ::ng-deep nb-sidebar {
+    z-index: 9990 !important;
+  }
+
+  ::ng-deep nb-sidebar.menu-sidebar-scan {
+    z-index: 9990 !important;
+  }
+
+  ::ng-deep nb-sidebar .main-container-fixed {
+    top: 22px !important;
+  }
+
+  ::ng-deep nb-sidebar .main-container {
+    height: 100vh !important;
+    width: 16rem !important;
+  }
+
+  ::ng-deep nb-sidebar nb-menu {
+    margin: 4.25rem -1.25rem -1.25rem;
+  }
+
+  ::ng-deep nb-sidebar.menu-sidebar-scan {
+    z-index: 9999 !important;
+    top: 150px !important;
+    border-top: none !important;
+    border-bottom: none !important;
+  }
+
+  ::ng-deep nb-sidebar.menu-sidebar-scan .main-container.main-container-fixed {
+    position: relative;
+  }
+}

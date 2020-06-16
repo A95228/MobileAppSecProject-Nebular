@@ -1,0 +1,210 @@
+@import '../../../@theme/styles/themes';
+@import '~bootstrap/scss/mixins/breakpoints';
+@import '~@nebular/theme/styles/global/breakpoints';
+@include nb-install-component() {
+  .click {
+    cursor: pointer;
+  }
+
+  nb-card {
+    margin-top: 41px;
+    height: 120px;
+    border-radius: 4px;
+    background-color: #FFFFFF;
+    box-shadow: 0 0 16px 0 rgba(0,0,0,0.14);
+  }
+
+  ::ng-deep .ngx-charts {
+    margin-top: -26px;
+  }
+
+  .report {
+    margin: 22px;
+    display: flex;
+    position: relative;
+  }
+
+  .report > .image {
+    margin-right: 24px;
+  }
+
+  .report > .app-info {
+    margin-right: 1rem;
+  }
+
+  .report > .app-errors {
+    margin-right: 1rem;
+  }
+
+  .report > .scan-action {
+    float: right;
+    position: absolute;
+    right: 0;
+    height: 80px;
+  }
+
+  .app-system mat-icon {
+    font-size: 30px;
+    line-height: 80px;
+    color: #8f9bb3;
+    height: 60px;
+    width: 60px;
+  }
+
+  .app-info {
+    display: flex;
+  }
+
+  .app-title {
+    height: 25px;
+    color: #000000;
+    font-family: "IBM Plex Sans";
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 25px;
+  }
+
+  .app-version {
+    width: 180px;
+    color: #2C2C2C;
+    word-break: break-all;
+    font-family: "IBM Plex Sans";
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 25px;
+  }
+
+  .app-update {
+    height: 20px;
+    color: #4C5862;
+    font-family: "IBM Plex Sans";
+    font-size: 13px;
+    letter-spacing: 0.1px;
+    line-height: 20px;
+  }
+
+  .app-details {
+    margin-top: 7px;
+  }
+
+  .app-errors {
+    height: 67px;
+    margin-top: 7px;
+  }
+
+  .app-errors-count {
+    height: 58px;
+    color: #2C2C2C;
+    font-family: "IBM Plex Sans";
+    font-size: 45px;
+    font-weight: bold;
+    letter-spacing: 0;
+    line-height: 58px;
+    text-align: center;
+  }
+
+  .app-errors-issues {
+    height: 10px;
+    color: #A4ABB1;
+    font-family: "IBM Plex Sans";
+    font-size: 8px;
+    letter-spacing: 0;
+    line-height: 10px;
+    text-align: center;
+  }
+
+  .chart {
+    position: relative;
+    width: 140px;
+  }
+
+  .chart-spans {
+    position: absolute;
+    top: 16px;
+    width: 130px;
+    text-align: center;
+    z-index: 0;
+  }
+
+  .chart-spans span {
+    height: 56.64px;
+    color: #2C2C2C;
+    font-family: "IBM Plex Sans";
+    font-size: 30px;
+    font-weight: bold;
+    letter-spacing: -2.01px;
+    line-height: 39px;
+    text-align: center;
+  }
+
+  ngx-charts-pie-chart {
+    position: relative;
+    z-index: 9;
+  }
+
+  .chart-spans .cvss span {
+    color: #A4ABB1;
+    font-family: "IBM Plex Sans";
+    font-size: 8px;
+    letter-spacing: 0;
+    line-height: 10px;
+    text-align: center;
+    position: relative;
+    top: -11px;
+  }
+
+  .app-scores {
+    margin-top: 20px;
+    padding-left: 10px;
+  }
+
+  .app-score {
+    height: 30px;
+    width: 190px;
+  }
+
+  .app-score span {
+    color: #2C2C2C;
+    font-family: "IBM Plex Sans";
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 0;
+    line-height: 25px;
+    float: left;
+  }
+
+  .app-score span.score {
+    color: #7B7B7B;
+    font-family: "IBM Plex Sans";
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 25px;
+    float: right;
+  }
+
+  .scan-action mat-icon {
+    color: #8f9bb3;
+    cursor: pointer;
+  }
+
+  .scan-action button {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    border: none;
+    height: 22px;
+    width: 56px;
+    border-radius: 4px;
+    background-color: #F7685B;
+    color: #FFFFFF;
+    font-family: "IBM Plex Sans";
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    line-height: 16px;
+    text-align: center;
+  }
+}

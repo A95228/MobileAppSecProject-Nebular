@@ -1,0 +1,505 @@
+<div class="top-nav-guide"><span>{{ title }}</span></div>
+
+<div class="row">
+  <div class="col-xxxl-12 col-xxl-12 col-md-12">
+    <nb-card>
+      <nb-card-header>
+        <div class="support-title">
+          <span>Rest Api Docs</span>
+        </div>
+      </nb-card-header>
+      <nb-card-body>
+        <div class="api-details">
+          <span>Rest API Key: 86f035712f61bfe5192c34973419bb1fcf995fa5b7bb37f6babfd62af0d79fc2</span>
+          <div class="api-actions">
+            <div class="api-action">
+              <div class="title">
+                <span>api/v1/upload</span>
+              </div>
+
+            </div>
+            <div class="api-action">
+              <div class="title">
+                <span>api/v1/scan</span>
+              </div>
+
+
+
+
+
+
+            </div>
+            <div class="api-action">
+              <div class="title">
+                <span>api/v1/scans</span>
+              </div>
+
+            </div>
+            <div class="api-action">
+              <div class="title">
+                <span>api/v1/delete_scan</span>
+              </div>
+
+            </div>
+            <div class="api-action">
+              <div class="title">
+                <span>api/v1/download_pdf</span>
+              </div>
+
+            </div>
+            <div class="api-action">
+              <div class="title">
+                <span>api/v1/report_json</span>
+              </div>
+
+            </div>
+            <div class="api-action">
+              <div class="title">
+                <span>api/v1/view_source</span>
+              </div>
+
+            </div>
+
+
+
+          </div>
+        </div>
+        <div class="tabs">
+          <nb-tabset>
+            <nb-tab tabTitle="Upload a File">
+              <div class="top-tab-part">
+                <span>Upload File API</span>
+              </div>
+              <div class="line"></div>
+              <div class="api-details">
+                <span>API to upload a file. Supported file types are apk, zip, ipa.</span>
+                <div class="api-actions">
+                  <div class="api-action">
+                    <div class="title">
+                      <span>URL</span>
+                    </div>
+                    <div class="action sub">
+                      <span>/api/v1/upload</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Method</span>
+                    </div>
+                    <div class="action sub">
+                      <span>POST</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Header</span>
+                    </div>
+                    <div class="action sub">
+                      <span>Authorization: <api_key</span>>
+                    </div>
+                  </div>
+                  <div class="table">
+                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+                      <ng-container matColumnDef="paramname">
+                        <th mat-header-cell *matHeaderCellDef>
+                          <span>Param Name</span>
+                        </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class=""><span>{{element.paramname}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="paramvalue">
+                        <th mat-header-cell *matHeaderCellDef> Param Value </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class="issue"><span>{{element.paramvalue}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="required">
+                        <th mat-header-cell *matHeaderCellDef> Required </th>
+                        <td mat-cell *matCellDef="let element"> {{element.required}} </td>
+                      </ng-container>
+
+                      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                    </table>
+                  </div>
+                </div>
+              </div>            </nb-tab>
+            <nb-tab tabTitle="Scan a File">
+              <div class="top-tab-part">
+                <span>Scan File API</span>
+              </div>
+              <div class="line"></div>
+              <div class="api-details">
+                <span>API to scan a file.</span>
+                <div class="api-actions">
+                  <div class="api-action">
+                    <div class="title">
+                      <span>URL</span>
+                    </div>
+                    <div class="action sub">
+                      <span>/api/v1/scan</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Method</span>
+                    </div>
+                    <div class="action sub">
+                      <span>POST</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Header</span>
+                    </div>
+                    <div class="action sub">
+                      <span>Authorization: <api_key</span>>
+                    </div>
+                  </div>
+                  <div class="table">
+                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+                      <ng-container matColumnDef="paramname">
+                        <th mat-header-cell *matHeaderCellDef>
+                          <span>Param Name</span>
+                        </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class=""><span>{{element.paramname}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="paramvalue">
+                        <th mat-header-cell *matHeaderCellDef> Param Value </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class="issue"><span>{{element.paramvalue}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="required">
+                        <th mat-header-cell *matHeaderCellDef> Required </th>
+                        <td mat-cell *matCellDef="let element"> {{element.required}} </td>
+                      </ng-container>
+
+                      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </nb-tab>
+            <nb-tab tabTitle="Display Recent Scans">
+              <div class="top-tab-part">
+                <span>Get recent scans API</span>
+              </div>
+              <div class="line"></div>
+              <div class="api-details">
+                <span>Retrieve a list of recent scans.</span>
+                <div class="api-actions">
+                  <div class="api-action">
+                    <div class="title">
+                      <span>URL</span>
+                    </div>
+                    <div class="action sub">
+                      <span>/api/v1/scans</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Method</span>
+                    </div>
+                    <div class="action sub">
+                      <span>POST</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Header</span>
+                    </div>
+                    <div class="action sub">
+                      <span>Authorization: <api_key</span>>
+                    </div>
+                  </div>
+                  <div class="table">
+                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+                      <ng-container matColumnDef="paramname">
+                        <th mat-header-cell *matHeaderCellDef>
+                          <span>Param Name</span>
+                        </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class=""><span>{{element.paramname}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="paramvalue">
+                        <th mat-header-cell *matHeaderCellDef> Param Value </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class="issue"><span>{{element.paramvalue}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="required">
+                        <th mat-header-cell *matHeaderCellDef> Required </th>
+                        <td mat-cell *matCellDef="let element"> {{element.required}} </td>
+                      </ng-container>
+
+                      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                    </table>
+                  </div>
+                </div>
+              </div>            </nb-tab>
+            <nb-tab tabTitle="Delete Scan">
+              <div class="top-tab-part">
+                <span>Delete Scan API</span>
+              </div>
+              <div class="line"></div>
+              <div class="api-details">
+                <span>API to delete a scan.</span>
+                <div class="api-actions">
+                  <div class="api-action">
+                    <div class="title">
+                      <span>URL</span>
+                    </div>
+                    <div class="action sub">
+                      <span>/api/v1/delete_scan</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Method</span>
+                    </div>
+                    <div class="action sub">
+                      <span>POST</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Header</span>
+                    </div>
+                    <div class="action sub">
+                      <span>Authorization: <api_key</span>>
+                    </div>
+                  </div>
+                  <div class="table">
+                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+                      <ng-container matColumnDef="paramname">
+                        <th mat-header-cell *matHeaderCellDef>
+                          <span>Param Name</span>
+                        </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class=""><span>{{element.paramname}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="paramvalue">
+                        <th mat-header-cell *matHeaderCellDef> Param Value </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class="issue"><span>{{element.paramvalue}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="required">
+                        <th mat-header-cell *matHeaderCellDef> Required </th>
+                        <td mat-cell *matCellDef="let element"> {{element.required}} </td>
+                      </ng-container>
+
+                      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                    </table>
+                  </div>
+                </div>
+              </div>            </nb-tab>
+            <nb-tab tabTitle="Download PDF Report">
+              <div class="top-tab-part">
+                <span>Download PDF API</span>
+              </div>
+              <div class="line"></div>
+              <div class="api-details">
+                <span>API to download the report pdf.</span>
+                <div class="api-actions">
+                  <div class="api-action">
+                    <div class="title">
+                      <span>URL</span>
+                    </div>
+                    <div class="action sub">
+                      <span>api/v1/download_pdf</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Method</span>
+                    </div>
+                    <div class="action sub">
+                      <span>POST</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Header</span>
+                    </div>
+                    <div class="action sub">
+                      <span>Authorization: <api_key</span>>
+                    </div>
+                  </div>
+                  <div class="table">
+                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+                      <ng-container matColumnDef="paramname">
+                        <th mat-header-cell *matHeaderCellDef>
+                          <span>Param Name</span>
+                        </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class=""><span>{{element.paramname}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="paramvalue">
+                        <th mat-header-cell *matHeaderCellDef> Param Value </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class="issue"><span>{{element.paramvalue}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="required">
+                        <th mat-header-cell *matHeaderCellDef> Required </th>
+                        <td mat-cell *matCellDef="let element"> {{element.required}} </td>
+                      </ng-container>
+
+                      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                    </table>
+                  </div>
+                </div>
+              </div>            </nb-tab>
+            <nb-tab tabTitle="Generate JSON Report">
+              <div class="top-tab-part">
+                <span>Generate JSON API</span>
+              </div>
+              <div class="line"></div>
+              <div class="api-details">
+                <span>Return a JSON of detailed scan report.</span>
+                <div class="api-actions">
+                  <div class="api-action">
+                    <div class="title">
+                      <span>URL</span>
+                    </div>
+                    <div class="action sub">
+                      <span>/api/v1/report_json</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Method</span>
+                    </div>
+                    <div class="action sub">
+                      <span>POST</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Header</span>
+                    </div>
+                    <div class="action sub">
+                      <span>Authorization: <api_key</span>>
+                    </div>
+                  </div>
+                  <div class="table">
+                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+                      <ng-container matColumnDef="paramname">
+                        <th mat-header-cell *matHeaderCellDef>
+                          <span>Param Name</span>
+                        </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class=""><span>{{element.paramname}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="paramvalue">
+                        <th mat-header-cell *matHeaderCellDef> Param Value </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class="issue"><span>{{element.paramvalue}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="required">
+                        <th mat-header-cell *matHeaderCellDef> Required </th>
+                        <td mat-cell *matCellDef="let element"> {{element.required}} </td>
+                      </ng-container>
+
+                      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                    </table>
+                  </div>
+                </div>
+              </div>            </nb-tab>
+            <nb-tab tabTitle="View Source Files">
+              <div class="top-tab-part">
+                <span>View Source API.</span>
+              </div>
+              <div class="line"></div>
+              <div class="api-details">
+                <span>API to inspect source files extraxted by the scan.</span>
+                <div class="api-actions">
+                  <div class="api-action">
+                    <div class="title">
+                      <span>URL</span>
+                    </div>
+                    <div class="action sub">
+                      <span>api/v1/view_source</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Method</span>
+                    </div>
+                    <div class="action sub">
+                      <span>POST</span>
+                    </div>
+                  </div>
+                  <div class="api-action">
+                    <div class="title">
+                      <span>Header</span>
+                    </div>
+                    <div class="action sub">
+                      <span>Authorization: <api_key</span>>
+                    </div>
+                  </div>
+                  <div class="table">
+                    <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+                      <ng-container matColumnDef="paramname">
+                        <th mat-header-cell *matHeaderCellDef>
+                          <span>Param Name</span>
+                        </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class=""><span>{{element.paramname}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="paramvalue">
+                        <th mat-header-cell *matHeaderCellDef> Param Value </th>
+                        <td mat-cell *matCellDef="let element">
+                          <div class="issue"><span>{{element.paramvalue}}</span></div>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="required">
+                        <th mat-header-cell *matHeaderCellDef> Required </th>
+                        <td mat-cell *matCellDef="let element"> {{element.required}} </td>
+                      </ng-container>
+
+                      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </nb-tab>
+          </nb-tabset>
+
+        </div>
+      </nb-card-body>
+
+    </nb-card>
+  </div>
+</div>

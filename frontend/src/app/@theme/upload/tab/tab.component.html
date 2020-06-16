@@ -1,0 +1,12 @@
+  <nb-card class="uploading">
+    <nb-card-body>
+      <div class="description">
+        <div class="title"><span>Scanning</span></div>
+        <div class="content"><span>Kensa is scanning your file, please wait </span></div>
+      </div>
+      <nb-progress-bar [value]="progress" size="small"></nb-progress-bar>
+    </nb-card-body>
+    <nb-card-footer>
+      <div class="action"><span (click)="close()">Cancel</span></div>
+    </nb-card-footer>
+  </nb-card>

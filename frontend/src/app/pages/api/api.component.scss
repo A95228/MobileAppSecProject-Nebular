@@ -1,0 +1,139 @@
+@import '../../@theme/styles/themes';
+@import '~bootstrap/scss/mixins/breakpoints';
+@import '~@nebular/theme/styles/global/breakpoints';
+@include nb-install-component() {
+  nb-card {
+    border-radius: 4px;
+    background-color: #FFFFFF;
+    box-shadow: 0 6px 18px 0 rgba(0,0,0,0.06);
+    margin-top: 44px;
+  }
+
+  nb-card-header {
+    border-bottom: 1px solid #EBEFF2;
+    margin-bottom: 11px;
+  }
+  .support-title {
+    color: #192A3E;
+    font-family: "IBM Plex Sans";
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+    line-height: 30px;
+  }
+
+  ::ng-deep nb-tabset ul.tabset {
+    display: block;
+    position: absolute;
+    top: 46px;
+    left: 190px;
+    border: none;
+  }
+
+  ::ng-deep nb-tabset ul.tabset a::before {
+    display: none !important;
+  }
+
+  ::ng-deep nb-tabset ul.tabset li {
+    height: 22px;
+  }
+
+  ::ng-deep nb-tabset nb-tab {
+    overflow: initial;
+  }
+
+  .api-actions {
+    display: block;
+    padding-left: 20px;
+    padding-top: 10px;
+  }
+
+  .api-action {
+    width: 100%;
+    display: flex;
+  }
+
+  .api-action .action,
+  .api-action .title,
+  ::ng-deep nb-tabset ul.tabset a {
+    width: 146px;
+    font-family: "IBM Plex Sans";
+    font-size: 12px;
+    letter-spacing: 0.1px;
+    line-height: 18px;
+    padding: 0;
+    font-weight: 400;
+    height: 21px;
+  }
+
+  .api-action .title {
+    color: #4C5862;
+  }
+
+  .api-action .action,
+  ::ng-deep nb-tabset ul.tabset a {
+    color: #067EE2;
+    text-decoration: underline !important;
+    cursor: pointer;
+    text-transform: none;
+  }
+
+  .api-action .action.sub {
+    text-decoration: none !important;
+    cursor: initial;
+  }
+
+  .top-tab-part {
+    height: 28px;
+    color: #192A3E;
+    font-family: "IBM Plex Sans";
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+    line-height: 28px;
+  }
+
+  .line {
+    box-sizing: border-box;
+    height: 1px;
+    width: calc(100% + 112px);
+    border: 1px solid #EBEFF2;
+    margin-left: -56px;
+    margin-top: 22px;
+    margin-bottom: 20px;
+  }
+  table {
+    width: 100%;
+    box-shadow: none;
+  }
+
+  td,
+  th {
+    border-bottom: 1px solid #EBEFF2;
+    border-top: none;
+    padding-top: 18px;
+  }
+
+    ::ng-deep thead tr {
+      height: 36px;
+    }
+
+    ::ng-deep thead tr th {
+      color: #334D6E;
+      font-family: "IBM Plex Sans";
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0;
+      line-height: 20px;
+    }
+
+    ::ng-deep tbody tr {
+      height: 72px;
+      color: #192A3E;
+      font-family: "IBM Plex Sans";
+      font-size: 15px;
+      font-weight: 300;
+      letter-spacing: 0.1px;
+      line-height: 23px;
+    }
+}

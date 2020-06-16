@@ -1,0 +1,53 @@
+@import '../../@theme/styles/themes';
+@import '~bootstrap/scss/mixins/breakpoints';
+@import '~@nebular/theme/styles/global/breakpoints';
+@include nb-install-component() {
+  .recent-scans-empty {
+    margin-top: 60px;
+    height: 313px;
+    width: 100%;
+    background-image: url("/assets/images/recent-scans-empty.png");
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    position: relative;
+  }
+  .recent-scans-empty .empty-span{
+    position: absolute;
+    width: 100%;
+    padding-left: 47px;
+    top: 52%;
+    color: #C2CFE0;
+    font-family: "IBM Plex Sans";
+    font-size: 41px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 11px;
+    text-align: center;
+  }
+  .recent-scans-empty .bottom-span{
+    width: 100%;
+    bottom: -110px;
+    position: absolute;
+  }
+  .recent-scans-empty .bottom-span .nothing{
+    color: #C2CFE0;
+    font-family: "IBM Plex Sans";
+    font-size: 41px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 11px;
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  .recent-scans-empty .bottom-span .nothing-bottom{
+    color: #334D6E;
+    font-family: "IBM Plex Sans";
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0;
+    line-height: 11px;
+    text-align: center;
+  }
+
+}

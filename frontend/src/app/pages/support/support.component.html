@@ -1,0 +1,63 @@
+<div class="top-nav-guide"><span>{{ title }}</span></div>
+
+<div class="row">
+  <div class="col-xxxl-12 col-xxl-12 col-md-12">
+    <nb-card>
+      <nb-card-header>
+        <div class="support-title">
+          <span>Support</span>
+        </div>
+      </nb-card-header>
+      <nb-card-body>
+        <div class="support-actions">
+          <div class="support-action low"> <span>Low</span></div>
+          <div class="support-action high"> <span>High</span></div>
+          <div class="support-action urgent"> <span>Urgent</span></div>
+        </div>
+        <div class="row">
+          <div class="col-6">
+            <div class="select">
+              <div class="title">
+                <span>Subject</span>
+              </div>
+              <div class="content">
+                <input type="text" name="subject" placeholder="Mircosoft">
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="select">
+              <div class="title">
+                <span>Associated with</span>
+              </div>
+              <div class="content">
+                <nb-user [name]="user?.name"
+                         [picture]="user?.picture"
+                         size="small">
+                </nb-user>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-12">
+            <div class="select bottom">
+              <div class="title">
+                <span>Description</span>
+              </div>
+              <div class="content">
+                <input type="text" name="subject" placeholder="">
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="submit">
+              <span>Send</span>
+            </div>
+          </div>
+        </div>
+      </nb-card-body>
+
+    </nb-card>
+  </div>
+</div>

@@ -1,0 +1,115 @@
+@import '../../@theme/styles/themes';
+@import '~bootstrap/scss/mixins/breakpoints';
+@import '~@nebular/theme/styles/global/breakpoints';
+@include nb-install-component() {
+
+  nb-card {
+    border-radius: 4px;
+    background-color: #FFFFFF;
+    box-shadow: 0 6px 18px 0 rgba(0,0,0,0.06);
+    margin-top: 44px;
+
+  }
+  nb-user{
+    margin-top: 9px;
+  }
+  nb-card-header {
+    border-bottom: 1px solid #EBEFF2;
+    margin-bottom: 11px;
+  }
+
+  .support-actions {
+    display: flex;
+    margin-bottom: 24px;
+  }
+
+  .support-title {
+    color: #192A3E;
+    font-family: "IBM Plex Sans";
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+    line-height: 30px;
+  }
+
+  .support-action {
+    cursor: pointer;
+    height: 22px;
+    width: 86px;
+    opacity: 0.5;
+    color: #FFFFFF;
+    font-family: Poppins;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    line-height: 20px;
+    text-align: center;
+    border-radius: 4px;
+    margin-right: 30px;
+
+  }
+
+  .support-action.low {
+    background-color: #FFB946;
+  }
+
+  .support-action.high {
+    background-color: #2ED47A;
+  }
+
+  .support-action.urgent {
+    background-color: #F7685B;
+  }
+  .select{
+    border-bottom: #D3D8DD;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    height: 54px;
+    margin-bottom: 12px;
+  }
+  .select.bottom{
+    border: unset;
+    height: unset;
+    margin-bottom: 12px;
+  }
+  .select .title{
+    width: 381px;
+    color: #818E9B;
+    font-family: "IBM Plex Sans";
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    line-height: 16px;
+  }
+  .select .content input{
+    border: none;
+margin-top: 10px;
+width: 80%;
+
+  }
+    .select.bottom .content input{
+  margin-top: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 22px;
+  padding-bottom: 256px;
+  border: 1px solid #D3D8DD;
+    }
+    .submit{
+      float: right;
+      height: 48px;
+width: 209px;
+border-radius: 4px;
+background-color: #109CF1;
+cursor: pointer;
+color: #FFFFFF;
+font-family: "IBM Plex Sans";
+font-size: 14px;
+font-weight: 600;
+letter-spacing: 0.11px;
+line-height: 20px;
+text-align: center;
+padding: 14px;
+margin-top: 22px;
+    }
+}

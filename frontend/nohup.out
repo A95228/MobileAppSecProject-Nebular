@@ -1,0 +1,54 @@
+
+> ngx-admin@5.0.0 start /home/cloudsigma/ngx-admin
+> ng serve --host=185.230.211.59
+
+WARNING: This is a simple server for use in testing or debugging Angular applications
+locally. It hasn't been reviewed for security issues.
+
+Binding this server to an open connection can result in compromising your application or
+computer. Using a different host than the one passed to the "--host" flag might result in
+websocket connection issues. You might need to use "--disableHostCheck" if that's the
+case.
+[33mWarning:[0m Entry point 'ngx-echarts/core' contains deep imports into '/home/cloudsigma/ngx-admin/node_modules/echarts/lib/echarts'. This is probably not a problem, but may cause the compilation of entry points to be out of order.
+
+> ngx-admin@5.0.0 start /home/cloudsigma/ngx-admin
+> ng serve --host=185.230.211.59
+
+WARNING: This is a simple server for use in testing or debugging Angular applications
+locally. It hasn't been reviewed for security issues.
+
+Binding this server to an open connection can result in compromising your application or
+computer. Using a different host than the one passed to the "--host" flag might result in
+websocket connection issues. You might need to use "--disableHostCheck" if that's the
+case.
+[33mWarning:[0m Entry point 'ngx-echarts/core' contains deep imports into '/home/cloudsigma/ngx-admin/node_modules/echarts/lib/echarts'. This is probably not a problem, but may cause the compilation of entry points to be out of order.
+
+chunk {main} main.js, main.js.map (main) 1.99 kB [initial] [rendered]
+chunk {polyfills} polyfills.js, polyfills.js.map (polyfills) 672 bytes [initial] [rendered]
+chunk {runtime} runtime.js, runtime.js.map (runtime) 6.15 kB [entry] [rendered]
+chunk {scripts} scripts.js, scripts.js.map (scripts) 1.32 MB [entry] [rendered]
+chunk {styles} styles.js, styles.js.map (styles) 4.07 MB [initial] [rendered]
+chunk {vendor} vendor.js, vendor.js.map (vendor) 340 kB [initial] [rendered]
+Date: 2020-06-16T02:02:20.183Z - Hash: e65061c8769a09adb96c - Time: 125000ms
+
+ERROR in src/app/@theme/upload/upload.component.ts:103:14 - error TS2339: Property 'dragOver' does not exist on type 'UploadComponent'.
+
+103         this.dragOver = true;
+                 ~~~~~~~~
+src/app/@theme/upload/upload.component.ts:107:14 - error TS2339: Property 'dragOver' does not exist on type 'UploadComponent'.
+
+107         this.dragOver = false;
+                 ~~~~~~~~
+
+** Angular Live Development Server is listening on 185.230.211.59:4200, open your browser on http://185.230.211.59:4200/ **
+Terminated
+npm ERR! code ELIFECYCLE
+npm ERR! errno 143
+npm ERR! ngx-admin@5.0.0 start: `ng serve --host=185.230.211.59`
+npm ERR! Exit status 143
+npm ERR! 
+npm ERR! Failed at the ngx-admin@5.0.0 start script.
+npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
+
+npm ERR! A complete log of this run can be found in:
+npm ERR!     /home/cloudsigma/.npm/_logs/2020-06-16T02_03_59_491Z-debug.log
