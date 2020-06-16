@@ -2,25 +2,49 @@ import datetime
 import logging
 import json
 import pdb
+import warnings
 
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import EmptyPage, Paginator, PageNotAnInteger
 
-
 from users.models import User
-
+from StaticAnalyzer.views.rules_properties import (
+    Level,
+)
 
 logger = logging.getLogger(__name__)
 
 
-class StaticAnalyzer(models.Model):
-    """Base Static Analyzer Model"""
 
-    pass
+def score(findings):
+    """ Importing scores from its home causes 
+    circular imports, placing a copy here."""
+    cvss_scores = []
+    avg_cvss = 0
+    app_score = 100
+    for _, finding in findings.items():
+        if 'cvss' in finding:
+            if finding['cvss'] != 0:
+                cvss_scores.append(finding['cvss'])
+        if finding['level'] == Level.high.value:
+            app_score = app_score - 15
+        elif finding['level'] == Level.warning.value:
+            app_score = app_score - 10
+        elif finding['level'] == Level.good.value:
+            app_score = app_score + 5
+    if cvss_scores:
+        avg_cvss = round(sum(cvss_scores) / len(cvss_scores), 1)
+    if app_score < 0:
+        app_score = 10
+    elif app_score > 100:
+        app_score = 100
+    return avg_cvss, app_score
+
 
 
 class RecentScansDB(models.Model):
+
     FILE_NAME = models.CharField(max_length=260)
     MD5 = models.CharField(max_length=32)
     URL = models.URLField()
@@ -30,30 +54,11 @@ class RecentScansDB(models.Model):
     VERSION_NAME = models.CharField(max_length=50)
     ORGANIZATION_ID = models.CharField(max_length=254)
 
-    @staticmethod
-    def paginate(load, page, count=30):
-        """Paginate a context"""
-        try:
-            paginator = Paginator(load["scans"], count)
-            activities = paginator.page(page)
-        except PageNotAnInteger:
-            activities = paginator.page(1)
-        except EmptyPage:
-            activities = paginator.page(paginator.num_pages)
-        except Exception as e:
-            return None
-        resp = {
-            "page": activities.number,
-            "total_pages": paginator.num_pages,
-            "limit": 30,
-            "list": activities.object_list,
-        }
-        return resp
 
     @classmethod
     def get_recent_scans(cls, organization_id):
-        """Get recent scans from StaticAnalizer models"""
-
+        """List of recent scans and their data"""
+        
         scans = [
             StaticAnalyzerAndroid.objects.filter(ORGANIZATION=organization_id).order_by(
                 "-DATE"
@@ -63,37 +68,93 @@ class RecentScansDB(models.Model):
             ),
         ]
 
-        recent_scans = []
+        rs = []
         for queryset in scans:
-            if queryset.count() == 0:
-                continue
-            for _scan in queryset:
+
+            if queryset.count() == 0: continue # dont bother.
+    
+            for _ in queryset:
                 try:
-                    if isinstance(_scan, StaticAnalyzerAndroid):
-                        scan = StaticAnalyzerAndroid.get_scan_info_from_obj(_scan)
+                    
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # CASE ANDROID
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                    if isinstance(_, StaticAnalyzerAndroid):
+                        scan = StaticAnalyzerAndroid.get_scan_info_from_obj(_)
+                    
                         try:
-                            
-                            detected_trackers = eval(_scan.TRACKERS)['detected_trackers']
-                            total_trackers = eval(_scan.TRACKERS)["total_trackers"]
-                            anal_code = {"detected" : detected_trackers, "total" : total_trackers}
+                            ts = eval(_.TRACKERS)
+                            tt = ts["total_trackers"]
+                            dt = ts['detected_trackers']
                         except:
-                            anal_code = ""
-                        toap = {"scan": scan, "anal_code" : anal_code}
+                            tt = dt = "No trackers"
+
+                        # load trackers
+                        scan["trackers_detected"] =  "%s/%s" % (dt, tt) 
+                                
+                        try:
+                            skore = score(eval(_.CODE_ANALYSIS))
+                        except Exception as error:
+                            warnings.warn(str(error), UserWarning, stacklevel=3)
+                            skore = "No score"
+
+
+                        scan["security_score"] = skore
+
+                        try:
+                            issues = StaticAnalyzerAndroid.get_total_issue(_.MD5)
+                        except Exception as error:
+                            warnings.warn(str(error), UserWarning, stacklevel=3)
+                            issues = ""
+                        
+
+                        if issues is None:
+                            issues = ""
+                        else:
+                            pass
+
+                        scan["issues"] =  issues
+
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # CASE IOS
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
                     else:
-                        scan = StaticAnalyzerIOS.get_scan_info_from_obj(_scan)
+                        scan = StaticAnalyzerIOS.get_scan_info_from_obj(_)
+
                         try:
-                            anal_code = StaticAnalyzerAndroid.get_code_analysis_report(
-                                _scan.MD5
-                            )
+                            skore = score(StaticAnalyzerIOS.get_code_analysis_report(_.MD5))
+                        except Exception as error:
+                            warnings.warn(str(error), UserWarning, stacklevel=3)
+                            skore = "No score"
+
+                        scan["security_score"] = skore
+
+
+                        try:
+                            issues = StaticAnalyzerIOS.get_total_issue(_.MD5)
                         except:
-                            anal_code = ""
-                        toap = {"scan": scan, "anal_code" : anal_code}
+                            issues = ""
+                        
+
+                        if issues is None:
+                            issues = ""
+                        else:
+                            pass
+
+                        scan["issues"] =  issues
+
                 except Exception as error:
-                    recent_scans.append({})
+                    warnings.warn(str(error), UserWarning, stacklevel=3)
+                    rs.append({})
                     continue
-                recent_scans.append(toap)
-        return recent_scans
+
+                # Load to payload
+                rs.append(scan)
+
+        return rs
+
 
 
 class StaticAnalyzerAndroid(models.Model):
@@ -221,8 +282,8 @@ class StaticAnalyzerAndroid(models.Model):
                 cert_stat = ""
 
             scan_info = {
-                "file_name": scan_obj.FILE_NAME,
                 "icon_url": icon_url,
+                "file_name": scan_obj.FILE_NAME,
                 "system": "android",
                 "date": str(scan_obj.DATE).__str__(),
                 "certificate_status": cert_stat,
@@ -839,6 +900,25 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("get_app_permissions error %s" % md5)
             return None, None
 
+    @classmethod
+    def get_total_issue(cls, md5):
+        obj = cls.get_single_or_none(md5=md5)
+        if obj is None:
+            return None
+        # issue from shard library
+        issue_binary = len(obj.BINARY_ANALYSIS)
+        # issue from manifest
+        issue_manifest = len(obj.MANIFEST_ANALYSIS)
+        # issue from code_analysis
+        code_analysis = eval(obj.CODE_ANALYSIS)
+        issue_code_analysis = 0
+        if "items" in code_analysis.keys():
+            issue_code_analysis = len(code_analysis["items"])
+        file_analysis = eval(obj.FILE_ANALYSIS)
+        issue_file_analysis = len(file_analysis)
+        total_issue = issue_binary + issue_manifest + issue_code_analysis + issue_file_analysis
+        return total_issue
+
 
 class StaticAnalyzerIOS(models.Model):
     """This model represents the information obtained from a scan operation."""
@@ -1399,6 +1479,25 @@ class StaticAnalyzerIOS(models.Model):
             return scan_info
         except:
             return None
+
+    @classmethod
+    def get_total_issue(cls, md5):
+        obj = cls.get_single_or_none(md5=md5)
+        if obj is None:
+            return None
+        # issue from shard library
+        issue_binary = len(obj.BINARY_ANALYSIS)
+        # issue from manifest
+        issue_manifest = len(obj.MANIFEST_ANALYSIS)
+        # issue from code_analysis
+        code_analysis = eval(obj.CODE_ANALYSIS)
+        issue_code_analysis = 0
+        if "items" in code_analysis.keys():
+            issue_code_analysis = len(code_analysis["items"])
+        file_analysis = eval(obj.FILE_ANALYSIS)
+        issue_file_analysis = len(file_analysis)
+        total_issue = issue_binary + issue_manifest + issue_code_analysis + issue_file_analysis
+        return total_issue
 
 
 class StaticAnalyzerWindows(models.Model):
