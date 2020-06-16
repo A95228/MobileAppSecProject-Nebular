@@ -834,6 +834,25 @@ class StaticAnalyzerAndroid(models.Model):
             logger.info("get_app_permissions error %s" % md5)
             return None, None
 
+    @classmethod
+    def get_total_issue(cls, organization, md5):
+        obj = cls.get_single_or_none(organization=organization, md5=md5)
+        if obj is None:
+            return 0
+        # issue from shard library
+        issue_binary = len(obj.BINARY_ANALYSIS)
+        # issue from manifest
+        issue_manifest = len(obj.MANIFEST_ANALYSIS)
+        # issue from code_analysis
+        code_analysis = eval(obj.CODE_ANALYSIS)
+        issue_code_analysis = 0
+        if "items" in code_analysis.keys():
+            issue_code_analysis = len(code_analysis["items"])
+        file_analysis = eval(obj.FILE_ANALYSIS)
+        issue_file_analysis = len(file_analysis)
+        total_issue = issue_binary + issue_manifest + issue_code_analysis + issue_file_analysis
+        return total_issue
+
 
 class StaticAnalyzerIOS(models.Model):
     """This model represents the information obtained from a scan operation."""
@@ -1454,6 +1473,23 @@ class StaticAnalyzerIOS(models.Model):
             return scan_info
         except:
             return None
+
+    @classmethod
+    def get_total_issue(cls, organization, md5):
+        obj = cls.get_single_or_none(organization=organization, md5=md5)
+        if obj is None:
+            return 0
+        # issue from ats
+        issue_ats = len(eval(obj.ATS_ANALYSIS))
+        # issue from ipa_analysis
+        ipa_analysis = eval(obj.BINARY_ANALYSIS)
+        issue_ipa_analysis = 0
+        if "items" in ipa_analysis.keys():
+            issue_ipa_analysis = len(ipa_analysis["items"])
+        file_analysis = eval(obj.FILE_ANALYSIS)
+        issue_file_analysis = len(file_analysis)
+        total_issue = issue_ats + issue_ipa_analysis + issue_file_analysis
+        return total_issue
 
 
 class StaticAnalyzerWindows(models.Model):
