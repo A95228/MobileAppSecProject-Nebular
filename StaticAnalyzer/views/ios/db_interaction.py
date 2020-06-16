@@ -202,8 +202,6 @@ def save_or_update(
         return None
 
     except Exception as error:
-        import pdb
-        pdb.set_trace()
         try:
             logger.error('db_interaction.save_or_update failed.')
 
