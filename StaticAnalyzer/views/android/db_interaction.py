@@ -1,5 +1,6 @@
 # -*- coding: utf_8 -*-
 import logging
+import json 
 import os
 import shutil
 
@@ -193,10 +194,14 @@ def save_or_update(update_type,
                    apk_id,
                    trackers,
                    user,
-                   organization):
+                   organization) -> tuple:
     """
     Save/Update an APK/ZIP DB entry.
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    THIS PROCESS HAS HIGH PRIORITY!!!! 
+
+    [!] Do NOT edit unless you know what you are doing.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     """
 
     try:
@@ -230,7 +235,7 @@ def save_or_update(update_type,
             'BINARY_ANALYSIS': bin_anal,
             'FILE_ANALYSIS': app_dic['certz'],
             'ANDROID_API': code_an_dic['api'],
-            'CODE_ANALYSIS': code_an_dic['findings'],
+            'CODE_ANALYSIS': json.dumps(code_an_dic['findings']),
             'URLS': code_an_dic['urls'],
             'DOMAINS': code_an_dic['domains'],
             'EMAILS': code_an_dic['emails'],
@@ -245,53 +250,89 @@ def save_or_update(update_type,
             "ORGANIZATION" : organization
         }
 
-        if update_type == 'save':
-            logger.info("calling StaticAnalizerAndroid.objects.create")
-            scan_obj = StaticAnalyzerAndroid.objects.create(**values)
+        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # The code below handles the type of db interaction on flag
+        # passed on by the static_analyzer_android function.
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-            logger.info("updating RecentScansDB")
-            values = {
+        
+        up_values = { # Update values for RecentScansDB
                 'APP_NAME': app_dic['real_name'],
                 'PACKAGE_NAME': man_data_dic['packagename'],
                 'VERSION_NAME': man_data_dic['androvername'],
-            }
-            RecentScansDB.objects.filter(MD5=app_dic['md5']).update(**values)
+        }
+
+        # [!] Do NOT edit below the line unless you know what you are doing.
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        if update_type == 'save':
+
+            # Create new SSA entry
+            logger.info("calling StaticAnalizerAndroid.objects.create")
+            scan_obj = StaticAnalyzerAndroid.objects.create(**values)
+            logger.info("Object %s saved" % (scan_obj.pk))
+
+
+            # Update the RecentScansDB with the SSA data
+            logger.info("updating RecentScansDB")
+            RecentScansDB.objects.filter(MD5=app_dic['md5']).update(**up_values)
             logger.info("RecentScansDB entry %s updated" % app_dic["md5"])
 
+
+            # Get the scan info for the response by pasing obj, not PK
             app_info = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
 
+
+            # If scan_info_from_obj returns None, 
             if app_info is None:
                 return {"error" : "error getting scan info from obj %s" % app_dic["md5"]}, 500
             else:
                 return app_info, 200
 
-            return {"error" : "error getting scan info from obj %s" % app_dic["md5"]}, 500
+            # Fallback.
+            return {"error" : "android.db_interaction.save_or_update failed on creation."}, 500
 
-        else:
+
+        # This is an unpdate procedure, do NOT edit below the line unless you 
+        # know what you are doing.
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        else: 
+            
+            # Update SSA
             logger.info("updating StaticAnlaizerAndroid")
             StaticAnalyzerAndroid.objects.filter(MD5=app_dic['md5']).update(**values)
             logger.info("StaticAnalizerAndroid %s updated" % app_dic["md5"])
 
+            # Update RecentScansDB
             logger.info("updating RecentScansDB")
-            values = {
-                'APP_NAME': app_dic['real_name'],
-                'PACKAGE_NAME': man_data_dic['packagename'],
-                'VERSION_NAME': man_data_dic['androvername'],
-            }
-            RecentScansDB.objects.filter(MD5=app_dic['md5']).update(**values)
-            logger.info("RecentScansDB entry %s updated" % app_dic["md5"])
+            RecentScansDB.objects.filter(MD5=app_dic['md5']).update(**up_values)
+            logger.info("RecentScansDB entry updated")
 
-            logger.info("Getting scan info from object scan_obj %s" % scan_obj.MD5)
-            scan_obj = StaticAnalyzerAndroid.objects.get(MD5=app_dic["md5"])
-            context = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
+            # Getting data from object for controller, this bubbles all the way up
+            # to the controller.
+            logger.info("Getting scan_info_from_obj")
+            context = StaticAnalyzerAndroid.get_scan_info_from_obj(
+                StaticAnalyzerAndroid.objects.get(MD5=app_dic["md5"]))
         
-        if context is not None:
+        
+        if context is not None: 
             return context, 200
-    
+
+
         return {"error" : "error getting scan info"}, 500
-    
+
+
+    # This is the fallback operation when a scan fails.
+    # Do NOT edit below line unless you know what you are doing.
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # 1) Remove RecentScansDB entry
+    # 2) Remove any dirs and files associated with the failed scan.
+    # 3) Return and error with resp 500. (bubbles up to the controller)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     except Exception as error:
-        logger.error('db_interaction.save_or_update failed.')
+
+        logger.error('android.db_interaction.save_or_update failed.')
 
         logger.info("removing entry from RecentScansDB")
         RecentScansDB.objects.filter(MD5=app_dic['md5']).delete()
@@ -314,6 +355,8 @@ def save_or_update(update_type,
         except:
             return {"error" : "save_or_update failed"}, 500
 
+        # After directories are deleted return this.
         return {"error" : "save_or_update failed"}, 500
     
+    # Main fallback.
     return {"error" : "save_or_update failed"}, 500
