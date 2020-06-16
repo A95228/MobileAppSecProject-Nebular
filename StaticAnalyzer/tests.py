@@ -24,6 +24,15 @@ def static_analysis_test():
         logger.info('Running Upload Test')
         http_client = Client()
         apk_dir = os.path.join(settings.BASE_DIR, 'StaticAnalyzer/test_files/')
+
+        if not os.path.exists(apk_dir):
+            logger.error("%s does not exist, create and run tests again " % apk_dir)
+            return False
+
+        if len(os.listdir(apk_dir)) == 0:
+            logger.error("Add files to %s to test with." % apk_dir)
+            return False
+
         for filename in os.listdir(apk_dir):
             if not filename.endswith((
                     '.apk',
@@ -140,6 +149,17 @@ def api_test():
         logger.info('Running Test on Upload API')
         http_client = Client()
         apk_dir = os.path.join(settings.BASE_DIR, 'StaticAnalyzer/test_files/')
+        
+        if not os.path.exists(apk_dir):
+            logger.error("%s does not exist, create and run tests again " % apk_dir)
+            fail = True
+            return fail
+
+        if len(os.listdir(apk_dir)) == 0:
+            logger.error("Add files to %s to test with." % apk_dir)
+            fail = True
+            return fail
+
         for filename in os.listdir(apk_dir):
             if not filename.endswith((
                     '.apk',
@@ -334,7 +354,8 @@ class StaticAnalyzerAndAPI(TestCase):
     def test_static_analyzer(self):
         resp = self.http_client.post('/tests/?module=static')
         self.assertEqual(resp.status_code, 200)
-
+        
     def test_rest_api(self):
+
         resp = self.http_client.post('/tests/?module=api')
         self.assertEqual(resp.status_code, 200)

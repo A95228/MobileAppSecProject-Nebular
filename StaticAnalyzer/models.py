@@ -2,19 +2,24 @@ import datetime
 import logging
 import json
 import pdb
+import warnings
 
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import EmptyPage, Paginator, PageNotAnInteger
 
-from StaticAnalyzer.views.rules_properties import Level
 from users.models import User
-
+from StaticAnalyzer.views.rules_properties import (
+    Level,
+)
 
 logger = logging.getLogger(__name__)
 
+
+
 def score(findings):
-    # Score Apps based on AVG CVSS Score
+    """ Importing scores from its home causes
+    circular imports, placing a copy here."""
     cvss_scores = []
     avg_cvss = 0
     app_score = 100
@@ -37,7 +42,9 @@ def score(findings):
     return avg_cvss, app_score
 
 
+
 class RecentScansDB(models.Model):
+
     FILE_NAME = models.CharField(max_length=260)
     MD5 = models.CharField(max_length=32)
     URL = models.URLField()
@@ -47,49 +54,107 @@ class RecentScansDB(models.Model):
     VERSION_NAME = models.CharField(max_length=50)
     ORGANIZATION_ID = models.CharField(max_length=254)
 
-    @staticmethod
-    def paginate(load, page, count=30):
-        """Paginate a context"""
-        try:
-            paginator = Paginator(load["scans"], count)
-            activities = paginator.page(page)
-        except PageNotAnInteger:
-            activities = paginator.page(1)
-        except EmptyPage:
-            activities = paginator.page(paginator.num_pages)
-        except Exception as e:
-            return None
-        resp = {
-            "page": activities.number,
-            "total_pages": paginator.num_pages,
-            "limit": 30,
-            "list": activities.object_list,
-        }
-        return resp
-
 
     @classmethod
     def get_recent_scans(cls, organization_id):
-        scans = cls.objects.filter(ORGANIZATION_ID=organization_id).order_by("-TIMESTAMP")
-        if scans.count() == 0:
-            return None
-        scans_values = scans.values(
-            "APP_NAME",
-            "FILE_NAME",
-            "TIMESTAMP",
-            "MD5",
-            "PACKAGE_NAME",
-            "URL",
-            "VERSION_NAME"
-        )
-        try:
-            to_return = list(scans_values)
-        except Exception as e:
-            e = str(e) + " Sending back None"
-            logger.warning(msg=e)
-            return None
-        else:
-            return to_return
+        """List of recent scans and their data"""
+
+        scans = [
+            StaticAnalyzerAndroid.objects.filter(ORGANIZATION=organization_id).order_by(
+                "-DATE"
+            ),
+            StaticAnalyzerIOS.objects.filter(ORGANIZATION=organization_id).order_by(
+                "-DATE"
+            ),
+        ]
+
+        rs = []
+        for queryset in scans:
+
+            if queryset.count() == 0: continue # dont bother.
+
+            for _ in queryset:
+                try:
+
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # CASE ANDROID
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                    if isinstance(_, StaticAnalyzerAndroid):
+                        scan = StaticAnalyzerAndroid.get_scan_info_from_obj(_)
+
+                        try:
+                            ts = eval(_.TRACKERS)
+                            tt = ts["total_trackers"]
+                            dt = ts['detected_trackers']
+                        except:
+                            tt = dt = "No trackers"
+
+                        # load trackers
+                        scan["trackers_detected"] =  "%s/%s" % (dt, tt)
+
+                        try:
+                            skore = score(eval(_.CODE_ANALYSIS))
+                        except Exception as error:
+                            warnings.warn(str(error), UserWarning, stacklevel=3)
+                            skore = "No score"
+
+
+                        scan["security_score"] = skore
+
+                        try:
+                            issues = StaticAnalyzerAndroid.get_total_issue(_.MD5)
+                        except Exception as error:
+                            warnings.warn(str(error), UserWarning, stacklevel=3)
+                            issues = ""
+
+
+                        if issues is None:
+                            issues = ""
+                        else:
+                            pass
+
+                        scan["issues"] =  issues
+
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # CASE IOS
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                    else:
+                        scan = StaticAnalyzerIOS.get_scan_info_from_obj(_)
+
+                        try:
+                            skore = score(StaticAnalyzerIOS.get_code_analysis_report(_.MD5))
+                        except Exception as error:
+                            warnings.warn(str(error), UserWarning, stacklevel=3)
+                            skore = "No score"
+
+                        scan["security_score"] = skore
+
+
+                        try:
+                            issues = StaticAnalyzerIOS.get_total_issue(_.MD5)
+                        except:
+                            issues = ""
+
+
+                        if issues is None:
+                            issues = ""
+                        else:
+                            pass
+
+                        scan["issues"] =  issues
+
+                except Exception as error:
+                    warnings.warn(str(error), UserWarning, stacklevel=3)
+                    rs.append({})
+                    continue
+
+                # Load to payload
+                rs.append(scan)
+
+        return rs
+
 
 
 class StaticAnalyzerAndroid(models.Model):
@@ -168,7 +233,6 @@ class StaticAnalyzerAndroid(models.Model):
         except EmptyPage:
             activities = paginator.page(paginator.num_pages)
         except Exception as e:
-            pdb.set_trace()
             return None
 
         resp = {
@@ -230,11 +294,6 @@ class StaticAnalyzerAndroid(models.Model):
                  "average_cvss": score(json.loads(scan_obj.CODE_ANALYSIS))[0],
                  "security_score": score(json.loads(scan_obj.CODE_ANALYSIS))[1]
             }
-
-            # code_analysis = json.loads(scan_obj.CODE_ANALYSIS)
-            # t_issue = 0
-            # for issue, details in code_analysis["items"]:
-            #     t_issue = t_issue + issue
             return scan_info
         except:
             return None

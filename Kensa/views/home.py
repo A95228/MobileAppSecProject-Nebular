@@ -29,6 +29,7 @@ from StaticAnalyzer.models import (RecentScansDB,
 
 LINUX_PLATFORM = ['Darwin', 'Linux']
 HTTP_BAD_REQUEST = 400
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,6 +37,7 @@ logger = logging.getLogger(__name__)
 def key(d, key_name):
     """To get dict element by key name in template."""
     return d.get(key_name)
+
 
 @login_required
 def index(request):

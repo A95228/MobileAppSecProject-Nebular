@@ -32,15 +32,9 @@ from StaticAnalyzer.models import (
 from StaticAnalyzer.views.android import view_source
 from StaticAnalyzer.views.android.java import api_run_java_code
 from StaticAnalyzer.views.android.smali import api_run_smali
-from StaticAnalyzer.views.android.static_analyzer import (
-    static_analyzer,
-    static_analyzer_android
-)
+from StaticAnalyzer.views.android.static_analyzer import static_analyzer_android
 from StaticAnalyzer.views.ios import view_source as ios_view_source
-from StaticAnalyzer.views.ios.static_analyzer import (
-    static_analyzer_ios,
-    static_analyzer_ios_api
-)
+from StaticAnalyzer.views.ios.static_analyzer import static_analyzer_ios_api
 from StaticAnalyzer.views.shared_func import score, pdf
 from StaticAnalyzer.views.windows import windows
 

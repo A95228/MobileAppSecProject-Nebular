@@ -286,7 +286,7 @@ def static_analyzer_ios_api(scan_type, md5, filename, user_id, organization_id):
                 # DB
                 context = StaticAnalyzerIOS.get_scan_info(md5=md5)
                 if context is not None:
-                    return context, 'success'
+                    return context, 200
 
                 logger.info('iOS Binary (IPA) Analysis Started')
                 app_dict['app_file'] = app_dict[
@@ -330,10 +330,18 @@ def static_analyzer_ios_api(scan_type, md5, filename, user_id, organization_id):
                     'emailnfile': recon['emailnfile'],
                     'firebase': firebase_analysis(recon['urls_list']),
                 }
-                # Saving to DB
-                logger.info('Updating Database...')
+                
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # DB Interaction
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                if StaticAnalyzerIOS.objects.filter(MD5=app_dict["md5_hash"]).exists():
+                    flag = "update"
+                else:
+                    flag = "save"
+                
                 context = save_or_update(
-                    'save',
+                    flag,
                     app_dict,
                     infoplist_dict,
                     code_dict,
@@ -345,13 +353,13 @@ def static_analyzer_ios_api(scan_type, md5, filename, user_id, organization_id):
                 update_scan_timestamp(app_dict['md5_hash'])
 
                 if context is not None:
-                    return context, 'success'
-                return {'err': 'Updating Database err'}, 'err'
+                    return context, 200
+                return {"error": 'Updating Database err'}, 500
 
             elif scan_type == 'ios':
                 context = StaticAnalyzerIOS.get_scan_info(md5=md5)
                 if context is not None:
-                    return context, 'success'
+                    return context, 200
 
                 logger.info('iOS Source Code Analysis Started')
                 app_dict['app_file'] = app_dict[
@@ -389,29 +397,49 @@ def static_analyzer_ios_api(scan_type, md5, filename, user_id, organization_id):
                 }
                 # Saving to DB
                 logger.info('Updating Database...')
-                context = save_or_update(
-                    'save',
-                    app_dict,
-                    infoplist_dict,
-                    code_analysis_dic,
-                    fake_bin_dict,
-                    all_files,
-                    user_id,
-                    organization_id
-                )
-                update_scan_timestamp(app_dict['md5_hash'])
-                if context is not None:
-                    return context, 'success'
-                return {'err': 'Updating Database err'}, 'err'
+                try:
+                    
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # DB Interaction
+                    # ~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    if StaticAnalyzerIOS.objects.filter(MD5=app_dict["md5_hash"]).exists():
+                        flag = "update"
+                    else:
+                        flag = "save"
+                
+                    context = save_or_update(
+                        flag,
+                        app_dict,
+                        infoplist_dict,
+                        code_analysis_dic,
+                        fake_bin_dict,
+                        all_files,
+                        user_id,
+                        organization_id
+                    )
+
+                    logger.info("save or update called on ios")
+                    update_scan_timestamp(app_dict['md5_hash'])
+                    logger.info("updated scan timestamp")
+
+                    if context is not None:
+                        logger.info("update succeded")
+                        return context, 200
+                    
+                    return {"error": 'Updating Database err'}, 500
+                except Exception as error:
+                    pdb.set_trace()
+                    return {"error" : "Updating to Database err"}, 500
 
             else:
                 msg = 'File Type not supported!'
-                return {'err': msg}, 'err'
+                return {"error": msg}, 500
         else:
             msg = 'Hash match failed or Invalid file extension or file type'
-            return {'err': msg}, 'err'
+            return {"error": msg}, 500
+
     except Exception as exp:
         logger.exception('Error Performing Static Analysis')
         msg = str(exp)
         exp_doc = exp.__doc__
-        return {'err': 'Error Performing Static Analysis'}, 'err'
+        return {"error": 'Error Performing Static Analysis'}, 500
