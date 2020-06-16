@@ -58,7 +58,6 @@ class RecentScansDB(models.Model):
     @classmethod
     def get_recent_scans(cls, organization_id):
         """List of recent scans and their data"""
-        
         scans = [
             StaticAnalyzerAndroid.objects.filter(
                     ORGANIZATION=organization_id).order_by(
@@ -69,89 +68,76 @@ class RecentScansDB(models.Model):
                 "-DATE"
             ),
         ]
-
         rs = []
         for queryset in scans:
-
             if queryset.count() == 0: continue # don't bother.
-    
             for _ in queryset:
                 try:
-                    
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # CASE ANDROID
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
                     if isinstance(_, StaticAnalyzerAndroid):
                         scan = StaticAnalyzerAndroid.get_scan_info_from_obj(_)
-                    
                         try:
                             ts = eval(_.TRACKERS)
                             tt = ts["total_trackers"]
                             dt = ts['detected_trackers']
                         except:
                             tt = dt = "No trackers"
-
                         # load trackers
                         scan["trackers_detected"] =  "%s/%s" % (dt, tt) 
-                             
                         try:
                             skore = score(eval(_.CODE_ANALYSIS))[0]
                         except Exception as _exe_:
                             logger.exception(_exe_)
                             skore = "No score"
-
                         scan["security_score"] = skore
-
                         try:
                             issues = StaticAnalyzerAndroid.get_total_issue(_.MD5)
                         except Exception as _exe_:
                             logger.exception(_exe_)
                             issues = ""
-
                         if issues is None:
                             issues = ""
                         else:
                             pass
-
                         scan["issues"] =  issues
-
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # CASE IOS
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
                     else:
                         scan = StaticAnalyzerIOS.get_scan_info_from_obj(_)
-
                         try:
                             skore = score(StaticAnalyzerIOS.get_code_analysis_report(_.MD5))
                         except Exception as _exe_:
                             logger.exception(str(_exe_))
                             skore = "No score"
-
                         scan["security_score"] = skore
-
                         try:
                             issues = StaticAnalyzerIOS.get_total_issue(_.MD5)
                         except:
                             issues = ""
-
                         if issues is None:
                             issues = "No issues"
                         else:
                             pass
-
                         scan["issues"] = issues
-
                 except Exception as _exe_:
                     logger.exception(str(_exe_))
                     rs.append({})
                     continue
-
                 # Load to payload
                 rs.append(scan)
-
         return rs
+    
+    @classmethod
+    def get_fresh_up_save(cls, *args):
+        """Get a recent scan or update first arg 
+        needs to be organization, second md5."""
+        for fresh in cls.get_recent_scans(args[0]):
+            if 'app_info' in fresh:
+                if fresh["app_info"]["md5"] == args[1]:
+                    return fresh
 
 
 class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
