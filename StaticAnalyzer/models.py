@@ -8,10 +8,11 @@ from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import EmptyPage, Paginator, PageNotAnInteger
 
-from users.models import User
+from StaticAnalyzer.mixins import StaticAnalizerMixin
 from StaticAnalyzer.views.rules_properties import (
     Level,
 )
+from users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +43,6 @@ def score(findings):
     return avg_cvss, app_score
 
 
-
 class RecentScansDB(models.Model):
 
     FILE_NAME = models.CharField(max_length=260)
@@ -60,10 +60,12 @@ class RecentScansDB(models.Model):
         """List of recent scans and their data"""
         
         scans = [
-            StaticAnalyzerAndroid.objects.filter(ORGANIZATION=organization_id).order_by(
+            StaticAnalyzerAndroid.objects.filter(
+                    ORGANIZATION=organization_id).order_by(
                 "-DATE"
             ),
-            StaticAnalyzerIOS.objects.filter(ORGANIZATION=organization_id).order_by(
+            StaticAnalyzerIOS.objects.filter(
+                    ORGANIZATION=organization_id).order_by(
                 "-DATE"
             ),
         ]
@@ -71,7 +73,7 @@ class RecentScansDB(models.Model):
         rs = []
         for queryset in scans:
 
-            if queryset.count() == 0: continue # dont bother.
+            if queryset.count() == 0: continue # don't bother.
     
             for _ in queryset:
                 try:
@@ -92,22 +94,20 @@ class RecentScansDB(models.Model):
 
                         # load trackers
                         scan["trackers_detected"] =  "%s/%s" % (dt, tt) 
-                                
+                             
                         try:
-                            skore = score(eval(_.CODE_ANALYSIS))
-                        except Exception as error:
-                            warnings.warn(str(error), UserWarning, stacklevel=3)
+                            skore = score(eval(_.CODE_ANALYSIS))[0]
+                        except Exception as _exe_:
+                            logger.exception(_exe_)
                             skore = "No score"
-
 
                         scan["security_score"] = skore
 
                         try:
                             issues = StaticAnalyzerAndroid.get_total_issue(_.MD5)
-                        except Exception as error:
-                            warnings.warn(str(error), UserWarning, stacklevel=3)
+                        except Exception as _exe_:
+                            logger.exception(_exe_)
                             issues = ""
-                        
 
                         if issues is None:
                             issues = ""
@@ -125,28 +125,26 @@ class RecentScansDB(models.Model):
 
                         try:
                             skore = score(StaticAnalyzerIOS.get_code_analysis_report(_.MD5))
-                        except Exception as error:
-                            warnings.warn(str(error), UserWarning, stacklevel=3)
+                        except Exception as _exe_:
+                            logger.exception(str(_exe_))
                             skore = "No score"
 
                         scan["security_score"] = skore
-
 
                         try:
                             issues = StaticAnalyzerIOS.get_total_issue(_.MD5)
                         except:
                             issues = ""
-                        
 
                         if issues is None:
-                            issues = ""
+                            issues = "No issues"
                         else:
                             pass
 
-                        scan["issues"] =  issues
+                        scan["issues"] = issues
 
-                except Exception as error:
-                    warnings.warn(str(error), UserWarning, stacklevel=3)
+                except Exception as _exe_:
+                    logger.exception(str(_exe_))
                     rs.append({})
                     continue
 
@@ -156,8 +154,7 @@ class RecentScansDB(models.Model):
         return rs
 
 
-
-class StaticAnalyzerAndroid(models.Model):
+class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
     # Relational Fields
     USER = models.ForeignKey(User, on_delete=models.CASCADE)
     ORGANIZATION = models.CharField(max_length=254)
@@ -206,15 +203,6 @@ class StaticAnalyzerAndroid(models.Model):
     TRACKERS = models.TextField(default={})
     PLAYSTORE_DETAILS = models.TextField(default={})
 
-    @classmethod
-    def cook_scan(cls, **kwargs):
-        """Create a scan and store it to database -- do sanity checks here."""
-        if "USER" not in kwargs:
-            return False
-        if "ORGANIZATION" not in kwargs:
-            return False
-        cls.objects.create(**kwargs)
-        return True
 
     @staticmethod
     def paginate(load, page, count=30):
@@ -241,23 +229,6 @@ class StaticAnalyzerAndroid(models.Model):
             "list": activities.object_list,
         }
         return resp
-
-    @classmethod
-    def get_single_or_none(cls, md5):
-        """Get a single model or None"""
-        try:
-            return cls.objects.get(MD5=md5)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            return None
-
-    @classmethod
-    def get_md5s(cls, md5):
-        """Get md5 that match the given term for a search result,
-        return an empty list otherwise."""
-        md5s = cls.objects.filter(MD5__icontains=md5).values("MD5")
-        if md5s.count() == 0:
-            return []
-        return md5s
     
     @classmethod
     def get_scan_info_from_obj(cls, scan_obj):
@@ -278,6 +249,7 @@ class StaticAnalyzerAndroid(models.Model):
                     cert_stat = ca
                 except:
                     cert_stat = ""
+                cert_stat = "bad" if cert_stat == "warning" else "good"
             except:
                 cert_stat = ""
 
@@ -285,7 +257,7 @@ class StaticAnalyzerAndroid(models.Model):
                 "icon_url": icon_url,
                 "file_name": scan_obj.FILE_NAME,
                 "system": "android",
-                "date": str(scan_obj.DATE).__str__(),
+                "date": scan_obj.DATE.__format__("%b, %d, %Y"),
                 "certificate_status": cert_stat,
                 "app_info": {
                     "file_name": scan_obj.FILE_NAME,
@@ -307,15 +279,6 @@ class StaticAnalyzerAndroid(models.Model):
         except Exception as error:
             return None
     
-    @classmethod
-    def get_scan_info(cls, md5):
-        try:
-            scan_obj = cls.objects.get(MD5=md5)
-            scan_info = cls.get_scan_info_from_obj(scan_obj)
-            return scan_info
-        except:
-            return None
-
     @classmethod
     def get_certificate_analysis_data(cls, md5):
         """Get a certificate return None otherwise.
@@ -342,105 +305,6 @@ class StaticAnalyzerAndroid(models.Model):
             return None
         manifest = dict(manifest_analysis=eval(manifest))
         return manifest
-
-    @classmethod
-    def get_domains_data(cls, md5):
-        """Get domains. Requires pagination"""
-        countries = []
-        logger.info("Getting domains data of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-        except:
-            return None
-        try:
-            domains = eval(query.DOMAINS)
-            for key, value in domains.items():
-                holder = {}
-                geolocation = value.get("geolocation", None)
-                if geolocation is None:
-                    holder[key] = {}
-                    for k in value.keys():
-                        if k in ("good", "bad"):
-                            holder[key][k] = value.get(k, None)
-                    holder[key]["domain"] = key
-                    countries.append(holder)
-                    continue
-                country = geolocation.pop("country_long")
-                holder[country] = {}
-                holder[country]["domain"] = key
-                for k in value.keys():
-                    if k in ("good", "bad"):
-                        holder[country][k] = value.get(k, None)
-                holder[country].update(geolocation)
-                countries.append(holder)
-        except:
-            logger.info("Error getting domains for object : %s" % md5)
-            return None
-        return {"countries": countries}
-
-    @classmethod
-    def get_recon_emails(cls, md5, page):
-        """Get Reconnaissance emails or return None. 
-        Requires pagination"""
-        logger.info("Getting reconnassaince emails of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            emails = eval(query.EMAILS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists" % md5)
-            return None
-        except Exception:
-            logger.error("Error geting reconnaissance emails of %s" % md5)
-            return None
-        return {"emails": cls.paginate(emails, page)}
-
-    @classmethod
-    def get_recon_urls(cls, md5, page):
-        """Get reconnaissance urls or None. 
-        Requires pagination."""
-        logger.info("Getting urls of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            urls = eval(query.URLS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting recon urls of %s" % md5)
-            return None
-        return {"urls": cls.paginate(urls, page)}
-
-    @classmethod
-    def get_recon_firebase_db(cls, md5, page):
-        """Get reconnaissance firebase url. 
-        Requires pagination."""
-        logger.info("Getting firebase urls of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            firebase_urls = eval(query.FIREBASE_URLS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting fb_db_urls of %s" % md5)
-            return None
-        return {"firebase_urls": cls.paginate(firebase_urls, page)}
-
-    @classmethod
-    def get_recon_strings(cls, md5, page):
-        """Get reconnaissance strings, or return None 
-        Requires pagination."""
-        logger.info("Getting strings of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            strings = eval(query.STRINGS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception as error:
-            logger.error("%s : object -> %s" % (str(error), md5))
-            return None
-        return {"strings": cls.paginate(strings, page)}
 
     @classmethod
     def get_recon_trackers(cls, md5, page):
@@ -559,99 +423,6 @@ class StaticAnalyzerAndroid(models.Model):
             return None
 
     @classmethod
-    def get_code_analysis(cls, md5):
-        """Gets code analysis, or returns None."""
-        logger.info("get_code_analysis of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            code_analysis = eval(data_entry.CODE_ANALYSIS)
-            return code_analysis
-        except:
-            logger.info("get_code_analysis error %s" % md5)
-            return None
-
-
-    @classmethod
-    def get_code_analysis_report(cls, md5):
-        """Get's code analysis report, or returns None."""
-        logger.info("get_code_analysis of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            code_analysis = eval(data_entry.CODE_ANALYSIS)
-            code_high = code_good = code_warning = code_info = 0
-            resp_code = []
-            for issue, details in code_analysis.items():
-                if details["level"] == "high":
-                    code_high = code_high + 1
-                elif details["level"] == "good":
-                    code_good = code_good + 1
-                elif details["level"] == "warning":
-                    code_warning = code_warning + 1
-                elif details["level"] == "info":
-                    code_info = code_info + 1
-                resp_code.append(
-                    {
-                        "severity": details["level"],
-                        "issue": issue,
-                        "description": {
-                            "cvss": details["cvss"],
-                            "cwe": details["cwe"],
-                            "owasp": details["owasp"],
-                            "owasp-mstg": details["owasp-mstg"],
-                            "path": details["path"],
-                        },
-                    }
-                )
-            return {
-                "count": {
-                    "high": code_high,
-                    "good": code_good,
-                    "warning": code_warning,
-                    "info": code_info,
-                },
-                "list": resp_code,
-            }
-        except Exception as error:
-            logger.error(str(error))
-            logger.info("get_code_analysis error %s" % md5)
-            return None
-
-    @classmethod
-    def get_binary_analysis(cls, md5):
-        logger.info("get_binary_analysis of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            binary_analysis = eval(data_entry.BINARY_ANALYSIS)
-            binary_high = binary_info = binary_medium = 0
-            resp_binary = []
-            for i in range(0, len(binary_analysis)):
-                if binary_analysis[i]["stat"] == "high":
-                    binary_high = binary_high + 1
-                elif binary_analysis[i]["stat"] == "info":
-                    binary_info = binary_info + 1
-                elif binary_analysis[i]["stat"] == "medium":
-                    binary_medium = binary_medium + 1
-                resp_binary.append(
-                    {
-                        "severity": binary_analysis[i]["stat"],
-                        "issue": binary_analysis[i]["title"],
-                        "description": binary_analysis[i]["desc"],
-                        "files": binary_analysis[i]["file"],
-                    }
-                )
-            return {
-                "count": {
-                    "high": binary_high,
-                    "medium": binary_medium,
-                    "info": binary_info,
-                },
-                "list": resp_binary,
-            }
-        except:
-            logger.info("get_binary_analysis error %s" % md5)
-            return None
-
-    @classmethod
     def get_components_activities(cls, md5):
         logger.info("get_components_activities of %s" % md5)
         try:
@@ -707,128 +478,6 @@ class StaticAnalyzerAndroid(models.Model):
         return providers
 
     @classmethod
-    def get_components_libraries(cls, md5):
-        logger.info("get_components_libraries of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            libraries = eval(data_entry.LIBRARIES)
-        except:
-            logger.info("get_components_libraries error %s" % md5)
-            return None
-        return libraries
-
-    @classmethod
-    def get_components_files(cls, md5):
-        logger.info("get_components_files of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            files = eval(data_entry.FILES)
-        except:
-            logger.info("get_components_files error %s" % md5)
-            return None
-        return files
-
-    @classmethod
-    def get_domain_analysis(cls, md5):
-        logger.info("get_components_files of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            domains = eval(data_entry.DOMAINS)
-            bad_country = {}
-            for key, value in domains.items():
-                bad = value.get("bad", None)
-                if bad is None:
-                    continue
-                geolocation = value.get("geolocation", None)
-                if geolocation is None:
-                    continue
-                country_long = geolocation["country_long"]
-                # country_short = geolocation['country_short']
-                if country_long in bad_country.keys():
-                    bad_country[country_long]["domain"].append(key)
-                else:
-                    bad_country[country_long] = {"count": 0, "domain": [key]}
-                if bad == "yes":
-                    bad_country[country_long]["count"] = (
-                        bad_country[country_long]["count"] + 1
-                    )
-
-            bad_country_list = []
-            for key, value in bad_country.items():
-                bad_country_list.append(
-                    {
-                        "count": value["count"],
-                        "domains": value["domain"],
-                        "country": key,
-                    }
-                )
-            for i in range(len(bad_country_list) - 1):
-                for j in range(i + 1, len(bad_country_list)):
-                    if bad_country_list[i]["count"] < bad_country_list[j]["count"]:
-                        temp = bad_country_list[j]
-                        bad_country_list[j] = bad_country_list[i]
-                        bad_country_list[i] = temp
-            if len(bad_country_list) >= 3:
-                return {
-                    bad_country_list[0]["country"]: {
-                        "bad_count": bad_country_list[0]["count"],
-                        "domain": bad_country_list[0]["domains"][0],
-                    },
-                    bad_country_list[1]["country"]: {
-                        "bad_count": bad_country_list[1]["count"],
-                        "domain": bad_country_list[1]["domains"][0],
-                    },
-                    bad_country_list[2]["country"]: {
-                        "bad_count": bad_country_list[2]["count"],
-                        "domain": bad_country_list[2]["domains"][0],
-                    },
-                }
-            elif len(bad_country_list) == 1:
-                return {
-                    bad_country_list[0]["country"]: {
-                        "bad_count": bad_country_list[0]["count"],
-                        "domain": bad_country_list[0]["domains"][:3],
-                    },
-                }
-            elif len(bad_country_list) == 2:
-                if len(bad_country_list[0]["domains"]) > 1:
-                    return {
-                        bad_country_list[0]["country"]: {
-                            "bad_count": bad_country_list[0]["count"],
-                            "domain": bad_country_list[0]["domains"][:2],
-                        },
-                        bad_country_list[1]["country"]: {
-                            "bad_count": bad_country_list[1]["count"],
-                            "domain": bad_country_list[1]["domains"][0],
-                        },
-                    }
-                elif len(bad_country_list[1]["domains"]) > 1:
-                    return {
-                        bad_country_list[0]["country"]: {
-                            "bad_count": bad_country_list[0]["count"],
-                            "domain": bad_country_list[0]["domains"][0],
-                        },
-                        bad_country_list[1]["country"]: {
-                            "bad_count": bad_country_list[1]["count"],
-                            "domain": bad_country_list[1]["domains"][:2],
-                        },
-                    }
-                else:
-                    return {
-                        bad_country_list[0]["country"]: {
-                            "bad_count": bad_country_list[0]["count"],
-                            "domain": bad_country_list[0]["domains"][0],
-                        },
-                        bad_country_list[1]["country"]: {
-                            "bad_count": bad_country_list[1]["count"],
-                            "domain": bad_country_list[1]["domains"][0],
-                        },
-                    }
-        except:
-            logger.info("get_components_files error %s" % md5)
-            return None
-
-    @classmethod
     def get_manifest_analysis(cls, md5):
         logger.info("get_components_files of %s" % md5)
         try:
@@ -863,44 +512,6 @@ class StaticAnalyzerAndroid(models.Model):
             return None
 
     @classmethod
-    def get_file_analysis(cls, md5):
-        logger.info("get_file_analysis of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            file_analysis = eval(data_entry.FILE_ANALYSIS)
-            return file_analysis
-        except:
-            logger.info("get_file_analysis error %s" % md5)
-            return None
-
-    @classmethod
-    def get_app_permissions(cls, md5):
-        logger.info("get_app_permissions of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            permissions = eval(data_entry.PERMISSIONS)
-            permissions_list = []
-            for key, value in permissions.items():
-                temp = {key: value}
-                permissions_list.append(temp)
-            return permissions_list
-        except:
-            logger.info("get_app_permissions error %s" % md5)
-            return None
-
-    @classmethod
-    def get_org_user(cls, md5):
-        logger.info("get_org_user of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            org_id = data_entry.ORGANIZATION
-            user = data_entry.USER_ID
-            return org_id, user
-        except:
-            logger.info("get_app_permissions error %s" % md5)
-            return None, None
-
-    @classmethod
     def get_total_issue(cls, md5):
         obj = cls.get_single_or_none(md5=md5)
         if obj is None:
@@ -919,8 +530,23 @@ class StaticAnalyzerAndroid(models.Model):
         total_issue = issue_binary + issue_manifest + issue_code_analysis + issue_file_analysis
         return total_issue
 
+    @classmethod
+    def get_app_permissions(cls, md5):
+        logger.info("get_app_permissions of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            permissions = eval(data_entry.PERMISSIONS)
+            permissions_list = []
+            for key, value in permissions.items():
+                temp = {key: value}
+                permissions_list.append(temp)
+            return permissions_list
+        except:
+            logger.info("get_app_permissions error %s" % md5)
+            return None
 
-class StaticAnalyzerIOS(models.Model):
+
+class StaticAnalyzerIOS(models.Model, StaticAnalizerMixin):
     """This model represents the information obtained from a scan operation."""
 
     USER = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -960,17 +586,6 @@ class StaticAnalyzerIOS(models.Model):
     STRINGS = models.TextField(default=[])
     FIREBASE_URLS = models.TextField(default=[])
     APPSTORE_DETAILS = models.TextField(default={})
-
-    @classmethod
-    def cook_scan(cls, **kwargs):
-        """Create a scan and store it to 
-        database do sanity checks here."""
-        if "USER" not in kwargs:
-            return False
-        if "ORGANIZATION" not in kwargs:
-            return False
-        cls.objects.create(**kwargs)
-        return True
 
     @staticmethod
     def paginate(load, page, count=30):
@@ -1029,123 +644,12 @@ class StaticAnalyzerIOS(models.Model):
             scan_info = {
                 "file_name": scan_obj.FILE_NAME,
                 "icon_url": icon_url,
-                "date": scan_obj.DATE,
+                "date": scan_obj.DATE.__format__("%b, %d, %Y"),
                 "app_info": cls.get_app_info(scan_obj.MD5),
             }
             return scan_info
         except:
             return None
-
-    @classmethod
-    def get_single_or_none(cls, md5):
-        """Get a single model or None"""
-        try:
-            return cls.objects.get(MD5=md5)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            return None
-
-    @classmethod
-    def get_md5s(cls, md5):
-        """Get md5s that match the pattern"""
-        md5s = cls.objects.filter(MD5__icontains=md5).values("MD5")
-        if md5s.count() == 0:
-            return []
-        return md5s
-
-    @classmethod
-    def get_domains_data(cls, md5):
-        """Get domains"""
-        countries = []
-        logger.info("Getting domains data of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-        except:
-            return None
-        try:
-            domains = eval(query.DOMAINS)
-            for key, value in domains.items():
-                holder = {}
-                geolocation = value.get("geolocation", None)
-                if geolocation is None:
-                    holder[key] = {}
-                    for k in value.keys():
-                        if k in ("good", "bad"):
-                            holder[key][k] = value.get(k, None)
-                    holder[key]["domain"] = key
-                    countries.append(holder)
-                    continue
-                country = geolocation.pop("country_long")
-                holder[country] = {}
-                holder[country]["domain"] = key
-                for k in value.keys():
-                    if k in ("good", "bad"):
-                        holder[country][k] = value.get(k, None)
-                holder[country].update(geolocation)
-                countries.append(holder)
-        except:
-            logger.info("Issue getting domains for object : %s" % md5)
-            return None
-        return {"countries": countries}
-
-    @classmethod
-    def get_recon_emails(cls, md5, page):
-        """Get Reconnaissance emails or None"""
-        logger.info("Getting reconnassaince emails of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            emails = eval(query.EMAILS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting recon emails of %s" % md5)
-            return None
-        return {"emails": cls.paginate(emails, page)}
-
-    @classmethod
-    def get_recon_urls(cls, md5, page):
-        """Get recon urls or None"""
-        logger.info("Getting urls of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            urls = eval(query.URLS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting recon urls of %s" % md5)
-            return None
-        return {"urls": cls.paginate(urls, page)}
-
-    @classmethod
-    def get_recon_firebase_db(cls, md5, page):
-        """Get recon firebase url"""
-        logger.info("Getting firebase urls of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            firebase_urls = eval(query.FIREBASE_URLS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting fb_db_urls of %s" % md5)
-            return None
-        return {"firebase_urls": cls.paginate(firebase_urls, page)}
-
-    @classmethod
-    def get_recon_strings(cls, md5, page):
-        """Get recon strings. Requires pagination."""
-        logger.info("Getting strings of %s" % md5)
-        try:
-            query = cls.objects.get(MD5=md5)
-            strings = eval(query.STRINGS)
-        except (cls.DoesNotExist, ObjectDoesNotExist):
-            logger.error("Object %s does not exists")
-            return None
-        except Exception:
-            logger.error("Unexpected error geting strings of %s" % md5)
-            return None
-        return {"strings": cls.paginate(strings, page)}
 
     @classmethod
     def get_app_store(cls, md5):
@@ -1157,6 +661,29 @@ class StaticAnalyzerIOS(models.Model):
             return app_stor_info
         except:
             logger.info("error get_app_store of %s" % md5)
+            return None
+
+    @classmethod
+    def get_app_permissions(cls, md5):
+        """Get's applications permissions or returns None."""
+        logger.info("get_app_permissions of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            permissions = eval(data_entry.PERMISSIONS)
+            return permissions
+        except:
+            logger.info("get_app_permissions error %s" % md5)
+            return None
+
+    @classmethod
+    def get_libraries(cls, md5):
+        logger.info("get_libraries of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            permissions = eval(data_entry.PERMISSIONS)
+            return permissions
+        except:
+            logger.info("get_libraries error %s" % md5)
             return None
 
     @classmethod
@@ -1210,285 +737,12 @@ class StaticAnalyzerIOS(models.Model):
             return None
 
     @classmethod
-    def get_code_analysis(cls, md5):
-        """Get code analysis, or returns None."""
-        logger.info("get_code_analysis of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            code_analysis = eval(data_entry.CODE_ANALYSIS)
-            return code_analysis
-        except:
-            logger.info("get_code_analysis error %s" % md5)
-            return None
-
-    @classmethod
-    def get_code_analysis_report(cls, md5):
-        """Generates a code analysis report, or returns None."""
-        logger.info("get_code_analysis of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            code_analysis = eval(data_entry.CODE_ANALYSIS)
-            code_high = code_good = code_warning = code_info = 0
-            resp_code = []
-            for issue, details in code_analysis.items():
-                if details["level"] == "high":
-                    code_high = code_high + 1
-                elif details["level"] == "good":
-                    code_good = code_good + 1
-                elif details["level"] == "warning":
-                    code_warning = code_warning + 1
-                elif details["level"] == "info":
-                    code_info = code_info + 1
-                resp_code.append(
-                    {
-                        "severity": details["level"],
-                        "issue": issue,
-                        "description": {
-                            "cvss": details["cvss"],
-                            "cwe": details["cwe"],
-                            "owasp": details["owasp"],
-                            "owasp-mstg": details["owasp-mstg"],
-                            "path": details["path"],
-                        },
-                    }
-                )
-            return {
-                "count": {
-                    "high": code_high,
-                    "good": code_good,
-                    "warning": code_warning,
-                    "info": code_info,
-                },
-                "list": resp_code,
-            }
-        except:
-            logger.info("get_code_analysis error %s" % md5)
-            return None
-
-    @classmethod
-    def get_binary_analysis(cls, md5):
-        """Generates binary analysis or returns None."""
-        logger.info("get_binary_analysis of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            binary_analysis = eval(data_entry.BINARY_ANALYSIS)
-            binary_high = binary_info = binary_medium = 0
-            resp_binary = []
-            for i in range(0, len(binary_analysis)):
-                if binary_analysis[i]["stat"] == "high":
-                    binary_high = binary_high + 1
-                elif binary_analysis[i]["stat"] == "info":
-                    binary_info = binary_info + 1
-                elif binary_analysis[i]["stat"] == "medium":
-                    binary_medium = binary_medium + 1
-                resp_binary.append(
-                    {
-                        "severity": binary_analysis[i]["stat"],
-                        "issue": binary_analysis[i]["title"],
-                        "description": binary_analysis[i]["desc"],
-                        "files": binary_analysis[i]["file"],
-                    }
-                )
-            return {
-                "count": {
-                    "high": binary_high,
-                    "medium": binary_medium,
-                    "info": binary_info,
-                },
-                "list": resp_binary,
-            }
-        except:
-            logger.info("get_binary_analysis error %s" % md5)
-            return None
-
-    @classmethod
-    def get_file_analysis(cls, md5):
-        """Get's file analysis or returns None."""
-        logger.info("get_file_analysis of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            file_analysis = eval(data_entry.FILE_ANALYSIS)
-            return file_analysis
-        except:
-            logger.info("get_file_analysis error %s" % md5)
-            return None
-
-    @classmethod
-    def get_app_permissions(cls, md5):
-        """Get's applications permissions or returns None."""
-        logger.info("get_app_permissions of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            permissions = eval(data_entry.PERMISSIONS)
-            return permissions
-        except:
-            logger.info("get_app_permissions error %s" % md5)
-            return None
-
-    @classmethod
-    def get_libraries(cls, md5):
-        logger.info("get_app_permissions of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            permissions = eval(data_entry.PERMISSIONS)
-            return permissions
-        except:
-            logger.info("get_app_permissions error %s" % md5)
-            return None
-
-    @classmethod
-    def get_components_libraries(cls, md5):
-        logger.info("get_components_libraries of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            libraries = eval(data_entry.LIBRARIES)
-        except:
-            logger.info("get_components_libraries error %s" % md5)
-            return None
-        return libraries
-
-    @classmethod
-    def get_components_files(cls, md5):
-        logger.info("get_components_files of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            files = eval(data_entry.FILES)
-        except:
-            logger.info("get_components_files error %s" % md5)
-            return None
-        return files
-
-    @classmethod
-    def get_org_user(cls, md5):
-        logger.info("get_org_user of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            org_id = data_entry.ORGANIZATION
-            user = data_entry.USER_ID
-            return org_id, user
-        except:
-            logger.info("get_org_user error %s" % md5)
-            return None, None
-
-    @classmethod
-    def get_domain_analysis(cls, md5):
-        logger.info("get_components_files of %s" % md5)
-        try:
-            data_entry = cls.objects.get(MD5=md5)
-            domains = eval(data_entry.DOMAINS)
-            bad_country = {}
-            for key, value in domains.items():
-                bad = value.get("bad", None)
-                if bad is None:
-                    continue
-                geolocation = value.get("geolocation", None)
-                if geolocation is None:
-                    continue
-                country_long = geolocation["country_long"]
-                # country_short = geolocation['country_short']
-                if country_long in bad_country.keys():
-                    bad_country[country_long]["domain"].append(key)
-                else:
-                    bad_country[country_long] = {"count": 0, "domain": [key]}
-                if bad == "yes":
-                    bad_country[country_long]["count"] = (
-                        bad_country[country_long]["count"] + 1
-                    )
-
-            bad_country_list = []
-            for key, value in bad_country.items():
-                bad_country_list.append(
-                    {
-                        "count": value["count"],
-                        "domains": value["domain"],
-                        "country": key,
-                    }
-                )
-            for i in range(len(bad_country_list) - 1):
-                for j in range(i + 1, len(bad_country_list)):
-                    if bad_country_list[i]["count"] < bad_country_list[j]["count"]:
-                        temp = bad_country_list[j]
-                        bad_country_list[j] = bad_country_list[i]
-                        bad_country_list[i] = temp
-            if len(bad_country_list) >= 3:
-                return {
-                    bad_country_list[0]["country"]: {
-                        "bad_count": bad_country_list[0]["count"],
-                        "domain": bad_country_list[0]["domains"][0],
-                    },
-                    bad_country_list[1]["country"]: {
-                        "bad_count": bad_country_list[1]["count"],
-                        "domain": bad_country_list[1]["domains"][0],
-                    },
-                    bad_country_list[2]["country"]: {
-                        "bad_count": bad_country_list[2]["count"],
-                        "domain": bad_country_list[2]["domains"][0],
-                    },
-                }
-            elif len(bad_country_list) == 1:
-                return {
-                    bad_country_list[0]["country"]: {
-                        "bad_count": bad_country_list[0]["count"],
-                        "domain": bad_country_list[0]["domains"][:3],
-                    },
-                }
-            elif len(bad_country_list) == 2:
-                if len(bad_country_list[0]["domains"]) > 1:
-                    return {
-                        bad_country_list[0]["country"]: {
-                            "bad_count": bad_country_list[0]["count"],
-                            "domain": bad_country_list[0]["domains"][:2],
-                        },
-                        bad_country_list[1]["country"]: {
-                            "bad_count": bad_country_list[1]["count"],
-                            "domain": bad_country_list[1]["domains"][0],
-                        },
-                    }
-                elif len(bad_country_list[1]["domains"]) > 1:
-                    return {
-                        bad_country_list[0]["country"]: {
-                            "bad_count": bad_country_list[0]["count"],
-                            "domain": bad_country_list[0]["domains"][0],
-                        },
-                        bad_country_list[1]["country"]: {
-                            "bad_count": bad_country_list[1]["count"],
-                            "domain": bad_country_list[1]["domains"][:2],
-                        },
-                    }
-                else:
-                    return {
-                        bad_country_list[0]["country"]: {
-                            "bad_count": bad_country_list[0]["count"],
-                            "domain": bad_country_list[0]["domains"][0],
-                        },
-                        bad_country_list[1]["country"]: {
-                            "bad_count": bad_country_list[1]["count"],
-                            "domain": bad_country_list[1]["domains"][0],
-                        },
-                    }
-        except:
-            logger.info("get_components_files error %s" % md5)
-            return None
-
-    @classmethod
-    def get_scan_info(cls, md5):
-        """Get's scan information"""
-        try:
-            scan_obj = cls.objects.get(MD5=md5)
-            scan_info = cls.get_scan_info_from_obj(scan_obj)
-            return scan_info
-        except:
-            return None
-
-    @classmethod
     def get_total_issue(cls, md5):
         obj = cls.get_single_or_none(md5=md5)
         if obj is None:
             return None
         # issue from shard library
         issue_binary = len(obj.BINARY_ANALYSIS)
-        # issue from manifest
-        issue_manifest = len(obj.MANIFEST_ANALYSIS)
         # issue from code_analysis
         code_analysis = eval(obj.CODE_ANALYSIS)
         issue_code_analysis = 0
@@ -1496,7 +750,7 @@ class StaticAnalyzerIOS(models.Model):
             issue_code_analysis = len(code_analysis["items"])
         file_analysis = eval(obj.FILE_ANALYSIS)
         issue_file_analysis = len(file_analysis)
-        total_issue = issue_binary + issue_manifest + issue_code_analysis + issue_file_analysis
+        total_issue = issue_binary + issue_code_analysis + issue_file_analysis
         return total_issue
 
 
