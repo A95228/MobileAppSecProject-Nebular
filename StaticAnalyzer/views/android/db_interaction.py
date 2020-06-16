@@ -268,7 +268,7 @@ def save_or_update(update_type,
 
         if update_type == 'save':
 
-            # Create new SSA entry
+            # Create new SAA entry
             logger.info("calling StaticAnalizerAndroid.objects.create")
             scan_obj = StaticAnalyzerAndroid.objects.create(**values)
             logger.info("Object %s saved" % (scan_obj.pk))
@@ -283,7 +283,6 @@ def save_or_update(update_type,
             # Get the scan info for the response by pasing obj, not PK
             app_info = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
 
-
             # If scan_info_from_obj returns None, 
             if app_info is None:
                 return {"error" : "error getting scan info from obj %s" % app_dic["md5"]}, 500
@@ -294,7 +293,7 @@ def save_or_update(update_type,
             return {"error" : "android.db_interaction.save_or_update failed on creation."}, 500
 
 
-        # This is an unpdate procedure, do NOT edit below the line unless you 
+        # This is an update procedure, do NOT edit below the line unless you 
         # know what you are doing.
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         else: 
@@ -314,7 +313,6 @@ def save_or_update(update_type,
             logger.info("Getting scan_info_from_obj")
             context = StaticAnalyzerAndroid.get_scan_info_from_obj(
                 StaticAnalyzerAndroid.objects.get(MD5=app_dic["md5"]))
-        
         
         if context is not None: 
             return context, 200
