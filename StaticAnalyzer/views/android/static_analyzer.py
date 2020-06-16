@@ -20,7 +20,7 @@ from django.template.defaulttags import register
 from Kensa.utils import (
     file_size,
     is_file_exists,
-    print_n_send_error_response,
+    print_n_send_error_response, remove_directory,
 )
 
 from StaticAnalyzer.models import StaticAnalyzerAndroid
@@ -527,9 +527,9 @@ def static_analyzer(request, api=False):
         app_dic = {}
         match = re.match("^[0-9a-f]{32}$", checksum)
         if (
-            (match)
-            and (filename.lower().endswith(".apk") or filename.lower().endswith(".zip"))
-            and (typ in ["zip", "apk"])
+                (match)
+                and (filename.lower().endswith(".apk") or filename.lower().endswith(".zip"))
+                and (typ in ["zip", "apk"])
         ):
             app_dic["dir"] = settings.BASE_DIR  # BASE DIR
             app_dic["app_name"] = filename  # APP ORGINAL NAME
@@ -551,12 +551,12 @@ def static_analyzer(request, api=False):
                 else:
                     app_dic["app_file"] = app_dic["md5"] + ".apk"  # NEW FILENAME
                     app_dic["app_path"] = (
-                        app_dic["app_dir"] + app_dic["app_file"]
+                            app_dic["app_dir"] + app_dic["app_file"]
                     )  # APP PATH
 
                     # ANALYSIS BEGINS
                     app_dic["size"] = (
-                        str(file_size(app_dic["app_path"])) + "MB"
+                            str(file_size(app_dic["app_path"])) + "MB"
                     )  # FILE SIZE
                     app_dic["sha1"], app_dic["sha256"] = hash_gen(app_dic["app_path"])
 
@@ -607,7 +607,7 @@ def static_analyzer(request, api=False):
 
                     # Set Manifest link
                     app_dic["mani"] = (
-                        "../ManifestView/?md5=" + app_dic["md5"] + "&type=apk&bin=1"
+                            "../ManifestView/?md5=" + app_dic["md5"] + "&type=apk&bin=1"
                     )
                     man_data_dic = manifest_data(app_dic["parsed_xml"])
                     app_dic["playstore"] = get_app_details(man_data_dic["packagename"])
@@ -750,7 +750,7 @@ def static_analyzer(request, api=False):
                 else:
                     app_dic["app_file"] = app_dic["md5"] + ".zip"  # NEW FILENAME
                     app_dic["app_path"] = (
-                        app_dic["app_dir"] + app_dic["app_file"]
+                            app_dic["app_dir"] + app_dic["app_file"]
                     )  # APP PATH
                     logger.info("Extracting ZIP")
                     app_dic["files"] = unzip(app_dic["app_path"], app_dic["app_dir"])
@@ -773,7 +773,7 @@ def static_analyzer(request, api=False):
                     if valid and (pro_type in ["eclipse", "studio"]):
                         # ANALYSIS BEGINS
                         app_dic["size"] = (
-                            str(file_size(app_dic["app_path"])) + "MB"
+                                str(file_size(app_dic["app_path"])) + "MB"
                         )  # FILE SIZE
                         app_dic["sha1"], app_dic["sha256"] = hash_gen(
                             app_dic["app_path"]
@@ -798,11 +798,11 @@ def static_analyzer(request, api=False):
 
                         # Set manifest view link
                         app_dic["mani"] = (
-                            "../ManifestView/?md5="
-                            + app_dic["md5"]
-                            + "&type="
-                            + pro_type
-                            + "&bin=0"
+                                "../ManifestView/?md5="
+                                + app_dic["md5"]
+                                + "&type="
+                                + pro_type
+                                + "&bin=0"
                         )
 
                         man_data_dic = manifest_data(app_dic["persed_xml"])
@@ -979,10 +979,8 @@ def static_analyzer(request, api=False):
             return print_n_send_error_response(request, msg, False, exp)
 
 
-
 def static_analyzer_android(scan_type, md5, filename, user_id, organization_id):
     """Do static analysis on an request and save to db."""
-
     try:
 
         # Input validation
@@ -1003,10 +1001,8 @@ def static_analyzer_android(scan_type, md5, filename, user_id, organization_id):
                 # pylint: disable=E1101
                 context = StaticAnalyzerAndroid.get_scan_info(organization_id, md5)
                 if context is not None:
-                    context['average_cvss'], context[
-                        'security_score'] = score(context['code_analysis'])
-
                     return context, 'success'
+
                 app_dic['app_file'] = app_dic[
                                           'md5'] + '.apk'  # NEW FILENAME
                 app_dic['app_path'] = (app_dic['app_dir'] +
@@ -1023,7 +1019,9 @@ def static_analyzer_android(scan_type, md5, filename, user_id, organization_id):
                 if not app_dic['files']:
                     # Can't Analyze APK, bail out.
                     msg = 'APK file is invalid or corrupt'
-                    return {'error': msg}, 500
+                    target_dir = os.path.join(settings.UPLD_DIR, organization_id + '/', md5)
+                    remove_directory(target_dir)
+                    return {'error': msg}, 'err'
 
                 app_dic['certz'] = get_hardcoded_cert_keystore(app_dic[
                                                                    'files'])
@@ -1137,21 +1135,24 @@ def static_analyzer_android(scan_type, md5, filename, user_id, organization_id):
 
                 logger.info('Updating Database...')
                 context = save_or_update('save',
-                    app_dic,
-                    man_data_dic,
-                    man_an_dic,
-                    code_an_dic,
-                    cert_dic,
-                    bin_an_buff,
-                    apkid_results,
-                    tracker_res,
-                    user_id,
-                    organization_id,
-                )
+                                         app_dic,
+                                         man_data_dic,
+                                         man_an_dic,
+                                         code_an_dic,
+                                         cert_dic,
+                                         bin_an_buff,
+                                         apkid_results,
+                                         tracker_res,
+                                         user_id,
+                                         organization_id,
+                                         )
                 if context is not None:
                     update_scan_timestamp(app_dic['md5'])
                     return context, 'success'
                 logger.exception('Saving to Database Failed')
+                #here remove scaned folder
+                target_dir = os.path.join(settings.UPLD_DIR, organization_id + '/', md5)
+                remove_directory(target_dir)
                 return {'err': 'Saving to Database Failed'}, 'err'
             elif filename.lower().endswith('.zip'):
                 # Check if in DB
@@ -1287,17 +1288,25 @@ def static_analyzer_android(scan_type, md5, filename, user_id, organization_id):
                         return context, 'success'
                     except Exception:
                         logger.exception('Saving to Database Failed')
+                    target_dir = os.path.join(settings.UPLD_DIR, organization_id + '/', md5)
+                    remove_directory(target_dir)
                     return {'err': 'Saving to Database Failed'}, 'err'
                 else:
                     msg = 'This ZIP Format is not supported'
                     logger.error('Saving to Database Failed')
+                    target_dir = os.path.join(settings.UPLD_DIR, organization_id + '/', md5)
+                    remove_directory(target_dir)
                     return {'err': 'This ZIP Format is not supported'}, 'err'
             else:
                 err = ('Only APK,IPA and Zipped '
                        'Android/iOS Source code supported now!')
                 logger.error(err)
+                target_dir = os.path.join(settings.UPLD_DIR, organization_id + '/', md5)
+                remove_directory(target_dir)
                 return {'err': 'Only APK,IPA and Zipped Android/iOS Source code supported now!'}, 'err'
         else:
+            target_dir = os.path.join(settings.UPLD_DIR, organization_id + '/', md5)
+            remove_directory(target_dir)
             msg = 'Hash match failed or Invalid file extension or file type'
             return {'err': 'Hash match failed or Invalid file extension or file type'}, 'err'
 
@@ -1305,7 +1314,9 @@ def static_analyzer_android(scan_type, md5, filename, user_id, organization_id):
         logger.exception('Error Performing Static Analysis')
         msg = str(excep)
         exp = excep.__doc__
-        return {'error': 'Error Performing Static Analysis'}, 500
+        target_dir = os.path.join(settings.UPLD_DIR, organization_id + '/', md5)
+        remove_directory(target_dir)
+        return {'error': 'Error Performing Static Analysis'}, 'err'
 
 
 def valid_android_zip(app_dir):

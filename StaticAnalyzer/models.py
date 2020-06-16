@@ -321,12 +321,12 @@ class StaticAnalyzerAndroid(models.Model):
         return eval(cert)
 
     @classmethod
-    def get_manifest(cls, md5):
+    def get_manifest(cls, organization, md5):
         """Get a manifest return None otherwise.
         Requires no pagination."""
         logger.info("Getting manifest data of %s" % md5)
         try:
-            cert = cls.objects.get(MD5=md5)
+            cert = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             manifest = cert.MANIFEST_ANALYSIS
         except:
             logger.error("ObjectNotFound with md5 %s" % md5)
@@ -563,43 +563,40 @@ class StaticAnalyzerAndroid(models.Model):
             return None
 
     @classmethod
-    def get_code_analysis_report(cls, md5):
+    def get_code_analysis_report(cls, organization, md5):
         """Get's code analysis report, or returns None."""
         logger.info("get_code_analysis of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             code_analysis = eval(data_entry.CODE_ANALYSIS)
             code_high = code_good = code_warning = code_info = 0
             resp_code = []
-            for issue, details in code_analysis["items"]:
-                if details["level"] == "high":
-                    code_high = code_high + 1
-                elif details["level"] == "good":
-                    code_good = code_good + 1
-                elif details["level"] == "warning":
-                    code_warning = code_warning + 1
-                elif details["level"] == "info":
-                    code_info = code_info + 1
+            for issue, details in code_analysis.items():
+                # if details["level"] == "high":
+                #     code_high = code_high + 1
+                # elif details["level"] == "good":
+                #     code_good = code_good + 1
+                # elif details["level"] == "warning":
+                #     code_warning = code_warning + 1
+                # elif details["level"] == "info":
+                #     code_info = code_info + 1
                 resp_code.append(
                     {
                         "severity": details["level"],
                         "issue": issue,
-                        "description": {
-                            "cvss": details["cvss"],
-                            "cwe": details["cwe"],
-                            "owasp": details["owasp"],
-                            "owasp-mstg": details["owasp-mstg"],
-                            "path": details["path"],
-                        },
+                        "cvss": details["cvss"],
+                        "cwe": details["cwe"],
+                        "owasp": details["owasp"],
+                        "owasmasvs": details["owasp-mstg"],
+                        "file": details["path"],
                     }
                 )
             return {
-                "count": {
-                    "high": code_high,
-                    "good": code_good,
-                    "warning": code_warning,
-                    "info": code_info,
-                },
+                "count": # "high": code_high,
+                    # "good": code_good,
+                    # "warning": code_warning,
+                    # "info": code_info,
+                    len(resp_code),
                 "list": resp_code,
             }
         except:
@@ -607,20 +604,20 @@ class StaticAnalyzerAndroid(models.Model):
             return None
 
     @classmethod
-    def get_binary_analysis(cls, md5):
+    def get_binary_analysis(cls, organization, md5):
         logger.info("get_binary_analysis of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             binary_analysis = eval(data_entry.BINARY_ANALYSIS)
             binary_high = binary_info = binary_medium = 0
             resp_binary = []
             for i in range(0, len(binary_analysis)):
-                if binary_analysis[i]["stat"] == "high":
-                    binary_high = binary_high + 1
-                elif binary_analysis[i]["stat"] == "info":
-                    binary_info = binary_info + 1
-                elif binary_analysis[i]["stat"] == "medium":
-                    binary_medium = binary_medium + 1
+                # if binary_analysis[i]["stat"] == "high":
+                #     binary_high = binary_high + 1
+                # elif binary_analysis[i]["stat"] == "info":
+                #     binary_info = binary_info + 1
+                # elif binary_analysis[i]["stat"] == "medium":
+                #     binary_medium = binary_medium + 1
                 resp_binary.append(
                     {
                         "severity": binary_analysis[i]["stat"],
@@ -630,11 +627,11 @@ class StaticAnalyzerAndroid(models.Model):
                     }
                 )
             return {
-                "count": {
-                    "high": binary_high,
-                    "medium": binary_medium,
-                    "info": binary_info,
-                },
+                "count":
+                    # "high": binary_high,
+                    # "medium": binary_medium,
+                    # "info": binary_info,
+                    len(resp_binary),
                 "list": resp_binary,
             }
         except:
@@ -822,20 +819,20 @@ class StaticAnalyzerAndroid(models.Model):
             return None
 
     @classmethod
-    def get_manifest_analysis(cls, md5):
+    def get_manifest_analysis(cls, organization, md5):
         logger.info("get_components_files of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             manifest = eval(data_entry.MANIFEST_ANALYSIS)
             count_high = count_info = count_medium = 0
             manifest_response = []
             for i in range(len(manifest)):
-                if manifest[i]["stat"] == "high":
-                    count_high = count_high + 1
-                elif manifest[i]["stat"] == "medium":
-                    count_medium = count_medium + 1
-                elif manifest[i]["stat"] == "info":
-                    count_info = count_info + 1
+                # if manifest[i]["stat"] == "high":
+                #     count_high = count_high + 1
+                # elif manifest[i]["stat"] == "medium":
+                #     count_medium = count_medium + 1
+                # elif manifest[i]["stat"] == "info":
+                #     count_info = count_info + 1
                 manifest_response.append(
                     {
                         "severity": manifest[i]["stat"],
@@ -843,14 +840,7 @@ class StaticAnalyzerAndroid(models.Model):
                         "description": manifest[i]["desc"],
                     }
                 )
-            return {
-                "count": {
-                    "high": count_high,
-                    "medium": count_medium,
-                    "info": count_info,
-                },
-                "list": manifest_response,
-            }
+            return len(manifest_response), manifest_response
         except:
             logger.info("get_components_files error %s" % md5)
             return None
@@ -867,16 +857,21 @@ class StaticAnalyzerAndroid(models.Model):
             return None
 
     @classmethod
-    def get_app_permissions(cls, md5):
+    def get_app_permissions(cls, organization, md5):
         logger.info("get_app_permissions of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             permissions = eval(data_entry.PERMISSIONS)
             permissions_list = []
-            for key, value in permissions.items():
-                temp = {key: value}
-                permissions_list.append(temp)
-            return permissions_list
+            for perm, desc in permissions.items():
+                permissions_list.append({
+                    'severity': desc['status'],
+                    'permission': perm,
+                    'info': desc['info'],
+                    'description': desc['description']})
+            return {
+                'count': len(permissions_list),
+                'list': permissions_list }
         except:
             logger.info("get_app_permissions error %s" % md5)
             return None
@@ -1201,7 +1196,7 @@ class StaticAnalyzerIOS(models.Model):
             return None
 
     @classmethod
-    def get_code_analysis_report(cls, md5):
+    def get_code_analysis_report(cls, organization, md5):
         """Generates a code analysis report, or returns None."""
         logger.info("get_code_analysis of %s" % md5)
         try:
@@ -1280,38 +1275,39 @@ class StaticAnalyzerIOS(models.Model):
         except:
             return None
 
-
     @classmethod
-    def get_binary_analysis(cls, md5):
+    def get_binary_analysis(cls, organization, md5):
         """Generates binary analysis or returns None."""
         logger.info("get_binary_analysis of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             binary_analysis = eval(data_entry.BINARY_ANALYSIS)
-            binary_high = binary_info = binary_medium = 0
+            # binary_high = binary_info = binary_medium = 0
             resp_binary = []
-            for i in range(0, len(binary_analysis)):
-                if binary_analysis[i]["stat"] == "high":
-                    binary_high = binary_high + 1
-                elif binary_analysis[i]["stat"] == "info":
-                    binary_info = binary_info + 1
-                elif binary_analysis[i]["stat"] == "medium":
-                    binary_medium = binary_medium + 1
-                resp_binary.append(
-                    {
-                        "severity": binary_analysis[i]["stat"],
-                        "issue": binary_analysis[i]["title"],
-                        "description": binary_analysis[i]["desc"],
-                        "files": binary_analysis[i]["file"],
-                    }
-                )
-            return {
-                "count": {
-                    "high": binary_high,
-                    "medium": binary_medium,
-                    "info": binary_info,
-                },
-                "list": resp_binary,
+            if "items" in binary_analysis.key():
+                for issue, detail in binary_analysis['items']:
+                    # if binary_analysis[i]["stat"] == "high":
+                    #     binary_high = binary_high + 1
+                    # elif binary_analysis[i]["stat"] == "info":
+                    #     binary_info = binary_info + 1
+                    # elif binary_analysis[i]["stat"] == "medium":
+                    #     binary_medium = binary_medium + 1
+                    resp_binary.append(
+                        {
+                            "severity": detail["level"],
+                            "issue": issue,
+                            "description": detail["detailed_desc"],
+                            "files": detail["file"],
+                        }
+                    )
+                return {
+                    "count": {
+                        # "high": binary_high,
+                        # "medium": binary_medium,
+                        # "info": binary_info,
+                        len(resp_binary)
+                    },
+                    "list": resp_binary,
             }
         except:
             logger.info("get_binary_analysis error %s" % md5)
@@ -1330,13 +1326,25 @@ class StaticAnalyzerIOS(models.Model):
             return None
 
     @classmethod
-    def get_app_permissions(cls, md5):
+    def get_app_permissions(cls, organization, md5):
         """Get's applications permissions or returns None."""
         logger.info("get_app_permissions of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             permissions = eval(data_entry.PERMISSIONS)
-            return permissions
+            # get_app_permissions
+            permissions_list = []
+            for perm in permissions:
+                permissions_list.append({
+                    'permission': perm['name'],
+                    'status': perm['status'],
+                    'description': perm['description'],
+                    'reason': perm['reason']
+                })
+            return {
+                'count': len(permissions_list),
+                'list': permissions_list
+            }
         except:
             logger.info("get_app_permissions error %s" % md5)
             return None

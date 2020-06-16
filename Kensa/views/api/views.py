@@ -460,14 +460,13 @@ class ManifestAnalysis(RetrieveAPIView):
         try:
             md5 = request.GET["md5"]
             match = re.match("^[0-9a-f]{32}$", md5)
-            page = request.GET["page"]
+            page = int(request.GET.get("page", 1))
 
             if match:
-                manifest = StaticAnalyzerAndroid.get_manifest_analysis(md5)
-                resp = create_pagination_response(manifest["list"], page)
+                _, manifest = StaticAnalyzerAndroid.get_manifest_analysis(request.user.organization, md5)
+                resp = create_pagination_response(manifest, page)
                 if match is not None:
-                    return make_api_response(
-                        {"total_count": manifest["count"], "pageinfo": resp},
+                    return make_api_response(resp,
                         OK,
                     )
                 return make_api_response({"msg": "Not exist"}, OK)
@@ -492,17 +491,16 @@ class CodeAnalysis(RetrieveAPIView):
                 code_analysis = {}
                 if system == "android":
                     code_analysis = StaticAnalyzerAndroid.get_code_analysis_report(
+                        request.user.organization,
                         md5
                     )
                 elif system == "ios":
                     code_analysis = StaticAnalyzerIOS.get_code_analysis_report(
+                        request.user.organization,
                         md5
                     )
                 if code_analysis is not None:
-                    return make_api_response(
-                        {"count": len(code_analysis), "list": code_analysis},
-                        OK,
-                    )
+                    return make_api_response(code_analysis, OK)
                 return make_api_response({"msg": "Not exist"}, OK)
             else:
                 return make_api_response({"error": "HASH error"}, BAD_REQUEST)
@@ -556,20 +554,16 @@ class AppPermissions(RetrieveAPIView):
                 app_permissions = []
                 if system == "android":
                     app_permissions = StaticAnalyzerAndroid.get_app_permissions(
+                        request.user.organization,
                         md5
                     )
                 elif system == "ios":
                     app_permissions = StaticAnalyzerIOS.get_app_permissions(
+                        request.user.organization,
                         md5
                     )
                 if app_permissions is not None:
-                    return make_api_response(
-                        {
-                            "count": len(app_permissions),
-                            "list": app_permissions,
-                        },
-                        OK,
-                    )
+                    return make_api_response(app_permissions, OK)
                 return make_api_response({"msg": "Not exist"}, OK)
             else:
                 return make_api_response({"error": "HASH error"}, BAD_REQUEST)
@@ -590,20 +584,17 @@ class BinaryAnalysis(RetrieveAPIView):
             system = request.GET["system"]
             if match:
                 binary_analysis = []
-                # if system == 'android':
-                binary_analysis = StaticAnalyzerAndroid.get_binary_analysis(
-                    md5
-                )
-                # elif system == 'ios':
-                #     binary_analysis = StaticAnalyzerIOS.get_binary_analysis(md5)
-                if binary_analysis is not None:
-                    return make_api_response(
-                        {
-                            "count": len(binary_analysis),
-                            "list": binary_analysis,
-                        },
-                        OK,
+                if system == 'android':
+                    binary_analysis = StaticAnalyzerAndroid.get_binary_analysis(
+                        request.user.organization,
+                        md5
                     )
+                # elif system == 'ios':
+                #     binary_analysis = StaticAnalyzerIOS.get_binary_analysis(
+                #         request.user.organization,
+                #         md5)
+                if binary_analysis is not None:
+                    return make_api_response(binary_analysis, OK)
                 return make_api_response({"msg": "Not exist"}, OK)
             else:
                 return make_api_response({"error": "HASH error"}, BAD_REQUEST)
@@ -876,7 +867,7 @@ class GetManifestView(RetrieveAPIView):
     def get(self, request, *args, **kwargs):
         """Get manifest"""
         try:
-            data = StaticAnalyzerAndroid.get_manifest(request.GET["md5"])
+            data = StaticAnalyzerAndroid.get_manifest(request.user.organization, request.GET["md5"])
         except:
             return make_api_response({"error": "contact sysadmin"}, status=500)
         if data is None:

@@ -1,9 +1,12 @@
 # -*- coding: utf_8 -*-
 import logging
+import json
+import os
+import shutil
 
 from django.conf import settings
 from django.db.models import QuerySet
-
+from django.conf import settings
 from Kensa.utils import python_dict, python_list
 
 from StaticAnalyzer.models import StaticAnalyzerAndroid
@@ -47,7 +50,7 @@ def get_context_from_db_entry(db_entry: QuerySet) -> dict:
             'icon_hidden': db_entry[0].ICON_HIDDEN,
             'icon_found': db_entry[0].ICON_FOUND,
             'permissions': python_dict(db_entry[0].PERMISSIONS),
-            'certificate_analysis': json.loads(
+            'certificate_analysis': python_dict(
                 db_entry[0].CERTIFICATE_ANALYSIS),
             'manifest_analysis': python_list(db_entry[0].MANIFEST_ANALYSIS),
             'binary_analysis': python_list(db_entry[0].BINARY_ANALYSIS),
@@ -101,7 +104,7 @@ def get_android_context(static_db)->dict:
             'icon_hidden': static_db.ICON_HIDDEN,
             'icon_found': static_db.ICON_FOUND,
             'permissions': python_dict(static_db.PERMISSIONS),
-            'certificate_analysis': json.loads(
+            'certificate_analysis': python_dict(
                 static_db.CERTIFICATE_ANALYSIS),
             'manifest_analysis': python_list(static_db.MANIFEST_ANALYSIS),
             'binary_analysis': python_list(static_db.BINARY_ANALYSIS),
