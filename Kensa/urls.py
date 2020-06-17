@@ -166,14 +166,14 @@ urlpatterns = [
     url(r'^api/v1/appstore_info$', AppStoreView.as_view()),
     url(r'^api/v1/summary/security_overview$', SecurityOverView.as_view()),
     url(r'^api/v1/summary/malware_overview$', MalwareOverView.as_view()),
-    url(r'^api/v1/summary/components/activities$', ComponentsActivities),
+    url(r'^api/v1/summary/components/activities$', ComponentsActivities.as_view()),
     url(r'^api/v1/summary/components/services$', ComponentsServices.as_view()),
     url(r'^api/v1/summary/components/receivers$', ComponentsReceivers.as_view()),
     url(r'^api/v1/summary/components/providers$', ComponentsProviders.as_view()),
     url(r'^api/v1/summary/components/libraries$', ComponentsLibraries.as_view()),
     url(r'^api/v1/summary/components/files$', ComponentsFiles.as_view()),
-
     url(r'^api/v1/summary/domain_analaysis$', DomainAnalysis.as_view()),
+
     url(r'^api/v1/malware_analysis/apk_id', APKIDAnalysis.as_view()),
     url(r'^api/v1/security_analysis/manifest_analysis$', ManifestAnalysis.as_view()),
     url(r'^api/v1/security_analysis/code_analysis$', CodeAnalysis.as_view()),

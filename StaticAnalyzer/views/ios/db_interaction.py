@@ -1,5 +1,4 @@
 """Module holding the functions for the db."""
-import json
 import logging
 import os
 import shutil
@@ -110,7 +109,6 @@ def get_context_from_analysis(app_dict,
         logger.exception('Rendering to Template')
 
 def save_or_update(
-        update_type,
         app_dict,
         info_dict,
         code_dict,
@@ -119,7 +117,16 @@ def save_or_update(
         user,
         organization
     ):
-    """Save/Update an IPA/ZIP DB entry."""
+    """
+    Save/Update an IPA/ZIP DB entry.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    [!] This procedure has a HIGH level priority.
+    [!] Do not edit unless you know what you are doing.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    """
+
+
     try:
         values = {
             'FILE_NAME': app_dict['file_name'],
@@ -145,7 +152,7 @@ def save_or_update(
             'ATS_ANALYSIS': info_dict['inseccon'],
             'BINARY_ANALYSIS': bin_dict['bin_res'],
             'IOS_API': code_dict['api'],
-            'CODE_ANALYSIS': json.dumps(code_dict['code_anal']),
+            'CODE_ANALYSIS': code_dict['code_anal'],
             'FILE_ANALYSIS': all_files['special_files'],
             'LIBRARIES': bin_dict['libs'],
             'FILES': all_files['files_short'],
@@ -159,20 +166,37 @@ def save_or_update(
             "ORGANIZATION" : organization 
         }
 
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # The code below handles the type of db interaction on flag
+        # passed on by the static_analyzer_android function.
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        up_values = { # Update values for RecentScansDB
+            'APP_NAME': info_dict['bin_name'],
+            'PACKAGE_NAME': info_dict['id'],
+            'VERSION_NAME': info_dict['bundle_version_name'],
+        }
+
+        # [!] Do NOT edit below the line unless you know what you are doing.
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if StaticAnalyzerIOS.objects.filter(ORGANIZATION=organization, MD5=app_dict["md5_hash"]).exists():
+            update_type = "update"
+        else:
+            update_type = "save"
 
         if update_type == 'save':
+
+            # create new SAIOS entry
             logger.info("calling StaticAnalizerIOS.objects.create")
             scan_obj = StaticAnalyzerIOS.objects.create(**values)
+            logger.info("IOS scan create successfully")
 
+            # Update RecentScansDB
             logger.info("updating RecentScansDB")
-            values = {
-                'APP_NAME': info_dict['bin_name'],
-                'PACKAGE_NAME': info_dict['id'],
-                'VERSION_NAME': info_dict['bundle_version_name'],
-            }
-            RecentScansDB.objects.filter(MD5=app_dict['md5_hash']).update(**values)
+            RecentScansDB.objects.filter(ORGANIZATION=organization, MD5=app_dict['md5_hash']).update(**up_values)
             logger.info("RecentScansDB entry %s updated" % app_dict["md5_hash"])
 
+            # Get app info from recently created object
             app_info = StaticAnalyzerIOS.get_scan_info_from_obj(scan_obj)
 
             if app_info is not None:
@@ -180,31 +204,40 @@ def save_or_update(
 
             return None
 
+        # This is an update procedure, do NOT edit below the line unless you 
+        # know what you are doing.
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         else:
-            logger.info("updating StaticAnlaizerAndroid")
-            StaticAnalyzerIOS.objects.filter(MD5=app_dict['md5_hash']).update(**values)
-            logger.info("StaticAnalizerAndroid %s updated" % app_dict["md5_hash"])
 
+            # Update SAIOS
+            logger.info("updating StaticAnalyzerIOS")
+            StaticAnalyzerIOS.objects.filter(ORGANIZATION=organization, MD5=app_dict['md5_hash']).update(**values)
+            logger.info("StaticAnalizerAndroid scan updated")
+
+            # Update RecentScansDB
             logger.info("updating RecentScansDB")
-            values = {
-                'APP_NAME': info_dict['bin_name'],
-                'PACKAGE_NAME': info_dict['id'],
-                'VERSION_NAME': info_dict['bundle_version_name'],
-            }
-            RecentScansDB.objects.filter(MD5=app_dict['md5_hash']).update(**values)
-            logger.info("RecentScansDB entry %s updated" % app_dict["md5_hash"])
+            RecentScansDB.objects.filter(ORGANIZATION=organization, MD5=app_dict['md5_hash']).update(**up_values)
+            logger.info("RecentScansDB entry updated")
 
-            logger.info("Getting scan info from object scan_obj %s" % scan_obj.MD5)
-            scan_obj = StaticAnalyzerIOS.objects.get(MD5=app_dict["md5_hash"])
-            context = StaticAnalyzerIOS.get_scan_info_from_obj(scan_obj)
-            if context is not None:
+            # Get scan info from recently scanned or updated object
+            logger.info("Getting scan info from object recently scanned object")
+            context = StaticAnalyzerIOS.get_scan_info(organization, app_dict["md5_hash"])
+
+            if context is not None: 
                 return context
 
         return None
 
+    # This is the fallback operation when a scan fails.
+    # Do NOT edit below line unless you know what you are doing.
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # 1) Remove RecentScansDB entry
+    # 2) Remove any dirs and files associated with the failed scan.
+    # 3) Return None and it will be handled by static_analyser_ios_api 
+    #    then the controller will know what to do.
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     except Exception as error:
-        import pdb
-        pdb.set_trace()
         try:
             logger.error('db_interaction.save_or_update failed.')
 

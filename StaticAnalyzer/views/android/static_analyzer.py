@@ -999,9 +999,9 @@ def static_analyzer_android(scan_type, md5, filename, user_id, organization_id):
             if filename.lower().endswith('.apk'):
                 # Check if in DB
                 # pylint: disable=E1101
-                context = StaticAnalyzerAndroid.get_scan_info(organization_id, md5)
-                if context is not None:
-                    return context, 'success'
+                # context = StaticAnalyzerAndroid.get_scan_info(organization_id, md5)
+                # if context is not None:
+                #     return context, 'success'
 
                 app_dic['app_file'] = app_dic[
                                           'md5'] + '.apk'  # NEW FILENAME
@@ -1133,23 +1133,32 @@ def static_analyzer_android(scan_type, md5, filename, user_id, organization_id):
                 copy_icon(app_dic['md5'], app_dic['icon_path'])
                 app_dic['zipped'] = 'apk'
 
-                logger.info('Updating Database...')
-                context = save_or_update('save',
-                                         app_dic,
-                                         man_data_dic,
-                                         man_an_dic,
-                                         code_an_dic,
-                                         cert_dic,
-                                         bin_an_buff,
-                                         apkid_results,
-                                         tracker_res,
-                                         user_id,
-                                         organization_id,
-                                         )
-                if context is not None:
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # DB Interaction Section
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                
+                context, status = save_or_update(
+                    app_dic,
+                    man_data_dic,
+                    man_an_dic,
+                    code_an_dic,
+                    cert_dic,
+                    bin_an_buff,
+                    apkid_results,
+                    tracker_res,
+                    user_id,
+                    organization_id,
+                )
+                
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                # Handle errors from save_or_update
+                # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                if 'error' not in context and status == 'success':
                     update_scan_timestamp(app_dic['md5'])
-                    return context, 'success'
-                logger.exception('Saving to Database Failed')
+                    return context, status
+                else:
+                    logger.exception('Saving to Database Failed')
                 #here remove scaned folder
                 target_dir = os.path.join(settings.UPLD_DIR, organization_id + '/', md5)
                 remove_directory(target_dir)
@@ -1166,10 +1175,6 @@ def static_analyzer_android(scan_type, md5, filename, user_id, organization_id):
                 app_dic['strings'] = ''
                 app_dic['zipped'] = ''
                 # Above fields are only available for APK and not ZIP
-                context = StaticAnalyzerAndroid.get_scan_info(md5)
-                if context is not None:
-                    return context, 'success'
-
                 app_dic['app_file'] = app_dic[
                                           'md5'] + '.zip'  # NEW FILENAME
                 app_dic['app_path'] = (app_dic['app_dir'] +
@@ -1269,10 +1274,11 @@ def static_analyzer_android(scan_type, md5, filename, user_id, organization_id):
                         list(set(code_an_dic['urls_list'])))
                     logger.info('Connecting to Database')
                     try:
-                        # SAVE TO DB
-                        logger.info('Updating Database...')
-                        context = save_or_update(
-                            'save',
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                        # DB Interaction section
+                        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                        context, status = save_or_update(
                             app_dic,
                             man_data_dic,
                             man_an_dic,

@@ -119,9 +119,9 @@ class AppInfoView(RetrieveAPIView):
             if match:
                 app_info = {}
                 if system == "android":
-                    app_info = StaticAnalyzerAndroid.get_app_info(md5)
+                    app_info = StaticAnalyzerAndroid.get_app_info(request.user.organization, md5)
                 elif system == "ios":
-                    app_info = StaticAnalyzerIOS.get_app_info(md5)
+                    app_info = StaticAnalyzerIOS.get_app_info(request.user.organization, md5)
                 # else system == 'windows':
                 #     app_info = StaticAnalyzerWindows.get_app_info(md5)
                 else:
@@ -151,9 +151,9 @@ class AppStoreView(RetrieveAPIView):
             if match:
                 app_store_info = {}
                 if system == "android":
-                    app_store_info = StaticAnalyzerAndroid.get_app_store(md5)
+                    app_store_info = StaticAnalyzerAndroid.get_app_store(request.user.organization, md5)
                 elif system == "ios":
-                    app_store_info = StaticAnalyzerIOS.get_app_store(md5)
+                    app_store_info = StaticAnalyzerIOS.get_app_store(request.user.organization, md5)
                 else:
                     return make_api_response(
                         {"error": "SYSTEM type error"}, BAD_REQUEST
@@ -180,11 +180,11 @@ class SecurityOverView(RetrieveAPIView):
                 security_overview = {}
                 if system == "android":
                     security_overview = StaticAnalyzerAndroid.get_security_overview(
-                        md5
+                        request.user.organization, md5
                     )
                 elif system == "ios":
                     security_overview = StaticAnalyzerIOS.get_security_overview(
-                        md5
+                        request.user.organization, md5
                     )
                 if security_overview is not None:
                     return make_api_response(security_overview, OK)
@@ -209,13 +209,9 @@ class MalwareOverView(RetrieveAPIView):
             if match:
                 malware_overview = {}
                 if system == "android":
-                    _, malware_overview = score(
-                        StaticAnalyzerAndroid.get_code_analysis(md5)
-                    )
+                    _, malware_overview = StaticAnalyzerAndroid.get_security_score(request.user.organization, md5)
                 elif system == "ios":
-                    _, malware_overview = score(
-                        StaticAnalyzerIOS.get_code_analysis(md5)
-                    )
+                    _, malware_overview = StaticAnalyzerIOS.get_security_score(request.user.organization, md5)
                 # elif system == 'windows':
                 #     malware_overview = StaticAnalyzerWindows.get_malware_overview(md5)
 
@@ -249,6 +245,7 @@ class ComponentsActivities(RetrieveAPIView):
                 )
             if match:
                 activities = StaticAnalyzerAndroid.get_components_activities(
+                    request.user.organization,
                     md5
                 )
                 if activities is not None:
@@ -279,7 +276,7 @@ class ComponentsServices(RetrieveAPIView):
                     BAD_REQUEST,
                 )
             if match:
-                services = StaticAnalyzerAndroid.get_components_services(md5)
+                services = StaticAnalyzerAndroid.get_components_services(request.user.organization, md5)
                 if services is not None:
                     resp = create_pagination_response(services, page)
                     return make_api_response(resp, OK)
@@ -308,7 +305,7 @@ class ComponentsReceivers(RetrieveAPIView):
                     BAD_REQUEST,
                 )
             if match:
-                receivers = StaticAnalyzerAndroid.get_components_services(md5)
+                receivers = StaticAnalyzerAndroid.get_components_services(request.user.organization, md5)
                 if receivers is not None:
                     resp = create_pagination_response(receivers, page)
                     return make_api_response(resp, OK)
@@ -337,7 +334,7 @@ class ComponentsProviders(RetrieveAPIView):
                     BAD_REQUEST,
                 )
             if match:
-                providers = StaticAnalyzerAndroid.get_components_providers(md5)
+                providers = StaticAnalyzerAndroid.get_components_providers(request.user.organization, md5)
                 if providers is not None:
                     resp = create_pagination_response(providers, page)
                     return make_api_response(resp, OK)
@@ -365,10 +362,13 @@ class ComponentsLibraries(RetrieveAPIView):
                 libraries = []
                 if system == "android":
                     libraries = StaticAnalyzerAndroid.get_components_libraries(
+                        request.user.organization,
                         md5
                     )
                 elif system == "ios":
-                    libraries = StaticAnalyzerIOS.get_components_libraries(md5)
+                    libraries = StaticAnalyzerIOS.get_components_libraries(
+                        request.user.organization,
+                        md5)
 
                 if libraries is not None:
                     resp = create_pagination_response(libraries, page)
@@ -395,9 +395,13 @@ class ComponentsFiles(RetrieveAPIView):
             if match:
                 files = []
                 if system == "android":
-                    files = StaticAnalyzerAndroid.get_components_files(md5)
+                    files = StaticAnalyzerAndroid.get_components_files(
+                        request.user.organization,
+                        md5)
                 elif system == "ios":
-                    files = StaticAnalyzerIOS.get_components_files(md5)
+                    files = StaticAnalyzerIOS.get_components_files(
+                        request.user.organization,
+                        md5)
                 if files is not None:
                     resp = create_pagination_response(files, page)
                     return make_api_response(resp, OK)
@@ -422,10 +426,13 @@ class DomainAnalysis(RetrieveAPIView):
             if match:
                 domains = {}
                 if system == "android":
-                    domains = StaticAnalyzerAndroid.get_domain_analysis(md5)
+                    domains = StaticAnalyzerAndroid.get_domain_analysis(
+                        request.user.organization,
+                        md5)
                     # elif system == 'ios':
                     #     domains = StaticAnalyzerIOS.get_malware_overview(md5)
-                    return make_api_response(domains, OK)
+                    if domains is not None:
+                        return make_api_response(domains, OK)
                 return make_api_response({"msg": "Not exist"}, OK)
             else:
                 return make_api_response({"error": "HASH error"}, BAD_REQUEST)
@@ -444,7 +451,9 @@ class APKIDAnalysis(RetrieveAPIView):
             md5 = request.GET["md5"]
             match = re.match("^[0-9a-f]{32}$", md5)
             if match:
-                apkid = StaticAnalyzerAndroid.get_apkid_analysis(md5)
+                apkid = StaticAnalyzerAndroid.get_apkid_analysis(
+                    request.user.organization,
+                    md5)
                 return make_api_response(apkid, OK)
         except Exception as excep:
             logger.exception("Error calling api_domain_analysis")
@@ -523,10 +532,13 @@ class FileAnalysis(RetrieveAPIView):
                 file_analysis = []
                 if system == "android":
                     file_analysis = StaticAnalyzerAndroid.get_file_analysis(
+                        request.user.organization,
                         md5
                     )
                 elif system == "ios":
-                    file_analysis = StaticAnalyzerIOS.get_file_analysis(md5)
+                    file_analysis = StaticAnalyzerIOS.get_file_analysis(
+                        request.user.organization,
+                        md5)
                 if file_analysis is not None:
                     return make_api_response(
                         {"count": len(file_analysis), "list": file_analysis},
@@ -583,7 +595,7 @@ class BinaryAnalysis(RetrieveAPIView):
             match = re.match("^[0-9a-f]{32}$", md5)
             system = request.GET["system"]
             if match:
-                binary_analysis = []
+                binary_analysis = None
                 if system == 'android':
                     binary_analysis = StaticAnalyzerAndroid.get_binary_analysis(
                         request.user.organization,

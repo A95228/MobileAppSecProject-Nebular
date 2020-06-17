@@ -185,8 +185,7 @@ def get_context_from_analysis(app_dic,
         logger.exception('Rendering to Template')
 
 
-def save_or_update(update_type,
-                   app_dic,
+def save_or_update(app_dic,
                    man_data_dic,
                    man_an_dic,
                    code_an_dic,
@@ -263,34 +262,31 @@ def save_or_update(update_type,
         # [!] Do NOT edit below the line unless you know what you are doing.
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+        if StaticAnalyzerAndroid.objects.filter(ORGANIZATION=organization, MD5=app_dic["md5"]).exists():
+            logger.info("Updating existing StaticAnalizerAndroid row")
+            update_type = 'upload'
+        else:
+            logger.info("Creating a new StaticAnalizerAndroid row")
+            update_type = 'save'
+
         if update_type == 'save':
 
             # Create new SSA entry
             logger.info("calling StaticAnalizerAndroid.objects.create")
             scan_obj = StaticAnalyzerAndroid.objects.create(**values)
             logger.info("Object %s saved" % (scan_obj.pk))
-
-
             # Update the RecentScansDB with the SSA data
             logger.info("updating RecentScansDB")
-            RecentScansDB.objects.filter(MD5=app_dic['md5']).update(**up_values)
+            RecentScansDB.updateEntry(organization, app_dic['md5'], up_values)
+
             logger.info("RecentScansDB entry %s updated" % app_dic["md5"])
-
-
             # Get the scan info for the response by pasing obj, not PK
             app_info = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
-
-
             # If scan_info_from_obj returns None,
             if app_info is None:
-                return {"error" : "error getting scan info from obj %s" % app_dic["md5"]}, 500
+                return {"error" : "error getting scan info from obj %s" % app_dic["md5"]}, 'err'
             else:
-                return app_info, 200
-
-            # Fallback.
-            return {"error" : "android.db_interaction.save_or_update failed on creation."}, 500
-
-
+                return app_info, 'success'
         # This is an unpdate procedure, do NOT edit below the line unless you
         # know what you are doing.
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -298,26 +294,24 @@ def save_or_update(update_type,
 
             # Update SSA
             logger.info("updating StaticAnlaizerAndroid")
-            StaticAnalyzerAndroid.objects.filter(MD5=app_dic['md5']).update(**values)
-            logger.info("StaticAnalizerAndroid %s updated" % app_dic["md5"])
+            if not StaticAnalyzerAndroid.updateEntry(organization, app_dic["md5"], values):
+                return {"error": "error getting scan info"}, 'err'
 
+            logger.info("StaticAnalizerAndroid %s updated" % app_dic["md5"])
             # Update RecentScansDB
             logger.info("updating RecentScansDB")
-            RecentScansDB.objects.filter(MD5=app_dic['md5']).update(**up_values)
-            logger.info("RecentScansDB entry updated")
+            RecentScansDB.updateEntry(organization, app_dic["md5"], up_values)
 
+            logger.info("RecentScansDB entry updated")
             # Getting data from object for controller, this bubbles all the way up
             # to the controller.
             logger.info("Getting scan_info_from_obj")
-            context = StaticAnalyzerAndroid.get_scan_info_from_obj(
-                StaticAnalyzerAndroid.objects.get(MD5=app_dic["md5"]))
-
+            context = StaticAnalyzerAndroid.get_scan_info(organization=organization, md5=app_dic["md5"])
 
         if context is not None:
-            return context, 200
+            return context, 'success'
 
-
-        return {"error" : "error getting scan info"}, 500
+        return {"error" : "error getting scan info"}, 'err'
 
 
     # This is the fallback operation when a scan fails.
@@ -350,10 +344,8 @@ def save_or_update(update_type,
             else:
                 logging.info("upload directory %s does not exist" % target)
         except:
-            return {"error" : "save_or_update failed"}, 500
+            return {"error" : "save_or_update failed"}, 'err'
 
         # After directories are deleted return this.
-        return {"error" : "save_or_update failed"}, 500
+        return {"error" : "save_or_update failed"}, 'err'
 
-    # Main fallback.
-    return {"error" : "save_or_update failed"}, 500
