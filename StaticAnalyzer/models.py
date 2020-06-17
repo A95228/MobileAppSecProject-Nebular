@@ -57,7 +57,30 @@ class RecentScansDB(models.Model):
 
     @classmethod
     def get_recent_scans(cls, organization_id):
-        """List of recent scans and their data"""
+        """
+        This method will
+
+        Scan object contains the following keys and values
+
+            image_link: string;
+            app_name            ~> string
+            file_name           ~> string
+            system              ~> string
+            timestamp           ~> string
+            timestamp_formated  ~> string
+            md5                 ~> string
+            package_name        ~> string
+            version_name        ~> string
+            cvss_score          ~> number
+            total_issues        ~> number
+            issue_high          ~> number
+            issue_medium        ~> number
+            issue_low           ~> number
+            security_score      ~> number
+            tracekrs_detection  ~> number
+            status              ~> string
+
+        """
         scans = [
             StaticAnalyzerAndroid.objects.filter(
                     ORGANIZATION=organization_id).order_by(
@@ -84,50 +107,54 @@ class RecentScansDB(models.Model):
                             dt = ts['detected_trackers']
                         except:
                             tt = dt = "No trackers"
-                        # load trackers
+                        
                         scan["trackers_detected"] =  "%s/%s" % (dt, tt) 
+
                         try:
-                            skore = score(eval(_.CODE_ANALYSIS))[0]
+                            acvss, sskor = score(eval(_.CODE_ANALYSIS))
                         except Exception as _exe_:
                             logger.exception(_exe_)
-                            skore = "No score"
-                        scan["security_score"] = skore
+                            acvss = sskor = "-"
+
+                        scan["security_score"] = sskor
+                        scan["cvss_score"] = acvss
+
                         try:
-                            issues = StaticAnalyzerAndroid.get_total_issue(_.MD5)
+                            issues = StaticAnalyzerAndroid.get_total_issue(
+                                organization, _.MD5)
                         except Exception as _exe_:
                             logger.exception(_exe_)
                             issues = ""
-                        if issues is None:
-                            issues = ""
-                        else:
-                            pass
                         scan["issues"] =  issues
+
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     # CASE IOS
                     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                     else:
                         scan = StaticAnalyzerIOS.get_scan_info_from_obj(_)
                         try:
-                            skore = score(StaticAnalyzerIOS.get_code_analysis_report(_.MD5))
+                            acvss, sskor = score(eval(_.CODE_ANALYSIS))
                         except Exception as _exe_:
-                            logger.exception(str(_exe_))
-                            skore = "No score"
-                        scan["security_score"] = skore
+                            logger.exception(_exe_)
+                            acvss = sskor = "-"
+
+                        scan["security_score"] = sskor
+                        scan["cvss_score"] = acvss
+
                         try:
                             issues = StaticAnalyzerIOS.get_total_issue(_.MD5)
-                        except:
+                        except Exception as _exe_:
+                            logger.exception(str(_exe_))
                             issues = ""
-                        if issues is None:
-                            issues = "No issues"
-                        else:
-                            pass
                         scan["issues"] = issues
+
                 except Exception as _exe_:
                     logger.exception(str(_exe_))
                     rs.append({})
                     continue
-                # Load to payload
+            
                 rs.append(scan)
+
         return rs
     
     @classmethod
@@ -138,6 +165,7 @@ class RecentScansDB(models.Model):
             if 'app_info' in fresh:
                 if fresh["app_info"]["md5"] == args[1]:
                     return fresh
+        return None
 
 
 class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
@@ -266,12 +294,12 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
             return None
     
     @classmethod
-    def get_certificate_analysis_data(cls, md5):
+    def get_certificate_analysis_data(cls, organization, md5):
         """Get a certificate return None otherwise.
         Requires no pagination."""
         logger.info("Getting certificate analysis of %s" % md5)
         try:
-            cert = cls.objects.get(MD5=md5)
+            cert = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             cert = cert.CERTIFICATE_ANALYSIS
         except:
             logger.error("ObjectNotFound with md5 %s" % md5)
@@ -279,12 +307,12 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
         return eval(cert)
 
     @classmethod
-    def get_manifest(cls, md5):
+    def get_manifest(cls, organization, md5):
         """Get a manifest return None otherwise.
         Requires no pagination."""
         logger.info("Getting manifest data of %s" % md5)
         try:
-            cert = cls.objects.get(MD5=md5)
+            cert = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             manifest = cert.MANIFEST_ANALYSIS
         except:
             logger.error("ObjectNotFound with md5 %s" % md5)
@@ -293,12 +321,12 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
         return manifest
 
     @classmethod
-    def get_recon_trackers(cls, md5, page):
+    def get_recon_trackers(cls, organization, md5, page):
         """Get reconnaisance trackers, or return None.
         Requires pagination."""
         logger.info("Getting reconnassaince trackers of %s" % md5)
         try:
-            query = cls.objects.get(MD5=md5)
+            query = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             trackers = eval(query.TRACKERS)
         except (cls.DoesNotExist, ObjectDoesNotExist):
             logger.error("Object %s does not exists")
@@ -309,10 +337,10 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
         return {"trackers": cls.paginate(trackers, page)}
 
     @classmethod
-    def get_app_info(cls, md5):
+    def get_app_info(cls, organization, md5):
         logger.info("get_app_info of %s" % md5)
         try:
-            db_entry = cls.objects.get(MD5=md5)
+            db_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             app_info = {
                 "file_name": db_entry.FILE_NAME,
                 "size": db_entry.SIZE,
@@ -334,12 +362,12 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
             return None
 
     @classmethod
-    def get_app_store(cls, md5):
+    def get_app_store(cls, organization, md5):
         """Get's application store information, or
         returns None."""
         try:
             logger.info("get_app_store of %s" % md5)
-            db_entry = cls.objects.get(MD5=md5)
+            db_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             app_store_info = eval(db_entry.PLAYSTORE_DETAILS)
             return app_store_info
         except:
@@ -347,12 +375,12 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
             return None
 
     @classmethod
-    def get_security_overview(cls, md5):
+    def get_security_overview(cls, organization, md5):
         """Generates a security overview context, 
         or returns None."""
         try:
             logger.info("get_security_overview of %s" % md5)
-            db_entry = cls.objects.get(MD5=md5)
+            db_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             mani_high = mani_medium = mani_info = 0
             manifest = eval(db_entry.MANIFEST_ANALYSIS)
             for item in manifest:
@@ -409,10 +437,10 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
             return None
 
     @classmethod
-    def get_components_activities(cls, md5):
+    def get_components_activities(cls, organization, md5):
         logger.info("get_components_activities of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             activities = eval(data_entry.ACTIVITIES)
         except:
             logger.info("get_components_activities error %s" % md5)
@@ -420,10 +448,10 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
         return activities
 
     @classmethod
-    def get_apkid_analysis(cls, md5):
+    def get_apkid_analysis(cls, organization, md5):
         logger.info("get_apkid_analysis of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             apkid = eval(data_entry.APKID)
         except:
             logger.info("get_apkid_analysis error %s" % md5)
@@ -431,10 +459,10 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
         return apkid
 
     @classmethod
-    def get_components_services(cls, md5):
+    def get_components_services(cls, organization, md5):
         logger.info("get_components_servicees of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             services = eval(data_entry.SERVICES)
         except:
             logger.info("get_components_servicees error %s" % md5)
@@ -442,10 +470,10 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
         return services
 
     @classmethod
-    def get_components_receivers(cls, md5):
+    def get_components_receivers(cls, organization, md5):
         logger.info("get_components_receivers of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             receivers = data_entry.RECEIVERS
         except:
             logger.info("get_components_receivers error %s" % md5)
@@ -453,10 +481,10 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
         return receivers
 
     @classmethod
-    def get_components_providers(cls, md5):
+    def get_components_providers(cls, organization, md5):
         logger.info("get_components_providers of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             providers = data_entry.PROVIDERS
         except:
             logger.info("get_components_providers error %s" % md5)
@@ -464,10 +492,10 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
         return providers
 
     @classmethod
-    def get_manifest_analysis(cls, md5):
+    def get_manifest_analysis(cls, organization, md5):
         logger.info("get_components_files of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             manifest = eval(data_entry.MANIFEST_ANALYSIS)
             count_high = count_info = count_medium = 0
             manifest_response = []
@@ -498,8 +526,8 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
             return None
 
     @classmethod
-    def get_total_issue(cls, md5):
-        obj = cls.get_single_or_none(md5=md5)
+    def get_total_issue(cls, organization, md5):
+        obj = cls.get_single_or_none(organization, md5=md5)
         if obj is None:
             return None
         # issue from shard library
@@ -517,10 +545,10 @@ class StaticAnalyzerAndroid(models.Model, StaticAnalizerMixin):
         return total_issue
 
     @classmethod
-    def get_app_permissions(cls, md5):
+    def get_app_permissions(cls, organization, md5):
         logger.info("get_app_permissions of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             permissions = eval(data_entry.PERMISSIONS)
             permissions_list = []
             for key, value in permissions.items():
@@ -595,11 +623,11 @@ class StaticAnalyzerIOS(models.Model, StaticAnalizerMixin):
         return resp
 
     @classmethod
-    def get_app_info(cls, md5):
+    def get_app_info(cls, organization, md5):
         """Get's application information, or returns None."""
         logger.info("ios get_app_info of %s" % md5)
         try:
-            db_entry = cls.objects.get(MD5=md5)
+            db_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             app_info = {
                 "file_name": db_entry.FILE_NAME,
                 "size": db_entry.SIZE,
@@ -631,18 +659,18 @@ class StaticAnalyzerIOS(models.Model, StaticAnalizerMixin):
                 "file_name": scan_obj.FILE_NAME,
                 "icon_url": icon_url,
                 "date": scan_obj.DATE.__format__("%b, %d, %Y"),
-                "app_info": cls.get_app_info(scan_obj.MD5),
+                "app_info": cls.get_app_info(scan_obj.ORGANIZATION, scan_obj.MD5),
             }
             return scan_info
         except:
             return None
 
     @classmethod
-    def get_app_store(cls, md5):
+    def get_app_store(cls, organization, md5):
         """Gets application store information, or returns None."""
         try:
             logger.info("get_app_store of %s" % md5)
-            db_entry = cls.objects.get(MD5=md5)
+            db_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             app_stor_info = eval(db_entry.APPSTORE_DETAILS)
             return app_stor_info
         except:
@@ -650,11 +678,11 @@ class StaticAnalyzerIOS(models.Model, StaticAnalizerMixin):
             return None
 
     @classmethod
-    def get_app_permissions(cls, md5):
+    def get_app_permissions(cls, organization, md5):
         """Get's applications permissions or returns None."""
         logger.info("get_app_permissions of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             permissions = eval(data_entry.PERMISSIONS)
             return permissions
         except:
@@ -662,10 +690,10 @@ class StaticAnalyzerIOS(models.Model, StaticAnalizerMixin):
             return None
 
     @classmethod
-    def get_libraries(cls, md5):
+    def get_libraries(cls, organization, md5):
         logger.info("get_libraries of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             permissions = eval(data_entry.PERMISSIONS)
             return permissions
         except:
@@ -673,11 +701,11 @@ class StaticAnalyzerIOS(models.Model, StaticAnalizerMixin):
             return None
 
     @classmethod
-    def get_security_overview(cls, md5):
+    def get_security_overview(cls, organization, md5):
         """Gets security overview, or returns None."""
         try:
             logger.info("get_security_overview of %s" % md5)
-            db_entry = cls.objects.get(MD5=md5)
+            db_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
 
             ats_secure = ats_insecure = ats_warning = ats_info = 0
             ats = eval(db_entry.ATS_ANALYSIS)
@@ -723,8 +751,8 @@ class StaticAnalyzerIOS(models.Model, StaticAnalizerMixin):
             return None
 
     @classmethod
-    def get_total_issue(cls, md5):
-        obj = cls.get_single_or_none(md5=md5)
+    def get_total_issue(cls, organization, md5):
+        obj = cls.get_single_or_none(ORGANIZATION=organization, md5=md5)
         if obj is None:
             return None
         # issue from shard library

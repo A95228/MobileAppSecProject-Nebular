@@ -37,24 +37,29 @@ class StaticAnalizerMixin(object):
         return True
 
     @classmethod
-    def get_single_or_none(cls, md5):
+    def get_single_or_none(cls, organization, md5):
         """Get a single model or None"""
         try:
-            return cls.objects.get(MD5=md5)
+            return cls.objects.get(ORGANIZATION=organization, MD5=md5)
         except (cls.DoesNotExist, ObjectDoesNotExist):
             return None
 
     @classmethod
-    def get_md5s(cls, md5):
+    def get_md5s(cls, organization, md5):
         """Get md5 that match the given term for a search result,
         return an empty list otherwise."""
-        md5s = cls.objects.filter(MD5__icontains=md5).values("MD5")
+        md5s = (cls.objects
+                    .filter(MD5__icontains=md5)
+                    .filter(ORGANIZATION__exact=organization)
+                    .order_by("-DATE")
+                    .values("MD5")
+                )
         if md5s.count() == 0:
             return []
         return md5s
 
     @classmethod
-    def get_code_analysis(cls, md5):
+    def get_code_analysis(cls, organization, md5):
         """Gets code analysis, or returns None."""
         logger.info("get_code_analysis of %s" % md5)
         try:
@@ -66,10 +71,10 @@ class StaticAnalizerMixin(object):
             return None
 
     @classmethod
-    def get_components_files(cls, md5):
+    def get_components_files(cls, organization, md5):
         logger.info("get_components_files of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             files = eval(data_entry.FILES)
         except:
             logger.info("get_components_files error %s" % md5)
@@ -77,10 +82,10 @@ class StaticAnalizerMixin(object):
         return files
 
     @classmethod
-    def get_components_libraries(cls, md5):
+    def get_components_libraries(cls, organization,  md5):
         logger.info("get_components_libraries of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             libraries = eval(data_entry.LIBRARIES)
         except:
             logger.info("get_components_libraries error %s" % md5)
@@ -88,10 +93,10 @@ class StaticAnalizerMixin(object):
         return libraries
 
     @classmethod
-    def get_file_analysis(cls, md5):
+    def get_file_analysis(cls, organization, md5):
         logger.info("get_file_analysis of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             file_analysis = eval(data_entry.FILE_ANALYSIS)
             return file_analysis
         except:
@@ -99,21 +104,21 @@ class StaticAnalizerMixin(object):
             return None
     
     @classmethod
-    def get_scan_info(cls, md5):
+    def get_scan_info(cls, organization, md5):
         try:
-            scan_obj = cls.objects.get(MD5=md5)
+            scan_obj = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             scan_info = cls.get_scan_info_from_obj(scan_obj)
             return scan_info
         except:
             return None
 
     @classmethod
-    def get_recon_emails(cls, md5, page):
+    def get_recon_emails(cls, organization, md5, page):
         """Get Reconnaissance emails or return None. 
         Requires pagination"""
         logger.info("Getting reconnassaince emails of %s" % md5)
         try:
-            query = cls.objects.get(MD5=md5)
+            query = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             emails = eval(query.EMAILS)
         except (cls.DoesNotExist, ObjectDoesNotExist):
             logger.error("Object %s does not exists" % md5)
@@ -124,12 +129,12 @@ class StaticAnalizerMixin(object):
         return {"emails": cls.paginate(emails, page)}
 
     @classmethod
-    def get_recon_urls(cls, md5, page):
+    def get_recon_urls(cls, organization, md5, page):
         """Get reconnaissance urls or None. 
         Requires pagination."""
         logger.info("Getting urls of %s" % md5)
         try:
-            query = cls.objects.get(MD5=md5)
+            query = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             urls = eval(query.URLS)
         except (cls.DoesNotExist, ObjectDoesNotExist):
             logger.error("Object %s does not exists")
@@ -140,12 +145,12 @@ class StaticAnalizerMixin(object):
         return {"urls": cls.paginate(urls, page)}
 
     @classmethod
-    def get_recon_firebase_db(cls, md5, page):
+    def get_recon_firebase_db(cls, organization, md5, page):
         """Get reconnaissance firebase url. 
         Requires pagination."""
         logger.info("Getting firebase urls of %s" % md5)
         try:
-            query = cls.objects.get(MD5=md5)
+            query = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             firebase_urls = eval(query.FIREBASE_URLS)
         except (cls.DoesNotExist, ObjectDoesNotExist):
             logger.error("Object %s does not exists")
@@ -156,12 +161,12 @@ class StaticAnalizerMixin(object):
         return {"firebase_urls": cls.paginate(firebase_urls, page)}
 
     @classmethod
-    def get_recon_strings(cls, md5, page):
+    def get_recon_strings(cls, organization, md5, page):
         """Get reconnaissance strings, or return None 
         Requires pagination."""
         logger.info("Getting strings of %s" % md5)
         try:
-            query = cls.objects.get(MD5=md5)
+            query = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             strings = eval(query.STRINGS)
         except (cls.DoesNotExist, ObjectDoesNotExist):
             logger.error("Object %s does not exists")
@@ -172,12 +177,12 @@ class StaticAnalizerMixin(object):
         return {"strings": cls.paginate(strings, page)}
 
     @classmethod
-    def get_domains_data(cls, md5):
+    def get_domains_data(cls, organization, md5):
         """Get domains"""
         countries = []
         logger.info("Getting domains data of %s" % md5)
         try:
-            query = cls.objects.get(MD5=md5)
+            query = cls.objects.get(ORGANIZATION=organization, MD5=md5)
         except:
             return None
         try:
@@ -207,10 +212,10 @@ class StaticAnalizerMixin(object):
         return {"countries": countries}
 
     @classmethod
-    def get_domain_analysis(cls, md5):
+    def get_domain_analysis(cls, organization, md5):
         logger.info("get_components_files of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             domains = eval(data_entry.DOMAINS)
             bad_country = {}
             for key, value in domains.items():
@@ -307,11 +312,11 @@ class StaticAnalizerMixin(object):
             return None
 
     @classmethod
-    def get_code_analysis_report(cls, md5):
+    def get_code_analysis_report(cls, organization, md5):
         """Get's code analysis report, or returns None."""
         logger.info("get_code_analysis of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             code_analysis = eval(data_entry.CODE_ANALYSIS)
             code_high = code_good = code_warning = code_info = 0
             resp_code = []
@@ -352,13 +357,13 @@ class StaticAnalizerMixin(object):
             return None
 
     @classmethod
-    def get_binary_analysis(cls, md5):
+    def get_binary_analysis(cls, organization, md5):
         """Generates binary analysis or returns None.
         Throws error, needs patch.
         """
         logger.info("get_binary_analysis of %s" % md5)
         try:
-            data_entry = cls.objects.get(MD5=md5)
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
             binary_analysis = eval(data_entry.BINARY_ANALYSIS)
             binary_high = binary_info = binary_medium = 0
             resp_binary = []
