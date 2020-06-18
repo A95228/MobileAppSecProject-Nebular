@@ -1,15 +1,17 @@
 # -*- coding: utf_8 -*-
 import logging
+import json 
+import os
+import shutil
 
 from django.conf import settings
 from django.db.models import QuerySet
-
+from django.conf import settings
 from Kensa.utils import python_dict, python_list
 
 from StaticAnalyzer.models import StaticAnalyzerAndroid
 from StaticAnalyzer.models import RecentScansDB
 
-"""Module holding the functions for the db."""
 
 
 logger = logging.getLogger(__name__)
@@ -69,6 +71,59 @@ def get_context_from_db_entry(db_entry: QuerySet) -> dict:
     except Exception:
         logger.exception('Fetching from DB')
 
+def get_android_context(static_db)->dict:
+    """Return the context for APK/ZIP from DB."""
+    try:
+        logger.info('Analysis is already Done. Fetching data from the DB...')
+        context = {
+            'version': settings.KENSA_VER,
+            'title': 'Static Analysis',
+            'file_name': static_db.FILE_NAME,
+            'app_name': static_db.APP_NAME,
+            'app_type': static_db.APP_TYPE,
+            'size': static_db.SIZE,
+            'md5': static_db.MD5,
+            'sha1': static_db.SHA1,
+            'sha256': static_db.SHA256,
+            'package_name': static_db.PACKAGE_NAME,
+            'main_activity': static_db.MAIN_ACTIVITY,
+            'exported_activities': static_db.EXPORTED_ACTIVITIES,
+            'browsable_activities': python_dict(
+                static_db.BROWSABLE_ACTIVITIES),
+            'activities': python_list(static_db.ACTIVITIES),
+            'receivers': python_list(static_db.RECEIVERS),
+            'providers': python_list(static_db.PROVIDERS),
+            'services': python_list(static_db.SERVICES),
+            'libraries': python_list(static_db.LIBRARIES),
+            'target_sdk': static_db.TARGET_SDK,
+            'max_sdk': static_db.MAX_SDK,
+            'min_sdk': static_db.MIN_SDK,
+            'version_name': static_db.VERSION_NAME,
+            'version_code': static_db.VERSION_CODE,
+            'icon_hidden': static_db.ICON_HIDDEN,
+            'icon_found': static_db.ICON_FOUND,
+            'permissions': python_dict(static_db.PERMISSIONS),
+            'certificate_analysis': python_dict(
+                static_db.CERTIFICATE_ANALYSIS),
+            'manifest_analysis': python_list(static_db.MANIFEST_ANALYSIS),
+            'binary_analysis': python_list(static_db.BINARY_ANALYSIS),
+            'file_analysis': python_list(static_db.FILE_ANALYSIS),
+            'android_api': python_dict(static_db.ANDROID_API),
+            'code_analysis': python_dict(static_db.CODE_ANALYSIS),
+            'urls': python_list(static_db.URLS),
+            'domains': python_dict(static_db.DOMAINS),
+            'emails': python_list(static_db.EMAILS),
+            'strings': python_list(static_db.STRINGS),
+            'firebase_urls': python_list(static_db.FIREBASE_URLS),
+            'files': python_list(static_db.FILES),
+            'exported_count': python_dict(static_db.EXPORTED_COUNT),
+            'apkid': python_dict(static_db.APKID),
+            'trackers': python_dict(static_db.TRACKERS),
+            'playstore_details': python_dict(static_db.PLAYSTORE_DETAILS),
+        }
+        return context
+    except Exception:
+        logger.exception('Fetching from DB')
 
 def get_context_from_analysis(app_dic,
                               man_data_dic,
@@ -137,10 +192,20 @@ def save_or_update(update_type,
                    cert_dic,
                    bin_anal,
                    apk_id,
-                   trackers) -> None:
-    """Save/Update an APK/ZIP DB entry."""
+                   trackers,
+                   user,
+                   organization) -> tuple:
+    """
+    Save/Update an APK/ZIP DB entry.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    THIS PROCESS HAS HIGH PRIORITY!!!! 
+
+    [!] Do NOT edit unless you know what you are doing.
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    """
+
     try:
-        values = {
+        values = { 
             'FILE_NAME': app_dic['app_name'],
             'APP_NAME': app_dic['real_name'],
             'APP_TYPE': app_dic['zipped'],
@@ -170,7 +235,7 @@ def save_or_update(update_type,
             'BINARY_ANALYSIS': bin_anal,
             'FILE_ANALYSIS': app_dic['certz'],
             'ANDROID_API': code_an_dic['api'],
-            'CODE_ANALYSIS': code_an_dic['findings'],
+            'CODE_ANALYSIS': json.dumps(code_an_dic['findings']),
             'URLS': code_an_dic['urls'],
             'DOMAINS': code_an_dic['domains'],
             'EMAILS': code_an_dic['emails'],
@@ -181,21 +246,115 @@ def save_or_update(update_type,
             'APKID': apk_id,
             'TRACKERS': trackers,
             'PLAYSTORE_DETAILS': app_dic['playstore'],
+            "USER" : user,
+            "ORGANIZATION" : organization
         }
+
+        
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # The code below handles the type of db interaction on flag
+        # passed on by the static_analyzer_android function.
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        
+        up_values = { # Update values for RecentScansDB
+                'APP_NAME': app_dic['real_name'],
+                'PACKAGE_NAME': man_data_dic['packagename'],
+                'VERSION_NAME': man_data_dic['androvername'],
+        }
+
+        # [!] Do NOT edit below the line unless you know what you are doing.
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         if update_type == 'save':
-            StaticAnalyzerAndroid.objects.create(**values)
-        else:
-            StaticAnalyzerAndroid.objects.filter(
-                MD5=app_dic['md5']).update(**values)
-    except Exception:
-        logger.exception('Updating DB')
-    try:
-        values = {
-            'APP_NAME': app_dic['real_name'],
-            'PACKAGE_NAME': man_data_dic['packagename'],
-            'VERSION_NAME': man_data_dic['androvername'],
-        }
-        RecentScansDB.objects.filter(
-            MD5=app_dic['md5']).update(**values)
-    except Exception:
-        logger.exception('Updating RecentScansDB')
+
+            # Create new SAA entry
+            logger.info("calling StaticAnalizerAndroid.objects.create")
+            scan_obj = StaticAnalyzerAndroid.objects.create(**values)
+            logger.info("Object %s saved" % (scan_obj.pk))
+
+
+            # Update the RecentScansDB with the SSA data
+            logger.info("updating RecentScansDB")
+            RecentScansDB.objects.filter(MD5=app_dic['md5']).update(**up_values)
+            logger.info("RecentScansDB entry %s updated" % app_dic["md5"])
+
+
+            # Get the scan info for the response by pasing obj, not PK
+            app_info = StaticAnalyzerAndroid.get_scan_info_from_obj(scan_obj)
+
+            # If scan_info_from_obj returns None, 
+            if app_info is None:
+                return {"error" : "error getting scan info from obj %s" % app_dic["md5"]}, 500
+            else:
+                return app_info, 200
+
+            # Fallback.
+            return {"error" : "android.db_interaction.save_or_update failed on creation."}, 500
+
+
+        # This is an update procedure, do NOT edit below the line unless you 
+        # know what you are doing.
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        else: 
+            
+            # Update SSA
+            logger.info("updating StaticAnlaizerAndroid")
+            StaticAnalyzerAndroid.objects.filter(MD5=app_dic['md5']).update(**values)
+            logger.info("StaticAnalizerAndroid %s updated" % app_dic["md5"])
+
+            # Update RecentScansDB
+            logger.info("updating RecentScansDB")
+            RecentScansDB.objects.filter(MD5=app_dic['md5']).update(**up_values)
+            logger.info("RecentScansDB entry updated")
+
+            # Getting data from object for controller, this bubbles all the way up
+            # to the controller.
+            logger.info("Getting scan_info_from_obj")
+            context = StaticAnalyzerAndroid.get_scan_info_from_obj(
+                StaticAnalyzerAndroid.objects.get(MD5=app_dic["md5"]))
+        
+        if context is not None: 
+            return context, 200
+
+
+        return {"error" : "error getting scan info"}, 500
+
+
+    # This is the fallback operation when a scan fails.
+    # Do NOT edit below line unless you know what you are doing.
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # 1) Remove RecentScansDB entry
+    # 2) Remove any dirs and files associated with the failed scan.
+    # 3) Return and error with resp 500. (bubbles up to the controller)
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    except Exception as error:
+
+        logger.error('android.db_interaction.save_or_update failed.')
+
+        logger.info("removing entry from RecentScansDB")
+        RecentScansDB.objects.filter(MD5=app_dic['md5']).delete()
+        logger.info("RecentScanDB entry deleted")
+
+        logger.info("Removing StaticAnalizerAndroid scan")
+        StaticAnalyzerAndroid.objects.filter(MD5=app_dic["md5"]).delete()
+        logger.info("StaticAnalizerAndroid scan %s removed" % app_dic["md5"])
+
+        logger.info("removing %s from uploads" % app_dic["md5"])
+        target = os.path.join(settings.UPLD_DIR, app_dic["md5"])
+        
+        try:
+            if os.path.exists(target):
+                logging.info("removing %s" % target)
+                shutil.rmtree(target)
+                logging.info("removed %s" % target)
+            else:
+                logging.info("upload directory %s does not exist" % target)
+        except:
+            return {"error" : "save_or_update failed"}, 500
+
+        # After directories are deleted return this.
+        return {"error" : "save_or_update failed"}, 500
+    
+    # Main fallback.
+    return {"error" : "save_or_update failed"}, 500

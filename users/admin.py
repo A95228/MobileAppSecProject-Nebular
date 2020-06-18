@@ -6,7 +6,6 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import GroupAdmin
 from django.contrib.auth.forms import UserChangeForm
 
-
 from .models import User
 MODELS_TO_HIDE_STD_PERMISSIONS = (
     ("Kensa", "contenttypes"),
