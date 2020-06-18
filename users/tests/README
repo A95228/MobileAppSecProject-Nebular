@@ -1,0 +1,2 @@
+To run user tests:
+    python<version>  manage.py test --verbosity 2 ./users

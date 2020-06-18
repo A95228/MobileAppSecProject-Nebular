@@ -35,7 +35,7 @@ from StaticAnalyzer.models import (RecentScansDB,
                                    StaticAnalyzerWindows)
 from StaticAnalyzer.views.comparer import generic_compare
 from StaticAnalyzer.views.android.db_interaction import (
-    get_context_from_db_entry as adb)
+    get_context_from_db_entry as adb, get_android_context)
 from StaticAnalyzer.views.ios.db_interaction import (
     get_context_from_db_entry as idb)
 from StaticAnalyzer.views.windows.db_interaction import (
@@ -106,53 +106,32 @@ def unzip(app_path, ext_path):
             except Exception:
                 logger.exception('Unzipping Error')
 
-
-def pdf(request, api=False, jsonres=False):
+def pdf(organization, md5, system, jsonres=False):
     try:
-        if api:
-            checksum = request.POST['hash']
-        else:
-            checksum = request.GET['md5']
-        hash_match = re.match('^[0-9a-f]{32}$', checksum)
-        if not hash_match:
-            if api:
-                return {'error': 'Invalid scan hash'}
-            else:
-                return HttpResponse(
-                    json.dumps({'md5': 'Invalid scan hash'}),
-                    content_type=ctype, status=500)
         # Do Lookups
-        android_static_db = StaticAnalyzerAndroid.objects.filter(
-            MD5=checksum)
-        ios_static_db = StaticAnalyzerIOS.objects.filter(
-            MD5=checksum)
-        win_static_db = StaticAnalyzerWindows.objects.filter(
-            MD5=checksum)
-
-        if android_static_db.exists():
+        context = None
+        if system == 'android':
+            android_static_db = StaticAnalyzerAndroid.get_single_or_none(organization=organization,md5=md5)
             context, template = handle_pdf_android(android_static_db)
-        elif ios_static_db.exists():
+        elif system =='ios':
+            ios_static_db = StaticAnalyzerIOS.objects.get_single_or_none(organization=organization, md5=md5)
             context, template = handle_pdf_ios(ios_static_db)
-        elif win_static_db.exists():
-            context, template = handle_pdf_win(win_static_db)
-        else:
-            if api:
-                return {'report': 'Report not Found'}
-            else:
-                return HttpResponse(
-                    json.dumps({'report': 'Report not Found'}),
-                    content_type=ctype,
-                    status=500)
+        elif system == 'windows':
+            win_static_db = StaticAnalyzerWindows.objects.filter(MD5=md5)
+        if context is None:
+            return {'error': 'Cannot Generate PDF/JSON',}, 404
+
         # Do VT Scan only on binaries
         context['virus_total'] = None
         ext = os.path.splitext(context['file_name'].lower())[1]
         if settings.VT_ENABLED and ext != '.zip':
             app_bin = os.path.join(
                 settings.UPLD_DIR,
-                checksum + '/',
-                checksum + ext)
+                organization + '/',
+                md5 + '/',
+                md5 + ext)
             vt = VirusTotal.VirusTotal()
-            context['virus_total'] = vt.get_result(app_bin, checksum)
+            context['virus_total'] = vt.get_result(app_bin, md5)
         # Get Local Base URL
         proto = 'file://'
         host_os = 'nix'
@@ -162,61 +141,145 @@ def pdf(request, api=False, jsonres=False):
         context['base_url'] = proto + settings.BASE_DIR
         context['dwd_dir'] = proto + settings.DWD_DIR
         context['host_os'] = host_os
-        try:
-            if api and jsonres:
-                return {'report_dat': context}
-            else:
-                options = {
-                    'page-size': 'Letter',
-                    'quiet': '',
-                    'no-collate': '',
-                    'margin-top': '0.50in',
-                    'margin-right': '0.50in',
-                    'margin-bottom': '0.50in',
-                    'margin-left': '0.50in',
-                    'encoding': 'UTF-8',
-                    'custom-header': [
-                        ('Accept-Encoding', 'gzip'),
-                    ],
-                    'no-outline': None,
-                }
-                # Added proxy support to wkhtmltopdf
-                proxies, _ = upstream_proxy('https')
-                if proxies['https']:
-                    options['proxy'] = proxies['https']
-                html = template.render(context)
-                pdf_dat = pdfkit.from_string(html, False, options=options)
-                if api:
-                    return {'pdf_dat': pdf_dat}
-                return HttpResponse(pdf_dat,
-                                    content_type='application/pdf')
-        except Exception as exp:
-            logger.exception('Error Generating PDF Report')
-            if api:
-                return {
-                    'error': 'Cannot Generate PDF/JSON',
-                    'err_details': str(exp)}
-            else:
-                return HttpResponse(
-                    json.dumps({'pdf_error': 'Cannot Generate PDF',
-                                'err_details': str(exp)}),
-                    content_type=ctype,
-                    status=500)
+        if jsonres:
+            return {'report_dat': context}, 200
+        else:
+            options = {
+                'page-size': 'Letter',
+                'quiet': '',
+                'no-collate': '',
+                'margin-top': '0.50in',
+                'margin-right': '0.50in',
+                'margin-bottom': '0.50in',
+                'margin-left': '0.50in',
+                'encoding': 'UTF-8',
+                'custom-header': [
+                    ('Accept-Encoding', 'gzip'),
+                ],
+                'no-outline': None,
+            }
+            # Added proxy support to wkhtmltopdf
+            proxies, _ = upstream_proxy('https')
+            if proxies['https']:
+                options['proxy'] = proxies['https']
+            html = template.render(context)
+            pdf_dat = pdfkit.from_string(html, False, options=options)
+            return {'pdf_dat': pdf_dat}, 200
     except Exception as exp:
         logger.exception('Error Generating PDF Report')
-        msg = str(exp)
-        exp = exp.__doc__
-        if api:
-            return print_n_send_error_response(request, msg, True, exp)
-        else:
-            return print_n_send_error_response(request, msg, False, exp)
+        return {
+            'error': 'Cannot Generate PDF/JSON',
+            'err_details': str(exp)}, 404
 
+# def pdf(request, api=False, jsonres=False):
+#     try:
+#         if api:
+#             checksum = request.POST['hash']
+#         else:
+#             checksum = request.GET['md5']
+#         hash_match = re.match('^[0-9a-f]{32}$', checksum)
+#         if not hash_match:
+#             if api:
+#                 return {'error': 'Invalid scan hash'}
+#             else:
+#                 return HttpResponse(
+#                     json.dumps({'md5': 'Invalid scan hash'}),
+#                     content_type=ctype, status=500)
+#         # Do Lookups
+#         android_static_db = StaticAnalyzerAndroid.objects.filter(
+#             MD5=checksum)
+#         ios_static_db = StaticAnalyzerIOS.objects.filter(
+#             MD5=checksum)
+#         win_static_db = StaticAnalyzerWindows.objects.filter(
+#             MD5=checksum)
+#
+#         if android_static_db.exists():
+#             context, template = handle_pdf_android(android_static_db)
+#         elif ios_static_db.exists():
+#             context, template = handle_pdf_ios(ios_static_db)
+#         elif win_static_db.exists():
+#             context, template = handle_pdf_win(win_static_db)
+#         else:
+#             if api:
+#                 return {'report': 'Report not Found'}
+#             else:
+#                 return HttpResponse(
+#                     json.dumps({'report': 'Report not Found'}),
+#                     content_type=ctype,
+#                     status=500)
+#         # Do VT Scan only on binaries
+#         context['virus_total'] = None
+#         ext = os.path.splitext(context['file_name'].lower())[1]
+#         if settings.VT_ENABLED and ext != '.zip':
+#             app_bin = os.path.join(
+#                 settings.UPLD_DIR,
+#                 checksum + '/',
+#                 checksum + ext)
+#             vt = VirusTotal.VirusTotal()
+#             context['virus_total'] = vt.get_result(app_bin, checksum)
+#         # Get Local Base URL
+#         proto = 'file://'
+#         host_os = 'nix'
+#         if platform.system() == 'Windows':
+#             proto = 'file:///'
+#             host_os = 'windows'
+#         context['base_url'] = proto + settings.BASE_DIR
+#         context['dwd_dir'] = proto + settings.DWD_DIR
+#         context['host_os'] = host_os
+#         try:
+#             if api and jsonres:
+#                 return {'report_dat': context}
+#             else:
+#                 options = {
+#                     'page-size': 'Letter',
+#                     'quiet': '',
+#                     'no-collate': '',
+#                     'margin-top': '0.50in',
+#                     'margin-right': '0.50in',
+#                     'margin-bottom': '0.50in',
+#                     'margin-left': '0.50in',
+#                     'encoding': 'UTF-8',
+#                     'custom-header': [
+#                         ('Accept-Encoding', 'gzip'),
+#                     ],
+#                     'no-outline': None,
+#                 }
+#                 # Added proxy support to wkhtmltopdf
+#                 proxies, _ = upstream_proxy('https')
+#                 if proxies['https']:
+#                     options['proxy'] = proxies['https']
+#                 html = template.render(context)
+#                 pdf_dat = pdfkit.from_string(html, False, options=options)
+#                 if api:
+#                     return {'pdf_dat': pdf_dat}
+#                 return HttpResponse(pdf_dat,
+#                                     content_type='application/pdf')
+#         except Exception as exp:
+#             logger.exception('Error Generating PDF Report')
+#             if api:
+#                 return {
+#                     'error': 'Cannot Generate PDF/JSON',
+#                     'err_details': str(exp)}
+#             else:
+#                 return HttpResponse(
+#                     json.dumps({'pdf_error': 'Cannot Generate PDF',
+#                                 'err_details': str(exp)}),
+#                     content_type=ctype,
+#                     status=500)
+#     except Exception as exp:
+#         logger.exception('Error Generating PDF Report')
+#         msg = str(exp)
+#         exp = exp.__doc__
+#         if api:
+#             return print_n_send_error_response(request, msg, True, exp)
+#         else:
+#             return print_n_send_error_response(request, msg, False, exp)
 
 def handle_pdf_android(static_db):
     logger.info(
         'Fetching data from DB for '
         'PDF Report Generation (Android)')
-    context = adb(static_db)
+    context = get_android_context(static_db)
     context['average_cvss'], context[
         'security_score'] = score(context['code_analysis'])
     if context['file_name'].lower().endswith('.zip'):

@@ -1,8 +1,50 @@
+import datetime
+import logging
+import json
+import pdb
+import warnings
+
 from django.db import models
-# Create your models here.
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import EmptyPage, Paginator, PageNotAnInteger
+
+from users.models import User
+from StaticAnalyzer.views.rules_properties import (
+    Level,
+)
+
+logger = logging.getLogger(__name__)
+
+
+
+def score(findings):
+    """ Importing scores from its home causes
+    circular imports, placing a copy here."""
+    cvss_scores = []
+    avg_cvss = 0
+    app_score = 100
+    for _, finding in findings.items():
+        if 'cvss' in finding:
+            if finding['cvss'] != 0:
+                cvss_scores.append(finding['cvss'])
+        if finding['level'] == Level.high.value:
+            app_score = app_score - 15
+        elif finding['level'] == Level.warning.value:
+            app_score = app_score - 10
+        elif finding['level'] == Level.good.value:
+            app_score = app_score + 5
+    if cvss_scores:
+        avg_cvss = round(sum(cvss_scores) / len(cvss_scores), 1)
+    if app_score < 0:
+        app_score = 10
+    elif app_score > 100:
+        app_score = 100
+    return avg_cvss, app_score
+
 
 
 class RecentScansDB(models.Model):
+
     FILE_NAME = models.CharField(max_length=260)
     MD5 = models.CharField(max_length=32)
     URL = models.URLField()
@@ -10,12 +52,122 @@ class RecentScansDB(models.Model):
     APP_NAME = models.CharField(max_length=260)
     PACKAGE_NAME = models.CharField(max_length=260)
     VERSION_NAME = models.CharField(max_length=50)
+    ORGANIZATION_ID = models.CharField(max_length=254)
+
+
+    @classmethod
+    def get_recent_scans(cls, organization_id):
+        """List of recent scans and their data"""
+
+        scans = [
+            StaticAnalyzerAndroid.objects.filter(ORGANIZATION=organization_id).order_by(
+                "-DATE"
+            ),
+            StaticAnalyzerIOS.objects.filter(ORGANIZATION=organization_id).order_by(
+                "-DATE"
+            ),
+        ]
+
+        rs = []
+        for queryset in scans:
+
+            if queryset.count() == 0: continue # dont bother.
+
+            for _ in queryset:
+                try:
+
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # CASE ANDROID
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                    if isinstance(_, StaticAnalyzerAndroid):
+                        scan = StaticAnalyzerAndroid.get_scan_info_from_obj(_)
+
+                        try:
+                            ts = eval(_.TRACKERS)
+                            tt = ts["total_trackers"]
+                            dt = ts['detected_trackers']
+                        except:
+                            tt = dt = "No trackers"
+
+                        # load trackers
+                        scan["trackers_detected"] =  "%s/%s" % (dt, tt)
+
+                        try:
+                            skore = score(eval(_.CODE_ANALYSIS))
+                        except Exception as error:
+                            warnings.warn(str(error), UserWarning, stacklevel=3)
+                            skore = "No score"
+
+
+                        scan["security_score"] = skore
+
+                        try:
+                            issues = StaticAnalyzerAndroid.get_total_issue(_.MD5)
+                        except Exception as error:
+                            warnings.warn(str(error), UserWarning, stacklevel=3)
+                            issues = ""
+
+
+                        if issues is None:
+                            issues = ""
+                        else:
+                            pass
+
+                        scan["issues"] =  issues
+
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                    # CASE IOS
+                    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+                    else:
+                        scan = StaticAnalyzerIOS.get_scan_info_from_obj(_)
+
+                        try:
+                            skore = score(StaticAnalyzerIOS.get_code_analysis_report(_.MD5))
+                        except Exception as error:
+                            warnings.warn(str(error), UserWarning, stacklevel=3)
+                            skore = "No score"
+
+                        scan["security_score"] = skore
+
+
+                        try:
+                            issues = StaticAnalyzerIOS.get_total_issue(_.MD5)
+                        except:
+                            issues = ""
+
+
+                        if issues is None:
+                            issues = ""
+                        else:
+                            pass
+
+                        scan["issues"] =  issues
+
+                except Exception as error:
+                    warnings.warn(str(error), UserWarning, stacklevel=3)
+                    rs.append({})
+                    continue
+
+                # Load to payload
+                rs.append(scan)
+
+        return rs
+
 
 
 class StaticAnalyzerAndroid(models.Model):
+    # Relational Fields
+    USER = models.ForeignKey(User, on_delete=models.CASCADE)
+    ORGANIZATION = models.CharField(max_length=254)
+    # Informational Fields
+    DATE = models.DateField(
+        auto_now=True, auto_created=True, verbose_name="date_when_created"
+    )
     FILE_NAME = models.CharField(max_length=260)
     APP_NAME = models.CharField(max_length=255)
-    APP_TYPE = models.CharField(max_length=20, default='')
+    APP_TYPE = models.CharField(max_length=20, default="")
     SIZE = models.CharField(max_length=50)
     MD5 = models.CharField(max_length=32)
     SHA1 = models.CharField(max_length=40)
@@ -54,11 +206,719 @@ class StaticAnalyzerAndroid(models.Model):
     TRACKERS = models.TextField(default={})
     PLAYSTORE_DETAILS = models.TextField(default={})
 
+    @classmethod
+    def cook_scan(cls, **kwargs):
+        """Create a scan and store it to 
+        database -- do sanity checks here."""
+        if "USER" not in kwargs:
+            return False
+        if "ORGANIZATION" not in kwargs:
+            return False
+        cls.objects.create(**kwargs)
+        return True
+
+    @staticmethod
+    def paginate(load, page, count=30):
+        """Paginate a context"""
+        try:
+            if "trackers" in load:
+                paginator = Paginator(load["trackers"], count)
+            elif "scans" in load:
+                paginator = Paginator(load["scans"], count)
+            else:
+                paginator = Paginator(load, count)
+            activities = paginator.page(page)
+        except PageNotAnInteger:
+            activities = paginator.page(1)
+        except EmptyPage:
+            activities = paginator.page(paginator.num_pages)
+        except Exception as e:
+            return None
+
+        resp = {
+            "page": activities.number,
+            "total_pages": paginator.num_pages,
+            "limit": 30,
+            "list": activities.object_list,
+        }
+        return resp
+
+    @classmethod
+    def get_single_or_none(cls, organization, md5):
+        """Get a single model or None"""
+        try:
+            return cls.objects.get(ORGANIZATION=organization, MD5=md5)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            return None
+
+    @classmethod
+    def get_md5s(cls, md5):
+        """Get md5 that match the given term for a search result,
+        return an empty list otherwise."""
+        md5s = cls.objects.filter(MD5__icontains=md5).values("MD5")
+        if md5s.count() == 0:
+            return []
+        return md5s
+
+    @classmethod
+    def get_scan_info_from_obj(cls, scan_obj):
+        try:
+            if scan_obj.ICON_FOUND:
+                icon_url = "/download/{0}-icon.png".format(scan_obj.MD5)
+            else:
+                icon_url = "img/no_icon.png"
+            certificate_analysis = json.loads(scan_obj.CERTIFICATE_ANALYSIS)
+
+            scan_info = {
+                "file_name": scan_obj.FILE_NAME,
+                "icon_url": icon_url,
+                "system": "android",
+                "date": scan_obj.DATE,
+                "certificate_status": certificate_analysis[
+                    "certificate_status"] if certificate_analysis is not None else "",
+                "app_info": {
+                    "file_name": scan_obj.FILE_NAME,
+                    "size": scan_obj.SIZE,
+                    "md5": scan_obj.MD5,
+                    "sha1": scan_obj.SHA1,
+                    "sha256": scan_obj.SHA256,
+                    "app_name": scan_obj.APP_NAME,
+                    "package_name": scan_obj.PACKAGE_NAME,
+                    "main_activity": scan_obj.MAIN_ACTIVITY,
+                    "target_sdk": scan_obj.TARGET_SDK,
+                    "max_sdk": scan_obj.MAX_SDK,
+                    "min_sdk": scan_obj.MIN_SDK,
+                    "version_name": scan_obj.VERSION_NAME,
+                    "version_code": scan_obj.VERSION_CODE,
+                },
+                 "average_cvss": score(json.loads(scan_obj.CODE_ANALYSIS))[0],
+                 "security_score": score(json.loads(scan_obj.CODE_ANALYSIS))[1]
+            }
+            return scan_info
+        except:
+            return None
+
+    @classmethod
+    def get_scan_info(cls, organization, md5):
+        try:
+            scan_obj = cls.objects.get(ORGANIZATION=organization, MD5=md5)
+            scan_info = cls.get_scan_info_from_obj(scan_obj)
+            return scan_info
+        except:
+            return None
+
+    @classmethod
+    def get_certificate_analysis_data(cls, md5):
+        """Get a certificate return None otherwise.
+        Requires no pagination."""
+        logger.info("Getting certificate analysis of %s" % md5)
+        try:
+            cert = cls.objects.get(MD5=md5)
+            cert = cert.CERTIFICATE_ANALYSIS
+        except:
+            logger.error("ObjectNotFound with md5 %s" % md5)
+            return None
+        return eval(cert)
+
+    @classmethod
+    def get_manifest(cls, organization, md5):
+        """Get a manifest return None otherwise.
+        Requires no pagination."""
+        logger.info("Getting manifest data of %s" % md5)
+        try:
+            cert = cls.objects.get(ORGANIZATION=organization, MD5=md5)
+            manifest = cert.MANIFEST_ANALYSIS
+        except:
+            logger.error("ObjectNotFound with md5 %s" % md5)
+            return None
+        manifest = dict(manifest_analysis=eval(manifest))
+        return manifest
+
+    @classmethod
+    def get_domains_data(cls, md5):
+        """Get domains. Requires pagination"""
+        countries = []
+        logger.info("Getting domains data of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+        except:
+            return None
+        try:
+            domains = eval(query.DOMAINS)
+            for key, value in domains.items():
+                holder = {}
+                geolocation = value.get("geolocation", None)
+                if geolocation is None:
+                    holder[key] = {}
+                    for k in value.keys():
+                        if k in ("good", "bad"):
+                            holder[key][k] = value.get(k, None)
+                    holder[key]["domain"] = key
+                    countries.append(holder)
+                    continue
+                country = geolocation.pop("country_long")
+                holder[country] = {}
+                holder[country]["domain"] = key
+                for k in value.keys():
+                    if k in ("good", "bad"):
+                        holder[country][k] = value.get(k, None)
+                holder[country].update(geolocation)
+                countries.append(holder)
+        except:
+            logger.info("Error getting domains for object : %s" % md5)
+            return None
+        return {"countries": countries}
+
+    @classmethod
+    def get_recon_emails(cls, md5, page):
+        """Get Reconnaissance emails or return None. 
+        Requires pagination"""
+        logger.info("Getting reconnassaince emails of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            emails = eval(query.EMAILS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists" % md5)
+            return None
+        except Exception:
+            logger.error("Error geting reconnaissance emails of %s" % md5)
+            return None
+        return {"emails": cls.paginate(emails, page)}
+
+    @classmethod
+    def get_recon_urls(cls, md5, page):
+        """Get reconnaissance urls or None. 
+        Requires pagination."""
+        logger.info("Getting urls of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            urls = eval(query.URLS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting recon urls of %s" % md5)
+            return None
+        return {"urls": cls.paginate(urls, page)}
+
+    @classmethod
+    def get_recon_firebase_db(cls, md5, page):
+        """Get reconnaissance firebase url. 
+        Requires pagination."""
+        logger.info("Getting firebase urls of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            firebase_urls = eval(query.FIREBASE_URLS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting fb_db_urls of %s" % md5)
+            return None
+        return {"firebase_urls": cls.paginate(firebase_urls, page)}
+
+    @classmethod
+    def get_recon_strings(cls, md5, page):
+        """Get reconnaissance strings, or return None 
+        Requires pagination."""
+        logger.info("Getting strings of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            strings = eval(query.STRINGS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception as error:
+            logger.error("%s : object -> %s" % (str(error), md5))
+            return None
+        return {"strings": cls.paginate(strings, page)}
+
+    @classmethod
+    def get_recon_trackers(cls, md5, page):
+        """Get reconnaisance trackers, or return None.
+        Requires pagination."""
+        logger.info("Getting reconnassaince trackers of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            trackers = eval(query.TRACKERS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting recon trackers of %s" % md5)
+            return None
+        return {"trackers": cls.paginate(trackers, page)}
+
+    @classmethod
+    def get_app_info(cls, md5):
+        logger.info("get_app_info of %s" % md5)
+        try:
+            db_entry = cls.objects.get(MD5=md5)
+            app_info = {
+                'file_name': db_entry.FILE_NAME,
+                'size': db_entry.SIZE,
+                'md5': db_entry.MD5,
+                'sha1': db_entry.SHA1,
+                'sha256': db_entry.SHA256,
+                'app_name': db_entry.APP_NAME,
+                'package_name': db_entry.PACKAGE_NAME,
+                'main_activity': db_entry.MAIN_ACTIVITY,
+                'target_sdk': db_entry.TARGET_SDK,
+                'max_sdk': db_entry.MAX_SDK,
+                'min_sdk': db_entry.MIN_SDK,
+                'version_name': db_entry.VERSION_NAME,
+                'version_code': db_entry.VERSION_CODE
+            }
+            return app_info
+        except:
+            logger.info("error get_app_info of %s" % md5)
+            return None
+
+
+    @classmethod
+    def get_app_store(cls, md5):
+        """Get's application store information, or
+        returns None."""
+        try:
+            logger.info("get_app_store of %s" % md5)
+            db_entry = cls.objects.get(MD5=md5)
+            app_store_info = eval(db_entry.PLAYSTORE_DETAILS)
+            return app_store_info
+        except:
+            logger.info("error get_app_store of %s" % md5)
+            return None
+
+    @classmethod
+    def get_security_overview(cls, md5):
+        """Generates a security overview context, 
+        or returns None."""
+        try:
+            logger.info("get_security_overview of %s" % md5)
+            db_entry = cls.objects.get(MD5=md5)
+            mani_high = mani_medium = mani_info = 0
+            manifest = eval(db_entry.MANIFEST_ANALYSIS)
+            for item in manifest:
+                if item["stat"] == "high":
+                    mani_high = mani_high + 1
+                elif item["stat"] == "medium":
+                    mani_medium = mani_medium + 1
+                elif item["stat"] == "info":
+                    mani_info = mani_info + 1
+            code_high = code_good = code_warning = code_info = 0
+            code_analysis = eval(db_entry.CODE_ANALYSIS)
+            if code_analysis and "items" in code_analysis.keys():
+                for _, details in code_analysis["items"]:
+                    if details["level"] == "high":
+                        code_high = code_high + 1
+                    elif details["level"] == "good":
+                        code_good = code_good + 1
+                    elif details["level"] == "warning":
+                        code_warning = code_warning + 1
+                    elif details["level"] == "info":
+                        code_info = code_info + 1
+            binary_high = binary_medium = binary_info = 0
+            binary = eval(db_entry.BINARY_ANALYSIS)
+            for item in binary:
+                if item["stat"] == "high":
+                    binary_high = binary_high + 1
+                elif item["stat"] == "medium":
+                    binary_medium = binary_medium + 1
+                elif item["stat"] == "info":
+                    binary_info = binary_info + 1
+
+            security_overview = {
+                "manifest": {
+                    "high": mani_high,
+                    "medium": mani_medium,
+                    "info": mani_info,
+                },
+                "code": {
+                    "high": code_high,
+                    "good": code_good,
+                    "warning": code_warning,
+                    "info": code_info,
+                },
+                "binary": {
+                    "high": binary_high,
+                    "medium": binary_medium,
+                    "info": binary_info,
+                },
+            }
+
+            return security_overview
+        except:
+            logger.info("error get_security_overview of %s" % md5)
+            return None
+
+    @classmethod
+    def get_code_analysis(cls, md5):
+        """Gets code analysis, or returns None."""
+        logger.info("get_code_analysis of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            code_analysis = eval(data_entry.CODE_ANALYSIS)
+            return code_analysis
+        except:
+            logger.info("get_code_analysis error %s" % md5)
+            return None
+
+    @classmethod
+    def get_code_analysis_report(cls, organization, md5):
+        """Get's code analysis report, or returns None."""
+        logger.info("get_code_analysis of %s" % md5)
+        try:
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
+            code_analysis = eval(data_entry.CODE_ANALYSIS)
+            code_high = code_good = code_warning = code_info = 0
+            resp_code = []
+            for issue, details in code_analysis.items():
+                # if details["level"] == "high":
+                #     code_high = code_high + 1
+                # elif details["level"] == "good":
+                #     code_good = code_good + 1
+                # elif details["level"] == "warning":
+                #     code_warning = code_warning + 1
+                # elif details["level"] == "info":
+                #     code_info = code_info + 1
+                resp_code.append(
+                    {
+                        "severity": details["level"],
+                        "issue": issue,
+                        "cvss": details["cvss"],
+                        "cwe": details["cwe"],
+                        "owasp": details["owasp"],
+                        "owasmasvs": details["owasp-mstg"],
+                        "file": details["path"],
+                    }
+                )
+            return {
+                "count": # "high": code_high,
+                    # "good": code_good,
+                    # "warning": code_warning,
+                    # "info": code_info,
+                    len(resp_code),
+                "list": resp_code,
+            }
+        except:
+            logger.info("get_code_analysis error %s" % md5)
+            return None
+
+    @classmethod
+    def get_binary_analysis(cls, organization, md5):
+        logger.info("get_binary_analysis of %s" % md5)
+        try:
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
+            binary_analysis = eval(data_entry.BINARY_ANALYSIS)
+            binary_high = binary_info = binary_medium = 0
+            resp_binary = []
+            for i in range(0, len(binary_analysis)):
+                # if binary_analysis[i]["stat"] == "high":
+                #     binary_high = binary_high + 1
+                # elif binary_analysis[i]["stat"] == "info":
+                #     binary_info = binary_info + 1
+                # elif binary_analysis[i]["stat"] == "medium":
+                #     binary_medium = binary_medium + 1
+                resp_binary.append(
+                    {
+                        "severity": binary_analysis[i]["stat"],
+                        "issue": binary_analysis[i]["title"],
+                        "description": binary_analysis[i]["desc"],
+                        "files": binary_analysis[i]["file"],
+                    }
+                )
+            return {
+                "count":
+                    # "high": binary_high,
+                    # "medium": binary_medium,
+                    # "info": binary_info,
+                    len(resp_binary),
+                "list": resp_binary,
+            }
+        except:
+            logger.info("get_binary_analysis error %s" % md5)
+            return None
+
+    @classmethod
+    def get_components_activities(cls, md5):
+        logger.info("get_components_activities of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            activities = eval(data_entry.ACTIVITIES)
+        except:
+            logger.info("get_components_activities error %s" % md5)
+            return None
+        return activities
+
+    @classmethod
+    def get_apkid_analysis(cls, md5):
+        logger.info("get_apkid_analysis of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            apkid = eval(data_entry.APKID)
+        except:
+            logger.info("get_apkid_analysis error %s" % md5)
+            return None
+        return apkid
+
+    @classmethod
+    def get_components_services(cls, md5):
+        logger.info("get_components_servicees of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            services = eval(data_entry.SERVICES)
+        except:
+            logger.info("get_components_servicees error %s" % md5)
+            return None
+        return services
+
+    @classmethod
+    def get_components_receivers(cls, md5):
+        logger.info("get_components_receivers of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            receivers = data_entry.RECEIVERS
+        except:
+            logger.info("get_components_receivers error %s" % md5)
+            return None
+        return receivers
+
+    @classmethod
+    def get_components_providers(cls, md5):
+        logger.info("get_components_providers of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            providers = data_entry.PROVIDERS
+        except:
+            logger.info("get_components_providers error %s" % md5)
+            return None
+        return providers
+
+    @classmethod
+    def get_components_libraries(cls, md5):
+        logger.info("get_components_libraries of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            libraries = eval(data_entry.LIBRARIES)
+        except:
+            logger.info("get_components_libraries error %s" % md5)
+            return None
+        return libraries
+
+    @classmethod
+    def get_components_files(cls, md5):
+        logger.info("get_components_files of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            files = eval(data_entry.FILES)
+        except:
+            logger.info("get_components_files error %s" % md5)
+            return None
+        return files
+
+    @classmethod
+    def get_domain_analysis(cls, md5):
+        logger.info("get_components_files of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            domains = eval(data_entry.DOMAINS)
+            bad_country = {}
+            for key, value in domains.items():
+                bad = value.get("bad", None)
+                if bad is None:
+                    continue
+                geolocation = value.get("geolocation", None)
+                if geolocation is None:
+                    continue
+                country_long = geolocation["country_long"]
+                # country_short = geolocation['country_short']
+                if country_long in bad_country.keys():
+                    bad_country[country_long]["domain"].append(key)
+                else:
+                    bad_country[country_long] = {"count": 0, "domain": [key]}
+                if bad == "yes":
+                    bad_country[country_long]["count"] = (
+                        bad_country[country_long]["count"] + 1
+                    )
+
+            bad_country_list = []
+            for key, value in bad_country.items():
+                bad_country_list.append(
+                    {
+                        "count": value["count"],
+                        "domains": value["domain"],
+                        "country": key,
+                    }
+                )
+            for i in range(len(bad_country_list) - 1):
+                for j in range(i + 1, len(bad_country_list)):
+                    if (
+                        bad_country_list[i]["count"]
+                        < bad_country_list[j]["count"]
+                    ):
+                        temp = bad_country_list[j]
+                        bad_country_list[j] = bad_country_list[i]
+                        bad_country_list[i] = temp
+            if len(bad_country_list) >= 3:
+                return {
+                    bad_country_list[0]["country"]: {
+                        "bad_count": bad_country_list[0]["count"],
+                        "domain": bad_country_list[0]["domains"][0],
+                    },
+                    bad_country_list[1]["country"]: {
+                        "bad_count": bad_country_list[1]["count"],
+                        "domain": bad_country_list[1]["domains"][0],
+                    },
+                    bad_country_list[2]["country"]: {
+                        "bad_count": bad_country_list[2]["count"],
+                        "domain": bad_country_list[2]["domains"][0],
+                    },
+                }
+            elif len(bad_country_list) == 1:
+                return {
+                    bad_country_list[0]["country"]: {
+                        "bad_count": bad_country_list[0]["count"],
+                        "domain": bad_country_list[0]["domains"][:3],
+                    },
+                }
+            elif len(bad_country_list) == 2:
+                if len(bad_country_list[0]["domains"]) > 1:
+                    return {
+                        bad_country_list[0]["country"]: {
+                            "bad_count": bad_country_list[0]["count"],
+                            "domain": bad_country_list[0]["domains"][:2],
+                        },
+                        bad_country_list[1]["country"]: {
+                            "bad_count": bad_country_list[1]["count"],
+                            "domain": bad_country_list[1]["domains"][0],
+                        },
+                    }
+                elif len(bad_country_list[1]["domains"]) > 1:
+                    return {
+                        bad_country_list[0]["country"]: {
+                            "bad_count": bad_country_list[0]["count"],
+                            "domain": bad_country_list[0]["domains"][0],
+                        },
+                        bad_country_list[1]["country"]: {
+                            "bad_count": bad_country_list[1]["count"],
+                            "domain": bad_country_list[1]["domains"][:2],
+                        },
+                    }
+                else:
+                    return {
+                        bad_country_list[0]["country"]: {
+                            "bad_count": bad_country_list[0]["count"],
+                            "domain": bad_country_list[0]["domains"][0],
+                        },
+                        bad_country_list[1]["country"]: {
+                            "bad_count": bad_country_list[1]["count"],
+                            "domain": bad_country_list[1]["domains"][0],
+                        },
+                    }
+        except:
+            logger.info("get_components_files error %s" % md5)
+            return None
+
+    @classmethod
+    def get_manifest_analysis(cls, organization, md5):
+        logger.info("get_components_files of %s" % md5)
+        try:
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
+            manifest = eval(data_entry.MANIFEST_ANALYSIS)
+            count_high = count_info = count_medium = 0
+            manifest_response = []
+            for i in range(len(manifest)):
+                # if manifest[i]["stat"] == "high":
+                #     count_high = count_high + 1
+                # elif manifest[i]["stat"] == "medium":
+                #     count_medium = count_medium + 1
+                # elif manifest[i]["stat"] == "info":
+                #     count_info = count_info + 1
+                manifest_response.append(
+                    {
+                        "severity": manifest[i]["stat"],
+                        "issue": manifest[i]["title"],
+                        "description": manifest[i]["desc"],
+                    }
+                )
+            return len(manifest_response), manifest_response
+        except:
+            logger.info("get_components_files error %s" % md5)
+            return None
+
+    @classmethod
+    def get_file_analysis(cls, md5):
+        logger.info("get_file_analysis of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            file_analysis = eval(data_entry.FILE_ANALYSIS)
+            return file_analysis
+        except:
+            logger.info("get_file_analysis error %s" % md5)
+            return None
+
+    @classmethod
+    def get_app_permissions(cls, organization, md5):
+        logger.info("get_app_permissions of %s" % md5)
+        try:
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
+            permissions = eval(data_entry.PERMISSIONS)
+            permissions_list = []
+            for perm, desc in permissions.items():
+                permissions_list.append({
+                    'severity': desc['status'],
+                    'permission': perm,
+                    'info': desc['info'],
+                    'description': desc['description']})
+            return {
+                'count': len(permissions_list),
+                'list': permissions_list }
+        except:
+            logger.info("get_app_permissions error %s" % md5)
+            return None
+
+    @classmethod
+    def get_org_user(cls, md5):
+        logger.info("get_org_user of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            org_id = data_entry.ORGANIZATION
+            user = data_entry.USER_ID
+            return org_id, user
+        except:
+            logger.info("get_app_permissions error %s" % md5)
+            return None, None
+
+    @classmethod
+    def get_total_issue(cls, organization, md5):
+        obj = cls.get_single_or_none(organization=organization, md5=md5)
+        if obj is None:
+            return 0
+        # issue from shard library
+        issue_binary = len(obj.BINARY_ANALYSIS)
+        # issue from manifest
+        issue_manifest = len(obj.MANIFEST_ANALYSIS)
+        # issue from code_analysis
+        code_analysis = eval(obj.CODE_ANALYSIS)
+        issue_code_analysis = 0
+        if "items" in code_analysis.keys():
+            issue_code_analysis = len(code_analysis["items"])
+        file_analysis = eval(obj.FILE_ANALYSIS)
+        issue_file_analysis = len(file_analysis)
+        total_issue = issue_binary + issue_manifest + issue_code_analysis + issue_file_analysis
+        return total_issue
+
 
 class StaticAnalyzerIOS(models.Model):
+    """This model represents the information obtained from a scan operation."""
+
+    USER = models.ForeignKey(User, on_delete=models.CASCADE)
+    ORGANIZATION = models.CharField(max_length=254)
+    DATE = models.DateField(
+        auto_now=True, auto_created=True, verbose_name="date_when_created"
+    )
     FILE_NAME = models.CharField(max_length=255)
     APP_NAME = models.CharField(max_length=255)
-    APP_TYPE = models.CharField(max_length=20, default='')
+    APP_TYPE = models.CharField(max_length=20, default="")
     SIZE = models.CharField(max_length=50)
     MD5 = models.CharField(max_length=32)
     SHA1 = models.CharField(max_length=40)
@@ -88,6 +948,615 @@ class StaticAnalyzerIOS(models.Model):
     STRINGS = models.TextField(default=[])
     FIREBASE_URLS = models.TextField(default=[])
     APPSTORE_DETAILS = models.TextField(default={})
+
+    @classmethod
+    def cook_scan(cls, **kwargs):
+        """Create a scan and store it to 
+        database do sanity checks here."""
+        if "USER" not in kwargs:
+            return False
+        if "ORGANIZATION" not in kwargs:
+            return False
+        cls.objects.create(**kwargs)
+        return True
+
+    @staticmethod
+    def paginate(load, page, count=30):
+        """Paginate a context"""
+        try:
+            paginator = Paginator(load, count)
+            activities = paginator.page(page)
+        except PageNotAnInteger:
+            activities = paginator.page(1)
+        except EmptyPage:
+            activities = paginator.page(paginator.num_pages)
+        except:
+            return None
+
+        resp = {
+            "page": activities.number,
+            "total_pages": paginator.num_pages,
+            "limit": 30,
+            "list": activities.object_list,
+        }
+        return resp
+
+    @classmethod
+    def get_single_or_none(cls, organization, md5):
+        """Get a single model or None"""
+        try:
+            return cls.objects.get(ORGANIZATION=organization, MD5=md5)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            return None
+
+    @classmethod
+    def get_md5s(cls, md5):
+        """Get md5s that match the pattern"""
+        md5s = cls.objects.filter(MD5__icontains=md5).values("MD5")
+        if md5s.count() == 0:
+            return []
+        return md5s
+
+    @classmethod
+    def get_domains_data(cls, md5):
+        """Get domains"""
+        countries = []
+        logger.info("Getting domains data of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+        except:
+            return None
+        try:
+            domains = eval(query.DOMAINS)
+            for key, value in domains.items():
+                holder = {}
+                geolocation = value.get("geolocation", None)
+                if geolocation is None:
+                    holder[key] = {}
+                    for k in value.keys():
+                        if k in ("good", "bad"):
+                            holder[key][k] = value.get(k, None)
+                    holder[key]["domain"] = key
+                    countries.append(holder)
+                    continue
+                country = geolocation.pop("country_long")
+                holder[country] = {}
+                holder[country]["domain"] = key
+                for k in value.keys():
+                    if k in ("good", "bad"):
+                        holder[country][k] = value.get(k, None)
+                holder[country].update(geolocation)
+                countries.append(holder)
+        except:
+            logger.info("Issue getting domains for object : %s" % md5)
+            return None
+        return {"countries": countries}
+
+    @classmethod
+    def get_recon_emails(cls, md5, page):
+        """Get Reconnaissance emails or None"""
+        logger.info("Getting reconnassaince emails of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            emails = eval(query.EMAILS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting recon emails of %s" % md5)
+            return None
+        return {"emails": cls.paginate(emails, page)}
+
+    @classmethod
+    def get_recon_urls(cls, md5, page):
+        """Get recon urls or None"""
+        logger.info("Getting urls of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            urls = eval(query.URLS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting recon urls of %s" % md5)
+            return None
+        return {"urls": cls.paginate(urls, page)}
+
+    @classmethod
+    def get_recon_firebase_db(cls, md5, page):
+        """Get recon firebase url"""
+        logger.info("Getting firebase urls of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            firebase_urls = eval(query.FIREBASE_URLS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting fb_db_urls of %s" % md5)
+            return None
+        return {"firebase_urls": cls.paginate(firebase_urls, page)}
+
+    @classmethod
+    def get_recon_strings(cls, md5, page):
+        """Get recon strings. Requires pagination."""
+        logger.info("Getting strings of %s" % md5)
+        try:
+            query = cls.objects.get(MD5=md5)
+            strings = eval(query.STRINGS)
+        except (cls.DoesNotExist, ObjectDoesNotExist):
+            logger.error("Object %s does not exists")
+            return None
+        except Exception:
+            logger.error("Unexpected error geting strings of %s" % md5)
+            return None
+        return {"strings": cls.paginate(strings, page)}
+
+    @classmethod
+    def get_app_info(cls, md5):
+        """Get's application information, or returns None."""
+        logger.info("ios get_app_info of %s" % md5)
+        try:
+            db_entry = cls.objects.get(MD5=md5)
+            app_info = {
+                "file_name": db_entry.FILE_NAME,
+                "size": db_entry.SIZE,
+                "md5": db_entry.MD5,
+                "sha1": db_entry.SHA1,
+                "sha256": db_entry.SHA256,
+                "app_name": db_entry.APP_NAME,
+                "app_type": db_entry.APP_TYPE,
+                "identifier": db_entry.BUNDLE_ID,
+                "sdk_name": db_entry.SDK_NAME,
+                "version": db_entry.APP_VERSION,
+                "build": db_entry.BUILD,
+                "platform": db_entry.PLATFORM,
+                "min_os_version": db_entry.MIN_OS_VERSION,
+                "supported_platform": eval(
+                    db_entry.BUNDLE_SUPPORTED_PLATFORMS
+                ),
+            }
+            return app_info
+        except:
+            logger.info("error get_app_info of %s" % md5)
+            return None
+
+    @classmethod
+    def get_app_store(cls, md5):
+        """Gets application store information, or returns None."""
+        try:
+            logger.info("get_app_store of %s" % md5)
+            db_entry = cls.objects.get(MD5=md5)
+            app_stor_info = eval(db_entry.APPSTORE_DETAILS)
+            return app_stor_info
+        except:
+            logger.info("error get_app_store of %s" % md5)
+            return None
+
+    @classmethod
+    def get_security_overview(cls, md5):
+        """Gets security overview, or returns None."""
+        try:
+            logger.info("get_security_overview of %s" % md5)
+            db_entry = cls.objects.get(MD5=md5)
+
+            ats_secure = ats_insecure = ats_warning = ats_info = 0
+            ats = eval(db_entry.ATS_ANALYSIS)
+            for item in ats:
+                if item["status"] == "secure":
+                    ats_secure = ats_secure + 1
+                elif item["status"] == "insecure":
+                    ats_insecure = ats_insecure + 1
+                elif item["status"] == "warning":
+                    ats_warning = ats_warning + 1
+                elif item["status"] == "info":
+                    ats_info = ats_info + 1
+            binary_high = binary_good = binary_warning = binary_info = 0
+            bns = eval(db_entry.BINARY_ANALYSIS)
+            for key in bns:
+                details = bns[key]
+                if details["level"] == "high":
+                    binary_high = binary_high + 1
+                elif details["level"] == "good":
+                    binary_good = binary_good + 1
+                elif details["level"] == "warning":
+                    binary_warning = binary_warning + 1
+                elif details["level"] == "info":
+                    binary_info = binary_info + 1
+
+            security_overview = {
+                "ats": {
+                    "secure": ats_secure,
+                    "insecure": ats_insecure,
+                    "warning": ats_warning,
+                    "info": ats_info,
+                },
+                "binary": {
+                    "high": binary_high,
+                    "secure": binary_good,
+                    "warning": binary_warning,
+                    "info": binary_info,
+                },
+            }
+            return security_overview
+        except:
+            logger.info("error get_security_overview of %s" % md5)
+            return None
+
+    @classmethod
+    def get_code_analysis(cls, md5):
+        """Get code analysis, or returns None."""
+        logger.info("get_code_analysis of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            code_analysis = eval(data_entry.CODE_ANALYSIS)
+            return code_analysis
+        except:
+            logger.info("get_code_analysis error %s" % md5)
+            return None
+
+    @classmethod
+    def get_code_analysis_report(cls, organization, md5):
+        """Generates a code analysis report, or returns None."""
+        logger.info("get_code_analysis of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            code_analysis = eval(data_entry.CODE_ANALYSIS)
+            code_high = code_good = code_warning = code_info = 0
+            resp_code = []
+            for issue, details in code_analysis["items"]:
+                if details["level"] == "high":
+                    code_high = code_high + 1
+                elif details["level"] == "good":
+                    code_good = code_good + 1
+                elif details["level"] == "warning":
+                    code_warning = code_warning + 1
+                elif details["level"] == "info":
+                    code_info = code_info + 1
+                resp_code.append(
+                    {
+                        "severity": details["level"],
+                        "issue": issue,
+                        "description": {
+                            "cvss": details["cvss"],
+                            "cwe": details["cwe"],
+                            "owasp": details["owasp"],
+                            "owasp-mstg": details["owasp-mstg"],
+                            "path": details["path"],
+                        },
+                    }
+                )
+            return {
+                "count": {
+                    "high": code_high,
+                    "good": code_good,
+                    "warning": code_warning,
+                    "info": code_info,
+                },
+                "list": resp_code,
+            }
+        except:
+            logger.info("get_code_analysis error %s" % md5)
+            return None
+
+
+    @classmethod
+    def get_scan_info_from_obj(cls, scan_obj):
+        try:
+            if scan_obj.ICON_FOUND:
+                icon_url = "/download/{0}-icon.png".format(scan_obj.MD5)
+            else:
+                icon_url = 'img/no_icon.png'
+            certificate_analysis = json.loads(scan_obj.CERTIFICATE_ANALYSIS)
+            scan_info = {
+                'file_name': scan_obj.FILE_NAME,
+                'icon_url': icon_url,
+                'system': 'android',
+                'date': scan_obj.DATE,
+                'certificate_status':
+                    certificate_analysis['certificate_status'] if certificate_analysis is not None else '',
+                'app_info': {
+                    'file_name': scan_obj.FILE_NAME,
+                    'size': scan_obj.SIZE,
+                    'md5': scan_obj.MD5,
+                    'sha1': scan_obj.SHA1,
+                    'sha256': scan_obj.SHA256,
+                    'app_name': scan_obj.APP_NAME,
+                    'package_name': scan_obj.PACKAGE_NAME,
+                    'main_activity': scan_obj.MAIN_ACTIVITY,
+                    'target_sdk': scan_obj.TARGET_SDK,
+                    'max_sdk': scan_obj.MAX_SDK,
+                    'min_sdk': scan_obj.MIN_SDK,
+                    'version_name': scan_obj.VERSION_NAME,
+                    'version_code': scan_obj.VERSION_CODE
+                }
+            }
+            return scan_info
+        except:
+            return None
+
+    @classmethod
+    def get_binary_analysis(cls, organization, md5):
+        """Generates binary analysis or returns None."""
+        logger.info("get_binary_analysis of %s" % md5)
+        try:
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
+            binary_analysis = eval(data_entry.BINARY_ANALYSIS)
+            # binary_high = binary_info = binary_medium = 0
+            resp_binary = []
+            if "items" in binary_analysis.key():
+                for issue, detail in binary_analysis['items']:
+                    # if binary_analysis[i]["stat"] == "high":
+                    #     binary_high = binary_high + 1
+                    # elif binary_analysis[i]["stat"] == "info":
+                    #     binary_info = binary_info + 1
+                    # elif binary_analysis[i]["stat"] == "medium":
+                    #     binary_medium = binary_medium + 1
+                    resp_binary.append(
+                        {
+                            "severity": detail["level"],
+                            "issue": issue,
+                            "description": detail["detailed_desc"],
+                            "files": detail["file"],
+                        }
+                    )
+                return {
+                    "count": {
+                        # "high": binary_high,
+                        # "medium": binary_medium,
+                        # "info": binary_info,
+                        len(resp_binary)
+                    },
+                    "list": resp_binary,
+            }
+        except:
+            logger.info("get_binary_analysis error %s" % md5)
+            return None
+
+    @classmethod
+    def get_file_analysis(cls, md5):
+        """Get's file analysis or returns None."""
+        logger.info("get_file_analysis of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            file_analysis = eval(data_entry.FILE_ANALYSIS)
+            return file_analysis
+        except:
+            logger.info("get_file_analysis error %s" % md5)
+            return None
+
+    @classmethod
+    def get_app_permissions(cls, organization, md5):
+        """Get's applications permissions or returns None."""
+        logger.info("get_app_permissions of %s" % md5)
+        try:
+            data_entry = cls.objects.get(ORGANIZATION=organization, MD5=md5)
+            permissions = eval(data_entry.PERMISSIONS)
+            # get_app_permissions
+            permissions_list = []
+            for perm in permissions:
+                permissions_list.append({
+                    'permission': perm['name'],
+                    'status': perm['status'],
+                    'description': perm['description'],
+                    'reason': perm['reason']
+                })
+            return {
+                'count': len(permissions_list),
+                'list': permissions_list
+            }
+        except:
+            logger.info("get_app_permissions error %s" % md5)
+            return None
+
+    @classmethod
+    def get_libraries(cls, md5):
+        logger.info("get_app_permissions of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            permissions = eval(data_entry.PERMISSIONS)
+            return permissions
+        except:
+            logger.info("get_app_permissions error %s" % md5)
+            return None
+
+    @classmethod
+    def get_components_libraries(cls, md5):
+        logger.info("get_components_libraries of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            libraries = eval(data_entry.LIBRARIES)
+        except:
+            logger.info("get_components_libraries error %s" % md5)
+            return None
+        return libraries
+
+    @classmethod
+    def get_components_files(cls, md5):
+        logger.info("get_components_files of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            files = eval(data_entry.FILES)
+        except:
+            logger.info("get_components_files error %s" % md5)
+            return None
+        return files
+
+    @classmethod
+    def get_org_user(cls, md5):
+        logger.info("get_org_user of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            org_id = data_entry.ORGANIZATION
+            user = data_entry.USER_ID
+            return org_id, user
+        except:
+            logger.info("get_org_user error %s" % md5)
+            return None, None
+
+    @classmethod
+    def get_domain_analysis(cls, md5):
+        logger.info("get_components_files of %s" % md5)
+        try:
+            data_entry = cls.objects.get(MD5=md5)
+            domains = eval(data_entry.DOMAINS)
+            bad_country = {}
+            for key, value in domains.items():
+                bad = value.get("bad", None)
+                if bad is None:
+                    continue
+                geolocation = value.get("geolocation", None)
+                if geolocation is None:
+                    continue
+                country_long = geolocation["country_long"]
+                # country_short = geolocation['country_short']
+                if country_long in bad_country.keys():
+                    bad_country[country_long]["domain"].append(key)
+                else:
+                    bad_country[country_long] = {"count": 0, "domain": [key]}
+                if bad == "yes":
+                    bad_country[country_long]["count"] = (
+                        bad_country[country_long]["count"] + 1
+                    )
+
+            bad_country_list = []
+            for key, value in bad_country.items():
+                bad_country_list.append(
+                    {
+                        "count": value["count"],
+                        "domains": value["domain"],
+                        "country": key,
+                    }
+                )
+            for i in range(len(bad_country_list) - 1):
+                for j in range(i + 1, len(bad_country_list)):
+                    if (
+                        bad_country_list[i]["count"]
+                        < bad_country_list[j]["count"]
+                    ):
+                        temp = bad_country_list[j]
+                        bad_country_list[j] = bad_country_list[i]
+                        bad_country_list[i] = temp
+            if len(bad_country_list) >= 3:
+                return {
+                    bad_country_list[0]["country"]: {
+                        "bad_count": bad_country_list[0]["count"],
+                        "domain": bad_country_list[0]["domains"][0],
+                    },
+                    bad_country_list[1]["country"]: {
+                        "bad_count": bad_country_list[1]["count"],
+                        "domain": bad_country_list[1]["domains"][0],
+                    },
+                    bad_country_list[2]["country"]: {
+                        "bad_count": bad_country_list[2]["count"],
+                        "domain": bad_country_list[2]["domains"][0],
+                    },
+                }
+            elif len(bad_country_list) == 1:
+                return {
+                    bad_country_list[0]["country"]: {
+                        "bad_count": bad_country_list[0]["count"],
+                        "domain": bad_country_list[0]["domains"][:3],
+                    },
+                }
+            elif len(bad_country_list) == 2:
+                if len(bad_country_list[0]["domains"]) > 1:
+                    return {
+                        bad_country_list[0]["country"]: {
+                            "bad_count": bad_country_list[0]["count"],
+                            "domain": bad_country_list[0]["domains"][:2],
+                        },
+                        bad_country_list[1]["country"]: {
+                            "bad_count": bad_country_list[1]["count"],
+                            "domain": bad_country_list[1]["domains"][0],
+                        },
+                    }
+                elif len(bad_country_list[1]["domains"]) > 1:
+                    return {
+                        bad_country_list[0]["country"]: {
+                            "bad_count": bad_country_list[0]["count"],
+                            "domain": bad_country_list[0]["domains"][0],
+                        },
+                        bad_country_list[1]["country"]: {
+                            "bad_count": bad_country_list[1]["count"],
+                            "domain": bad_country_list[1]["domains"][:2],
+                        },
+                    }
+                else:
+                    return {
+                        bad_country_list[0]["country"]: {
+                            "bad_count": bad_country_list[0]["count"],
+                            "domain": bad_country_list[0]["domains"][0],
+                        },
+                        bad_country_list[1]["country"]: {
+                            "bad_count": bad_country_list[1]["count"],
+                            "domain": bad_country_list[1]["domains"][0],
+                        },
+                    }
+        except:
+            logger.info("get_components_files error %s" % md5)
+            return None
+
+    @classmethod
+    def get_scan_info(cls, md5):
+        """Get's scan information"""
+        try:
+            scan_obj = cls.objects.get(MD5=md5)
+            scan_info = cls.get_scan_info_from_obj(scan_obj)
+            return scan_info
+        except:
+            return None
+
+    @classmethod
+    def get_scan_info_from_obj(cls, scan_obj):
+        """Get's information from a scan or returns None"""
+        try:
+            if scan_obj.ICON_FOUND:
+                icon_url = "/download/{}-icon.png".format(scan_obj.MD5)
+            else:
+                icon_url = "img/no_icon.png"
+            scan_info = {
+                "file_name": scan_obj.FILE_NAME,
+                "icon_url": icon_url,
+                "system": "ios",
+                "date": scan_obj.DATE,
+                "app_info": {
+                    "file_name": scan_obj.FILE_NAME,
+                    "size": scan_obj.SIZE,
+                    "md5": scan_obj.MD5,
+                    "sha1": scan_obj.SHA1,
+                    "sha256": scan_obj.SHA256,
+                    "app_name": scan_obj.APP_NAME,
+                    "app_type": scan_obj.APP_TYPE,
+                    "identifier": scan_obj.BUNDLE_ID,
+                    "sdk_name": scan_obj.SDK_NAME,
+                    "version": scan_obj.APP_VERSION,
+                    "build": scan_obj.BUILD,
+                    "platform": scan_obj.PLATFORM,
+                    "min_os_version": scan_obj.MIN_OS_VERSION,
+                    "supported_platform": scan_obj.BUNDLE_SUPPORTED_PLATFORMS,
+                },
+            }
+            return scan_info
+        except:
+            return None
+
+    @classmethod
+    def get_total_issue(cls, organization, md5):
+        obj = cls.get_single_or_none(organization=organization, md5=md5)
+        if obj is None:
+            return 0
+        # issue from ats
+        issue_ats = len(eval(obj.ATS_ANALYSIS))
+        # issue from ipa_analysis
+        ipa_analysis = eval(obj.BINARY_ANALYSIS)
+        issue_ipa_analysis = 0
+        if "items" in ipa_analysis.keys():
+            issue_ipa_analysis = len(ipa_analysis["items"])
+        file_analysis = eval(obj.FILE_ANALYSIS)
+        issue_file_analysis = len(file_analysis)
+        total_issue = issue_ats + issue_ipa_analysis + issue_file_analysis
+        return total_issue
 
 
 class StaticAnalyzerWindows(models.Model):

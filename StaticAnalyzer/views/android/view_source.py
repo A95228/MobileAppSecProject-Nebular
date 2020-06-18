@@ -43,15 +43,15 @@ def run(request, api=False):
             return print_n_send_error_response(request, err, False, exp)
         if fil.endswith('.java'):
             if typ == 'eclipse':
-                src = os.path.join(settings.UPLD_DIR, md5 + '/src/')
+                src = os.path.join(settings.UPLD_DIR, request.user.organization + '/', md5 + '/src/')
             elif typ == 'studio':
                 src = os.path.join(
-                    settings.UPLD_DIR, md5 + '/app/src/main/java/')
+                    settings.UPLD_DIR, request.user.organization + '/', md5 + '/app/src/main/java/')
             elif typ == 'apk':
                 src = os.path.join(
-                    settings.UPLD_DIR, md5 + '/java_source/')
+                    settings.UPLD_DIR, request.user.organization + '/', md5 + '/java_source/')
         elif fil.endswith('.smali'):
-            src = os.path.join(settings.UPLD_DIR,
+            src = os.path.join(settings.UPLD_DIR, request.user.organization + '/',
                                md5 + '/smali_source/')
         else:
             msg = 'Not Found'
