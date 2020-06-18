@@ -10,24 +10,26 @@ from wsgiref.util import FileWrapper
 
 from django.conf import settings
 from django.core.paginator import Paginator
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.template.defaulttags import register
 from django.contrib.auth.decorators import user_passes_test,login_required
-
 from Kensa.forms import FormUtil, UploadFileForm
 from Kensa.utils import (api_key, is_dir_exists, is_file_exists,
                          print_n_send_error_response)
 from Kensa.views.helpers import FileType
-from Kensa.views.scanning import Scanning
+from Kensa.views.scanning import Scanning, add_to_recent_scan
 
 from StaticAnalyzer.models import (RecentScansDB,
                                    StaticAnalyzerAndroid,
                                    StaticAnalyzerIOS,
                                    StaticAnalyzerWindows)
 
+
+
 LINUX_PLATFORM = ['Darwin', 'Linux']
 HTTP_BAD_REQUEST = 400
+
 logger = logging.getLogger(__name__)
 
 
@@ -35,6 +37,7 @@ logger = logging.getLogger(__name__)
 def key(d, key_name):
     """To get dict element by key name in template."""
     return d.get(key_name)
+
 
 @login_required
 def index(request):
@@ -131,14 +134,11 @@ class Upload(object):
             'hash': data['hash'],
             'file_name': data['file_name'],
         }
-        return api_response, 200
+        if data["status"] == "success":
+            return api_response, 200
+        else:
+            return {}, 500
 
-    #def user_can_upload(user):
-    #    if user.is_authenticated() and user.has_perm("upload.can_upload"):
-    #        return True
-    #    else:
-    #        return False
-    #@user_passes_test(user_can_upload)
     def upload(self):
         request = self.request
         scanning = Scanning(request)
@@ -147,14 +147,15 @@ class Upload(object):
 
         logger.info('MIME Type: %s FILE: %s', file_type, file_name_lower)
         if self.file_type.is_apk():
-            return scanning.scan_apk()
+            return scanning.scan_app('apk')
         elif self.file_type.is_zip():
-            return scanning.scan_zip()
+            return scanning.scan_app('zip')
         elif self.file_type.is_ipa():
-            return scanning.scan_ipa()
+            return scanning.scan_app('ipa')
         # Windows APPX
         elif self.file_type.is_appx():
-            return scanning.scan_appx()
+            return scanning.scan_app('appx')
+
 
 def api_docs(request):
     """Api Docs Route."""
@@ -291,7 +292,8 @@ def delete_scan(request, api=False):
                     StaticAnalyzerIOS.objects.filter(MD5=md5_hash).delete()
                     StaticAnalyzerWindows.objects.filter(MD5=md5_hash).delete()
                     # Delete Upload Dir Contents
-                    app_upload_dir = os.path.join(settings.UPLD_DIR, md5_hash)
+                    sub_path = "{}/{}".format(request.user.organization, md5_hash)
+                    app_upload_dir = os.path.join(settings.UPLD_DIR, sub_path)
                     if is_dir_exists(app_upload_dir):
                         shutil.rmtree(app_upload_dir)
                     # Delete Download Dir Contents

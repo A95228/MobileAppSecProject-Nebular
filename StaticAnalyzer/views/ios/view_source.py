@@ -62,10 +62,10 @@ def run(request, api=False):
                 return err
             return print_n_send_error_response(request, err, False, exp)
         if mode == 'ipa':
-            src = os.path.join(settings.UPLD_DIR,
+            src = os.path.join(settings.UPLD_DIR, request.user.organization + '/',
                                md5_hash + '/Payload/')
         elif mode == 'ios':
-            src = os.path.join(settings.UPLD_DIR, md5_hash + '/')
+            src = os.path.join(settings.UPLD_DIR, request.user.organization + '/', md5_hash + '/')
         sfile = os.path.join(src, fil)
         if not is_safe_path(src, sfile):
             msg = 'Path Traversal Detected!'
@@ -100,7 +100,7 @@ def run(request, api=False):
             sql_dump = read_sqlite(sfile)
         elif typ == 'txt' and fil == 'classdump.txt':
             file_format = 'cpp'
-            app_dir = os.path.join(settings.UPLD_DIR, md5_hash + '/')
+            app_dir = os.path.join(settings.UPLD_DIR, request.user.organization + '/', md5_hash + '/')
             cls_dump_file = os.path.join(app_dir, 'classdump.txt')
             if is_file_exists(cls_dump_file):
                 with io.open(cls_dump_file,

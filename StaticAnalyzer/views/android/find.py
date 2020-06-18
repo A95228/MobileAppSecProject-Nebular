@@ -26,10 +26,12 @@ def run(request):
             code = request.POST['code']
             matches = []
             if code == 'java':
-                src = os.path.join(settings.UPLD_DIR, md5 + '/java_source/')
+                sub_path = "{}/{}/java_source/".format(request.user.organization, md5)
+                src = os.path.join(settings.UPLD_DIR, sub_path)
                 ext = '.java'
             elif code == 'smali':
-                src = os.path.join(settings.UPLD_DIR, md5 + '/smali_source/')
+                sub_path = "{}/{}/smali_source/".format(request.user.organization, md5)
+                src = os.path.join(settings.UPLD_DIR, sub_path)
                 ext = '.smali'
             else:
                 err = 'Only Java/Smali files are allowed'

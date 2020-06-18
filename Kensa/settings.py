@@ -26,6 +26,7 @@ BANNER = """
 # ASCII Standard
 # ==============================================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+print(BASE_DIR)
 # ==========Kensa Home Directory=================
 USE_HOME = False
 
@@ -59,7 +60,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'kensa',
         'USER': 'kensa',
-        'PASSWORD': '',
+        'PASSWORD': 'kensa',
         'HOST': 'localhost',
         'PORT': '5432',
     }
@@ -148,28 +149,36 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'users',
+    #'grappelli.dashboard',
+    'rest_framework',
     'StaticAnalyzer',
     'DynamicAnalyzer',
     'Kensa',
     'MalwareAnalyzer',
+    'corsheaders',
 )
-MIDDLEWARE_CLASSES = (
 
+
+MIDDLEWARE_CLASSES = (
     'whitenoise.middleware.WhiteNoiseMiddleware',
 )
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware', # cors middleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'Kensa.views.api.rest_api_middleware.RestApiAuthMiddleware',
-    #'Kensa.LoginRequiredMiddleware',
-
 ]
+
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+
 ROOT_URLCONF = 'Kensa.urls'
 WSGI_APPLICATION = 'Kensa.wsgi.application'
 LANGUAGE_CODE = 'en-us'
@@ -212,12 +221,18 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
+
 SITE_ID = 1
 LOGIN_REDIRECT_URL = '/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
 MEDIA_URL = '/uploads/'
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 # 256MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 268435456
@@ -384,6 +399,21 @@ else:
 
 # ============JAVA SETTINGS======================
 JAVA_BINARY = find_java_binary()
+# ===============================================
+
+# ============DJANGO REST========================
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAuthenticated',),
+
+    "DEFAULT_RENDERER_CLASSES": (
+        "rest_framework.renderers.JSONRenderer",
+    ),
+
+    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication',],
+
+    'PAGE_SIZE': 30
+}
 # ===============================================
 
 # Better logging

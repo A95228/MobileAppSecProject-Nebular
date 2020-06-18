@@ -46,7 +46,7 @@ def view_report(request):
                 is_md5(md5_hash)):
             return print_n_send_error_response(request,
                                                'Invalid Parameters')
-        app_dir = os.path.join(settings.UPLD_DIR, md5_hash + '/')
+        app_dir = os.path.join(settings.UPLD_DIR, request.user.organization + '/', md5_hash + '/')
         download_dir = settings.DWD_DIR
         if not is_file_exists(os.path.join(app_dir, 'logcat.txt')):
             msg = ('Dynamic Analysis report is not available '
